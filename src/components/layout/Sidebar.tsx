@@ -70,7 +70,7 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex items-center gap-2">
             <Dumbbell className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg text-sidebar-foreground">FitSync</span>
+            <span className="font-bold text-lg text-sidebar-foreground">SpartaGYM</span>
           </div>
         )}
         {collapsed && <Dumbbell className="h-6 w-6 text-primary" />}
