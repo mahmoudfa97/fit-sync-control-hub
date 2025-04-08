@@ -49,80 +49,80 @@ interface Member {
 const members: Member[] = [
   {
     id: "1",
-    name: "Emma Wilson",
-    email: "emma.wilson@example.com",
-    membershipType: "Premium",
+    name: "سارة الحمدان",
+    email: "sarah.alh@example.com",
+    membershipType: "بريميوم",
     status: "active",
-    joinDate: "Jan 5, 2024",
-    lastCheckIn: "Today at 8:45 AM",
+    joinDate: "5 يناير، 2024",
+    lastCheckIn: "اليوم 8:45 ص",
     paymentStatus: "paid",
-    initials: "EW"
+    initials: "سح"
   },
   {
     id: "2",
-    name: "Marcus Johnson",
-    email: "marcus.j@example.com",
-    membershipType: "Standard",
+    name: "خالد العمري",
+    email: "khalid.a@example.com",
+    membershipType: "قياسي",
     status: "active",
-    joinDate: "Feb 12, 2024",
-    lastCheckIn: "Today at 7:30 AM",
+    joinDate: "12 فبراير، 2024",
+    lastCheckIn: "اليوم 7:30 ص",
     paymentStatus: "paid",
-    initials: "MJ"
+    initials: "خع"
   },
   {
     id: "3",
-    name: "Sophie Chen",
-    email: "sophie.c@example.com",
-    membershipType: "Premium",
+    name: "منى الزهراني",
+    email: "mona.z@example.com",
+    membershipType: "بريميوم",
     status: "active",
-    joinDate: "Nov 8, 2023",
-    lastCheckIn: "Yesterday at 6:15 PM",
+    joinDate: "8 نوفمبر، 2023",
+    lastCheckIn: "بالأمس 6:15 م",
     paymentStatus: "paid",
-    initials: "SC"
+    initials: "مز"
   },
   {
     id: "4",
-    name: "David Miller",
-    email: "david.m@example.com",
-    membershipType: "Standard",
+    name: "أحمد السعيد",
+    email: "ahmed.s@example.com",
+    membershipType: "قياسي",
     status: "inactive",
-    joinDate: "Mar 21, 2023",
-    lastCheckIn: "Apr 2, 2025",
+    joinDate: "21 مارس، 2023",
+    lastCheckIn: "2 أبريل، 2025",
     paymentStatus: "overdue",
-    initials: "DM"
+    initials: "أس"
   },
   {
     id: "5",
-    name: "Jessica Thompson",
-    email: "jessica.t@example.com",
-    membershipType: "Premium Plus",
+    name: "نورة الشمري",
+    email: "noura.s@example.com",
+    membershipType: "بريميوم بلس",
     status: "active",
-    joinDate: "Dec 3, 2023",
-    lastCheckIn: "Today at 10:20 AM",
+    joinDate: "3 ديسمبر، 2023",
+    lastCheckIn: "اليوم 10:20 ص",
     paymentStatus: "paid",
-    initials: "JT"
+    initials: "نش"
   },
   {
     id: "6",
-    name: "Michael Wong",
-    email: "michael.w@example.com",
-    membershipType: "Monthly",
+    name: "محمد العتيبي",
+    email: "mohammed.o@example.com",
+    membershipType: "شهري",
     status: "active",
-    joinDate: "Feb 18, 2024",
-    lastCheckIn: "Yesterday at 8:00 PM",
+    joinDate: "18 فبراير، 2024",
+    lastCheckIn: "بالأمس 8:00 م",
     paymentStatus: "pending",
-    initials: "MW"
+    initials: "مع"
   },
   {
     id: "7",
-    name: "Sarah Davis",
-    email: "sarah.d@example.com",
-    membershipType: "Annual",
+    name: "ليلى القاسم",
+    email: "layla.q@example.com",
+    membershipType: "سنوي",
     status: "expired",
-    joinDate: "Apr 5, 2023",
-    lastCheckIn: "Mar 20, 2024",
+    joinDate: "5 أبريل، 2023",
+    lastCheckIn: "20 مارس، 2024",
     paymentStatus: "overdue",
-    initials: "SD"
+    initials: "لق"
   },
 ];
 
@@ -139,6 +139,19 @@ const paymentStatusStyles = {
   pending: "text-amber-600",
 };
 
+const statusLabels = {
+  active: "نشط",
+  inactive: "غير نشط",
+  pending: "معلق",
+  expired: "منتهي"
+};
+
+const paymentStatusLabels = {
+  paid: "مدفوع",
+  overdue: "متأخر",
+  pending: "معلق"
+};
+
 export default function Members() {
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -151,9 +164,9 @@ export default function Members() {
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Members</h1>
+          <h1 className="text-3xl font-bold tracking-tight">الأعضاء</h1>
           <p className="text-muted-foreground">
-            Manage and track your gym members.
+            إدارة ومتابعة أعضاء صالتك الرياضية.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -161,7 +174,7 @@ export default function Members() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search members..."
+              placeholder="البحث في الأعضاء..."
               className="pl-8 w-full md:w-[300px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -171,46 +184,46 @@ export default function Members() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
-                <span className="sr-only">Filter</span>
+                <span className="sr-only">فلترة</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuGroup>
-                <DropdownMenuItem>Active members</DropdownMenuItem>
-                <DropdownMenuItem>Inactive members</DropdownMenuItem>
-                <DropdownMenuItem>Expired memberships</DropdownMenuItem>
-                <DropdownMenuItem>Payments overdue</DropdownMenuItem>
+                <DropdownMenuItem>الأعضاء النشطين</DropdownMenuItem>
+                <DropdownMenuItem>الأعضاء غير النشطين</DropdownMenuItem>
+                <DropdownMenuItem>العضويات المنتهية</DropdownMenuItem>
+                <DropdownMenuItem>المدفوعات المتأخرة</DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button>
             <UserPlus className="mr-2 h-4 w-4" />
-            Add Member
+            إضافة عضو
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Member Directory</CardTitle>
+          <CardTitle>دليل الأعضاء</CardTitle>
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  All Members
+                  جميع الأعضاء
                   <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>All Members</DropdownMenuItem>
-                <DropdownMenuItem>Active Members</DropdownMenuItem>
-                <DropdownMenuItem>Inactive Members</DropdownMenuItem>
-                <DropdownMenuItem>Expired Memberships</DropdownMenuItem>
+                <DropdownMenuItem>جميع الأعضاء</DropdownMenuItem>
+                <DropdownMenuItem>الأعضاء النشطين</DropdownMenuItem>
+                <DropdownMenuItem>الأعضاء غير النشطين</DropdownMenuItem>
+                <DropdownMenuItem>العضويات المنتهية</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button variant="outline" size="icon">
               <Download className="h-4 w-4" />
-              <span className="sr-only">Download CSV</span>
+              <span className="sr-only">تنزيل CSV</span>
             </Button>
           </div>
         </CardHeader>
@@ -218,12 +231,12 @@ export default function Members() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[250px]">Member</TableHead>
-                <TableHead>Membership</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Check-in</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[250px]">العضو</TableHead>
+                <TableHead>العضوية</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>آخر تسجيل حضور</TableHead>
+                <TableHead>الدفع</TableHead>
+                <TableHead className="text-right">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -245,12 +258,12 @@ export default function Members() {
                     <TableCell>
                       <div className="flex flex-col">
                         <span>{member.membershipType}</span>
-                        <span className="text-xs text-muted-foreground">Since {member.joinDate}</span>
+                        <span className="text-xs text-muted-foreground">منذ {member.joinDate}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={statusStyles[member.status]}>
-                        {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                        {statusLabels[member.status]}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -261,23 +274,23 @@ export default function Members() {
                     </TableCell>
                     <TableCell>
                       <span className={`font-medium ${paymentStatusStyles[member.paymentStatus]}`}>
-                        {member.paymentStatus.charAt(0).toUpperCase() + member.paymentStatus.slice(1)}
+                        {paymentStatusLabels[member.paymentStatus]}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
-                            Actions <ChevronDown className="ml-1 h-4 w-4" />
+                            إجراءات <ChevronDown className="ml-1 h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>Edit Member</DropdownMenuItem>
-                          <DropdownMenuItem>Check In</DropdownMenuItem>
-                          <DropdownMenuItem>Manage Plan</DropdownMenuItem>
+                          <DropdownMenuItem>عرض الملف الشخصي</DropdownMenuItem>
+                          <DropdownMenuItem>تعديل العضو</DropdownMenuItem>
+                          <DropdownMenuItem>تسجيل حضور</DropdownMenuItem>
+                          <DropdownMenuItem>إدارة الخطة</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">
-                            Deactivate
+                            إلغاء التفعيل
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -287,7 +300,7 @@ export default function Members() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    No members found.
+                    لم يتم العثور على أعضاء.
                   </TableCell>
                 </TableRow>
               )}

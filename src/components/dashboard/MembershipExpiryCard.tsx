@@ -28,35 +28,35 @@ interface ExpiringMembership {
 const EXPIRING_MEMBERSHIPS: ExpiringMembership[] = [
   {
     id: "1",
-    name: "Jessica Williams",
-    initials: "JW",
-    expiryDate: "Apr 15, 2025",
+    name: "مريم العبدالله",
+    initials: "مع",
+    expiryDate: "15 أبريل، 2025",
     daysLeft: 3,
-    plan: "Fitness Plus",
+    plan: "فتنس بلس",
   },
   {
     id: "2",
-    name: "Mark Johnson",
-    initials: "MJ",
-    expiryDate: "Apr 17, 2025",
+    name: "فهد الشمري",
+    initials: "فش",
+    expiryDate: "17 أبريل، 2025",
     daysLeft: 5,
-    plan: "Basic Plan",
+    plan: "الخطة الأساسية",
   },
   {
     id: "3",
-    name: "Sarah Miller",
-    initials: "SM",
-    expiryDate: "Apr 18, 2025",
+    name: "نورة القحطاني",
+    initials: "نق",
+    expiryDate: "18 أبريل، 2025",
     daysLeft: 6,
-    plan: "Premium Plan",
+    plan: "الخطة المميزة",
   },
   {
     id: "4",
-    name: "David Wilson",
-    initials: "DW",
-    expiryDate: "Apr 20, 2025",
+    name: "عبدالله الغامدي",
+    initials: "عغ",
+    expiryDate: "20 أبريل، 2025",
     daysLeft: 8,
-    plan: "Monthly Pass",
+    plan: "الباقة الشهرية",
   },
 ];
 
@@ -67,8 +67,8 @@ export function MembershipExpiryCard() {
         <div className="flex items-center gap-2">
           <BadgeAlert className="h-5 w-5 text-amber-500" />
           <div>
-            <CardTitle>Expiring Memberships</CardTitle>
-            <CardDescription>Members with expiring subscriptions</CardDescription>
+            <CardTitle>العضويات المنتهية قريبًا</CardTitle>
+            <CardDescription>الأعضاء ذوو الاشتراكات المنتهية قريبًا</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -88,9 +88,9 @@ export function MembershipExpiryCard() {
               </div>
               <div className="flex flex-col items-end">
                 <p className={`text-sm font-medium ${member.daysLeft <= 3 ? "text-destructive" : "text-amber-500"}`}>
-                  {member.daysLeft} days left
+                  متبقي {member.daysLeft} أيام
                 </p>
-                <p className="text-xs text-muted-foreground">Expires {member.expiryDate}</p>
+                <p className="text-xs text-muted-foreground">تنتهي في {member.expiryDate}</p>
               </div>
             </div>
           ))}
@@ -98,9 +98,9 @@ export function MembershipExpiryCard() {
       </CardContent>
       <CardFooter className="border-t pt-4 flex justify-between">
         <Button variant="outline" size="sm">
-          Send reminders
+          إرسال تذكيرات
         </Button>
-        <Button size="sm">View all</Button>
+        <Button size="sm">عرض الكل</Button>
       </CardFooter>
     </Card>
   );
