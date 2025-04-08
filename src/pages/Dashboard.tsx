@@ -34,7 +34,7 @@ export default function Dashboard() {
         <StatCard
           title="Today's Check-ins"
           value="189"
-          icon={CalendarCheck}
+          icon={CalendarClock}
           trend={{ value: 8, positive: true }}
         />
         <StatCard
