@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, ChevronDown, MenuIcon, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,9 +20,18 @@ import { Sidebar } from './Sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { useAppSelector } from '@/hooks/redux';
 
 export function TopBar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const language = useAppSelector((state) => state.settings.language);
+
+  useEffect(() => {
+    // Update html lang and dir attributes when component mounts
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+  }, [language]);
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 sticky top-0 z-30 w-full">
@@ -62,6 +71,8 @@ export function TopBar() {
           <Search className="h-5 w-5" />
           <span className="sr-only">Search</span>
         </Button>
+
+        <LanguageToggle />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
