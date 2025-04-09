@@ -1,25 +1,10 @@
 
 import { useState } from "react";
-import { 
-  Calendar, 
-  ChevronDown, 
-  Download, 
-  Filter, 
-  Plus, 
-  Search,
-  CalendarClock
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -28,8 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -45,103 +28,88 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-
+import { toast } from "sonner";
+import { Plus, Search } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { addCheckIn, filterCheckInsByDate, filterCheckInsByMember } from "@/store/slices/checkInsSlice";
+import { addCheckIn } from "@/store/slices/checkInsSlice";
 import { recordCheckIn } from "@/store/slices/membersSlice";
 
 export default function CheckIns() {
   const dispatch = useAppDispatch();
-  const { filteredCheckIns } = useAppSelector(state => state.checkIns);
-  const { members } = useAppSelector(state => state.members);
-  const { toast } = useToast();
+  const { checkIns } = useAppSelector((state) => state.checkIns);
+  const { members } = useAppSelector((state) => state.members);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [addCheckInOpen, setAddCheckInOpen] = useState(false);
-  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [newCheckIn, setNewCheckIn] = useState({
+    memberId: "",
+    notes: "",
+  });
   
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    if (term) {
-      dispatch(filterCheckInsByMember(term));
-    } else {
-      dispatch(filterCheckInsByDate(null));
-    }
-  };
+  const filteredCheckIns = checkIns.filter(
+    (checkIn) =>
+      checkIn.memberName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   const handleAddCheckIn = () => {
-    if (!selectedMemberId) {
-      toast({
-        title: "خطأ",
-        description: "الرجاء اختيار عضو",
-        variant: "destructive",
-      });
+    if (!newCheckIn.memberId) {
+      toast.error("يرجى اختيار عضو");
       return;
     }
     
-    const member = members.find(m => m.id === selectedMemberId);
-    
+    const member = members.find((m) => m.id === newCheckIn.memberId);
     if (!member) {
-      toast({
-        title: "خطأ",
-        description: "لم يتم العثور على العضو",
-        variant: "destructive",
-      });
+      toast.error("العضو غير موجود");
       return;
     }
     
     const now = new Date();
-    const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-    const dayName = dayNames[now.getDay()];
-    const dateStr = `${dayName}، ${now.getDate()} ${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][now.getMonth()]}`;
-    const hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const timeStr = `${hours}:${minutes} ${hours >= 12 ? 'م' : 'ص'}`;
     
-    const checkInData = {
-      id: `checkin-${Date.now()}`,
-      memberId: member.id,
-      memberName: member.name,
-      memberInitials: member.initials,
-      memberAvatar: member.avatar,
-      timestamp: now.toISOString(),
-      date: dateStr,
-      time: timeStr
-    };
+    dispatch(
+      addCheckIn({
+        id: `checkin-${Date.now()}`,
+        memberId: newCheckIn.memberId,
+        memberName: member.name,
+        checkInTime: now.toISOString(),
+        notes: newCheckIn.notes,
+      })
+    );
     
-    dispatch(addCheckIn(checkInData));
-    dispatch(recordCheckIn(member.id));
+    dispatch(recordCheckIn(newCheckIn.memberId));
     
-    toast({
-      title: "تم تسجيل الحضور",
-      description: `تم تسجيل حضور ${member.name} بنجاح`,
+    toast.success("تم تسجيل الحضور بنجاح");
+    setNewCheckIn({
+      memberId: "",
+      notes: "",
     });
-    
-    setSelectedMemberId("");
     setAddCheckInOpen(false);
   };
   
-  const handleFilterByDate = (date: string | null) => {
-    dispatch(filterCheckInsByDate(date));
-    setSearchTerm("");
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ar-SA", {
+      weekday: "long",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
-
-  // Get unique dates from check-ins for the filter dropdown
-  const uniqueDates = Array.from(
-    new Set(
-      useAppSelector(state => state.checkIns.checkIns).map(record => record.date)
-    )
-  );
-
+  
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("ar-SA", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  
   return (
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">سجل الحضور</h1>
+          <h1 className="text-3xl font-bold tracking-tight">تسجيل الحضور</h1>
           <p className="text-muted-foreground">
-            تتبع وإدارة تسجيلات حضور الأعضاء في صالتك الرياضية.
+            تتبع وإدارة حضور الأعضاء في الصالة
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -149,32 +117,12 @@ export default function CheckIns() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="البحث في الأعضاء..."
+              placeholder="البحث عن عضو..."
               className="pl-8 w-full md:w-[300px]"
               value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Calendar className="h-4 w-4" />
-                <span className="sr-only">تصفية حسب التاريخ</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => handleFilterByDate(null)}>
-                  جميع التواريخ
-                </DropdownMenuItem>
-                {uniqueDates.map(date => (
-                  <DropdownMenuItem key={date} onClick={() => handleFilterByDate(date)}>
-                    {date}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
           <Button onClick={() => setAddCheckInOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             تسجيل حضور
@@ -183,51 +131,27 @@ export default function CheckIns() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>سجل تسجيلات الحضور</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon">
-              <Download className="h-4 w-4" />
-              <span className="sr-only">تنزيل CSV</span>
-            </Button>
-          </div>
+        <CardHeader>
+          <CardTitle>سجل الحضور</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[250px]">العضو</TableHead>
+                <TableHead>العضو</TableHead>
                 <TableHead>التاريخ</TableHead>
                 <TableHead>الوقت</TableHead>
-                <TableHead>النوع</TableHead>
+                <TableHead>ملاحظات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCheckIns.length > 0 ? (
                 filteredCheckIns.map((checkIn) => (
                   <TableRow key={checkIn.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={checkIn.memberAvatar} alt={checkIn.memberName} />
-                          <AvatarFallback>{checkIn.memberInitials}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{checkIn.memberName}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {checkIn.date}
-                    </TableCell>
-                    <TableCell>
-                      {checkIn.time}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
-                        دخول
-                      </Badge>
-                    </TableCell>
+                    <TableCell className="font-medium">{checkIn.memberName}</TableCell>
+                    <TableCell>{formatDate(checkIn.checkInTime)}</TableCell>
+                    <TableCell>{formatTime(checkIn.checkInTime)}</TableCell>
+                    <TableCell>{checkIn.notes || "-"}</TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -241,27 +165,27 @@ export default function CheckIns() {
           </Table>
         </CardContent>
       </Card>
-      
-      {/* Add Check-In Dialog */}
+
       <Dialog open={addCheckInOpen} onOpenChange={setAddCheckInOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>تسجيل حضور عضو</DialogTitle>
+            <DialogTitle>تسجيل حضور جديد</DialogTitle>
             <DialogDescription>
-              اختر العضو الذي تريد تسجيل حضوره.
+              سجل حضور عضو في الصالة الرياضية.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="member">العضو</Label>
-              <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
-                <SelectTrigger id="member">
+              <Label htmlFor="memberId">العضو</Label>
+              <Select
+                value={newCheckIn.memberId}
+                onValueChange={(value) => setNewCheckIn({ ...newCheckIn, memberId: value })}
+              >
+                <SelectTrigger id="memberId">
                   <SelectValue placeholder="اختر العضو" />
                 </SelectTrigger>
                 <SelectContent>
-                  {members
-                    .filter(m => m.status === "active")
-                    .map((member) => (
+                  {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
                     </SelectItem>
@@ -269,20 +193,21 @@ export default function CheckIns() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-2 py-2">
-              <CalendarClock className="h-5 w-5 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                سيتم تسجيل الحضور بتاريخ ووقت الآن
-              </p>
+            <div className="grid gap-2">
+              <Label htmlFor="notes">ملاحظات (اختياري)</Label>
+              <Input
+                id="notes"
+                placeholder="أدخل أي ملاحظات إضافية"
+                value={newCheckIn.notes}
+                onChange={(e) => setNewCheckIn({ ...newCheckIn, notes: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddCheckInOpen(false)}>
               إلغاء
             </Button>
-            <Button onClick={handleAddCheckIn}>
-              تسجيل الحضور
-            </Button>
+            <Button onClick={handleAddCheckIn}>تسجيل الحضور</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

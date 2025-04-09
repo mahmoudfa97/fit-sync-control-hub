@@ -6,145 +6,132 @@ export interface StaffMember {
   name: string;
   email: string;
   phone: string;
-  role: string;
-  department: string;
-  hireDate: string;
+  role: 'manager' | 'receptionist' | 'trainer' | 'maintenance' | 'other';
+  joinDate: string;
   status: 'active' | 'inactive' | 'on_leave';
-  schedule: {
-    days: string[];
-    shift: string;
-  };
-  initials: string;
+  speciality?: string;
+  workDays?: string[];
+  workHours?: string;
+  salary?: number;
+  notes?: string;
   avatar?: string;
+  initials: string;
 }
 
 interface StaffState {
   staff: StaffMember[];
-  filteredStaff: StaffMember[];
-  departmentFilter: string | null;
 }
 
-const generateDummyStaff = (): StaffMember[] => {
-  const roles = [
-    { title: "مدرب شخصي", dept: "التدريب" },
-    { title: "مدرب يوغا", dept: "التدريب" },
-    { title: "مدرب زومبا", dept: "التدريب" },
-    { title: "مدير النادي", dept: "الإدارة" },
-    { title: "مدير العمليات", dept: "الإدارة" },
-    { title: "موظف استقبال", dept: "الاستقبال" },
-    { title: "مستشار تغذية", dept: "التغذية" },
-    { title: "مسؤول النظافة", dept: "الصيانة" }
-  ];
-  
-  const names = [
-    { name: "أحمد محمد", initials: "أم" },
-    { name: "سارة العلي", initials: "سع" },
-    { name: "ياسر الصالح", initials: "يص" },
-    { name: "لينا العمر", initials: "لع" },
-    { name: "خالد سعيد", initials: "خس" },
-    { name: "فاطمة الفهد", initials: "فف" },
-    { name: "عمر حسين", initials: "عح" },
-    { name: "سلمى كريم", initials: "سك" },
-    { name: "ماجد عبدالله", initials: "مع" },
-    { name: "ريم الخالد", initials: "رخ" }
-  ];
-  
-  const shifts = ["صباحي (6ص - 2م)", "مسائي (2م - 10م)"];
-  const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  const statuses = ['active', 'active', 'active', 'inactive', 'on_leave'];
-  
-  const staff: StaffMember[] = [];
-  
-  for (let i = 0; i < 10; i++) {
-    const person = names[i % names.length];
-    const role = roles[i % roles.length];
-    
-    const daysCount = Math.floor(Math.random() * 3) + 3;
-    const workDays = [];
-    
-    for (let j = 0; j < daysCount; j++) {
-      const dayIndex = (i + j) % days.length;
-      workDays.push(days[dayIndex]);
-    }
-    
-    const hireDate = new Date();
-    hireDate.setMonth(hireDate.getMonth() - Math.floor(Math.random() * 24));
-    
-    staff.push({
-      id: `staff-${i}`,
-      name: person.name,
-      email: person.name.replace(' ', '.').toLowerCase() + '@spartagym.com',
-      phone: `05${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}-${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`,
-      role: role.title,
-      department: role.dept,
-      hireDate: `${hireDate.getDate()} ${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][hireDate.getMonth()]}، ${hireDate.getFullYear()}`,
-      status: statuses[Math.floor(Math.random() * statuses.length)] as 'active' | 'inactive' | 'on_leave',
-      schedule: {
-        days: workDays,
-        shift: shifts[i % 2]
-      },
-      initials: person.initials
-    });
-  }
-  
-  return staff;
-};
-
-const initialStaff = generateDummyStaff();
-
 const initialState: StaffState = {
-  staff: initialStaff,
-  filteredStaff: initialStaff,
-  departmentFilter: null,
+  staff: [
+    {
+      id: "trainer-1",
+      name: "سارة الأحمد",
+      email: "sara.a@spartagym.com",
+      phone: "055-1111111",
+      role: "trainer",
+      joinDate: "2023-06-15",
+      status: "active",
+      speciality: "يوغا، بيلاتس",
+      workDays: ["monday", "wednesday", "saturday"],
+      workHours: "8:00 - 14:00",
+      salary: 6000,
+      initials: "سأ",
+    },
+    {
+      id: "trainer-2",
+      name: "أحمد المالكي",
+      email: "ahmed.m@spartagym.com",
+      phone: "050-2222222",
+      role: "trainer",
+      joinDate: "2023-08-01",
+      status: "active",
+      speciality: "تدريب قوة، كارديو",
+      workDays: ["sunday", "tuesday", "thursday"],
+      workHours: "16:00 - 22:00",
+      salary: 7000,
+      initials: "أم",
+    },
+    {
+      id: "trainer-3",
+      name: "لينا القحطاني",
+      email: "lina.q@spartagym.com",
+      phone: "055-3333333",
+      role: "trainer",
+      joinDate: "2023-09-10",
+      status: "active",
+      speciality: "زومبا، رقص هوائي",
+      workDays: ["monday", "wednesday", "friday"],
+      workHours: "17:00 - 21:00",
+      salary: 5500,
+      initials: "لق",
+    },
+    {
+      id: "manager-1",
+      name: "فهد الدوسري",
+      email: "fahad.d@spartagym.com",
+      phone: "050-4444444",
+      role: "manager",
+      joinDate: "2023-01-01",
+      status: "active",
+      workDays: ["sunday", "monday", "tuesday", "wednesday", "thursday"],
+      workHours: "9:00 - 17:00",
+      salary: 12000,
+      initials: "فد",
+    },
+    {
+      id: "receptionist-1",
+      name: "نورة العتيبي",
+      email: "noura.o@spartagym.com",
+      phone: "055-5555555",
+      role: "receptionist",
+      joinDate: "2023-03-15",
+      status: "active",
+      workDays: ["sunday", "monday", "tuesday", "wednesday", "thursday"],
+      workHours: "8:00 - 16:00",
+      salary: 4500,
+      initials: "نع",
+    },
+    {
+      id: "maintenance-1",
+      name: "سعد الحربي",
+      email: "saad.h@spartagym.com",
+      phone: "050-6666666",
+      role: "maintenance",
+      joinDate: "2023-02-10",
+      status: "active",
+      workDays: ["sunday", "tuesday", "thursday", "saturday"],
+      workHours: "7:00 - 15:00",
+      salary: 4000,
+      initials: "سح",
+    },
+  ],
 };
 
 export const staffSlice = createSlice({
   name: 'staff',
   initialState,
   reducers: {
-    addStaffMember: (state, action: PayloadAction<StaffMember>) => {
+    addStaff: (state, action: PayloadAction<StaffMember>) => {
       state.staff.push(action.payload);
-      state.filteredStaff = state.departmentFilter 
-        ? state.staff.filter(staff => staff.department === state.departmentFilter)
-        : [...state.staff];
     },
-    updateStaffMember: (state, action: PayloadAction<StaffMember>) => {
+    updateStaff: (state, action: PayloadAction<StaffMember>) => {
       const index = state.staff.findIndex(s => s.id === action.payload.id);
       if (index !== -1) {
         state.staff[index] = action.payload;
       }
-      state.filteredStaff = state.departmentFilter 
-        ? state.staff.filter(staff => staff.department === state.departmentFilter)
-        : [...state.staff];
     },
-    deleteStaffMember: (state, action: PayloadAction<string>) => {
+    removeStaff: (state, action: PayloadAction<string>) => {
       state.staff = state.staff.filter(s => s.id !== action.payload);
-      state.filteredStaff = state.departmentFilter 
-        ? state.staff.filter(staff => staff.department === state.departmentFilter)
-        : [...state.staff];
     },
-    filterStaffByDepartment: (state, action: PayloadAction<string | null>) => {
-      state.departmentFilter = action.payload;
-      state.filteredStaff = action.payload
-        ? state.staff.filter(staff => staff.department === action.payload)
-        : [...state.staff];
-    },
-    searchStaff: (state, action: PayloadAction<string>) => {
-      const searchTerm = action.payload.toLowerCase();
-      state.filteredStaff = state.staff.filter(staff => 
-        staff.name.toLowerCase().includes(searchTerm) ||
-        staff.email.toLowerCase().includes(searchTerm) ||
-        staff.role.toLowerCase().includes(searchTerm)
-      );
+    updateStaffStatus: (state, action: PayloadAction<{id: string, status: StaffMember['status']}>) => {
+      const index = state.staff.findIndex(s => s.id === action.payload.id);
+      if (index !== -1) {
+        state.staff[index].status = action.payload.status;
+      }
     },
   },
 });
 
-export const { 
-  addStaffMember, 
-  updateStaffMember, 
-  deleteStaffMember, 
-  filterStaffByDepartment,
-  searchStaff 
-} = staffSlice.actions;
+export const { addStaff, updateStaff, removeStaff, updateStaffStatus } = staffSlice.actions;
 export default staffSlice.reducer;
