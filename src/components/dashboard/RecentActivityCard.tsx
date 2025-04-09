@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
+import { useAppSelector } from "@/hooks/redux";
 
 type ActivityType = "checkin" | "payment" | "new-member" | "access" | "renewal";
 
@@ -28,8 +29,14 @@ interface Activity {
     avatar?: string;
     initials: string;
   };
-  time: string;
-  details: string;
+  time: {
+    en: string;
+    ar: string;
+  };
+  details: {
+    en: string;
+    ar: string;
+  };
 }
 
 const activityIcons: Record<ActivityType, React.ReactNode> = {
@@ -48,70 +55,114 @@ const activityClasses: Record<ActivityType, string> = {
   renewal: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-200",
 };
 
+const activityTypeLabels: Record<ActivityType, { en: string; ar: string }> = {
+  checkin: { en: "check in", ar: "تسجيل حضور" },
+  payment: { en: "payment", ar: "دفع" },
+  "new-member": { en: "new member", ar: "عضو جديد" },
+  access: { en: "access", ar: "دخول" },
+  renewal: { en: "renewal", ar: "تجديد" },
+};
+
 const ACTIVITIES: Activity[] = [
   {
     id: "1",
     type: "checkin",
     user: {
-      name: "John Doe",
-      initials: "JD",
+      name: "جون دو",
+      initials: "جد",
     },
-    time: "2 min ago",
-    details: "Checked in for evening workout",
+    time: {
+      en: "2 min ago",
+      ar: "منذ دقيقتين"
+    },
+    details: {
+      en: "Checked in for evening workout",
+      ar: "سجل حضور للتمرين المسائي"
+    },
   },
   {
     id: "2",
     type: "payment",
     user: {
-      name: "Sarah Wilson",
-      initials: "SW",
+      name: "سارة ويلسون",
+      initials: "سو",
     },
-    time: "23 min ago",
-    details: "Made payment of $59.99 for monthly plan",
+    time: {
+      en: "23 min ago",
+      ar: "منذ 23 دقيقة"
+    },
+    details: {
+      en: "Made payment of 59.99 SAR for monthly plan",
+      ar: "دفع مبلغ 59.99 ريال للاشتراك الشهري"
+    },
   },
   {
     id: "3",
     type: "new-member",
     user: {
-      name: "Michael Chen",
-      initials: "MC",
+      name: "مايكل تشين",
+      initials: "مت",
     },
-    time: "1 hour ago",
-    details: "Registered for new premium membership",
+    time: {
+      en: "1 hour ago",
+      ar: "منذ ساعة"
+    },
+    details: {
+      en: "Registered for new premium membership",
+      ar: "سجل للحصول على عضوية مميزة جديدة"
+    },
   },
   {
     id: "4",
     type: "access",
     user: {
-      name: "Emily Johnson",
-      initials: "EJ",
+      name: "إميلي جونسون",
+      initials: "إج",
     },
-    time: "2 hours ago",
-    details: "Accessed gym through south entrance",
+    time: {
+      en: "2 hours ago",
+      ar: "منذ ساعتين"
+    },
+    details: {
+      en: "Accessed gym through south entrance",
+      ar: "دخل الصالة عبر المدخل الجنوبي"
+    },
   },
   {
     id: "5",
     type: "renewal",
     user: {
-      name: "Robert Smith",
-      initials: "RS",
+      name: "روبرت سميث",
+      initials: "رس",
     },
-    time: "3 hours ago",
-    details: "Renewed platinum membership for 12 months",
+    time: {
+      en: "3 hours ago",
+      ar: "منذ 3 ساعات"
+    },
+    details: {
+      en: "Renewed platinum membership for 12 months",
+      ar: "جدد العضوية البلاتينية لمدة 12 شهرًا"
+    },
   },
 ];
 
 export function RecentActivityCard() {
+  const language = useAppSelector((state) => state.settings.language);
+  
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest activity across your gym</CardDescription>
+          <CardTitle>{language === "ar" ? "النشاطات الأخيرة" : "Recent Activity"}</CardTitle>
+          <CardDescription>
+            {language === "ar" ? "آخر النشاطات في صالتك الرياضية" : "Latest activity across your gym"}
+          </CardDescription>
         </div>
         <Button variant="ghost" size="icon">
           <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">More options</span>
+          <span className="sr-only">
+            {language === "ar" ? "خيارات أكثر" : "More options"}
+          </span>
         </Button>
       </CardHeader>
       <CardContent>
@@ -133,12 +184,12 @@ export function RecentActivityCard() {
                   )}>
                     <span className="flex items-center gap-0.5">
                       {activityIcons[activity.type]}
-                      <span className="ml-1">{activity.type.replace("-", " ")}</span>
+                      <span className="ml-1">{activityTypeLabels[activity.type][language]}</span>
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{activity.details}</p>
-                <p className="text-xs text-muted-foreground">{activity.time}</p>
+                <p className="text-sm text-muted-foreground">{activity.details[language]}</p>
+                <p className="text-xs text-muted-foreground">{activity.time[language]}</p>
               </div>
             </div>
           ))}
