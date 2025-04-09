@@ -53,20 +53,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addPayment, filterPaymentsByMember, filterPaymentsByStatus } from "@/store/slices/paymentsSlice";
-
-const paymentStatusStyles = {
-  paid: "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500",
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500",
-  overdue: "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500",
-  canceled: "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500",
-};
-
-const paymentStatusLabels = {
-  paid: "مدفوع",
-  pending: "معلق",
-  overdue: "متأخر",
-  canceled: "ملغي"
-};
+import { paymentStatusStyles, paymentStatusLabels } from "@/components/members/StatusBadges";
 
 const paymentMethodIcons = {
   card: <CreditCard className="h-4 w-4" />,
@@ -84,7 +71,7 @@ const paymentMethodLabels = {
 
 export default function Payments() {
   const dispatch = useAppDispatch();
-  const { filteredPayments } = useAppSelector(state => state.payments);
+  const { payments, filteredPayments } = useAppSelector(state => state.payments);
   const { members } = useAppSelector(state => state.members);
   const { toast } = useToast();
   
@@ -135,21 +122,25 @@ export default function Payments() {
     const today = new Date();
     const paymentDateStr = `${today.getDate()} ${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][today.getMonth()]}، ${today.getFullYear()}`;
     
-    const paymentToAdd = {
-      id: `payment-${Date.now()}`,
-      memberId: member.id,
-      memberName: member.name,
-      memberInitials: member.initials,
-      amount: Number(newPayment.amount),
-      currency: 'ريال',
-      paymentMethod: newPayment.paymentMethod,
-      paymentDate: paymentDateStr,
-      status: newPayment.status,
-      description: newPayment.description || 'رسوم اشتراك',
-      receiptNumber: `REC-${Math.floor(1000 + Math.random() * 9000)}`
-    };
-    
-    dispatch(addPayment(paymentToAdd));
+    dispatch(
+      addPayment({
+        id: `payment-${Date.now()}`,
+        memberId: member.id,
+        memberName: member.name,
+        memberInitials: member.initials,
+        amount: Number(newPayment.amount),
+        currency: 'ريال',
+        paymentMethod: newPayment.paymentMethod,
+        paymentDate: paymentDateStr,
+        status: newPayment.status,
+        description: newPayment.description || 'رسوم اشتراك',
+        receiptNumber: `REC-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: new Date().toISOString(), // For backward compatibility
+        type: 'membership', // For backward compatibility
+        method: newPayment.paymentMethod === 'card' ? 'credit' : newPayment.paymentMethod, // For backward compatibility
+        invoiceNumber: `INV-${today.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}` // For backward compatibility
+      })
+    );
     
     toast({
       title: "تم إضافة الدفعة بنجاح",

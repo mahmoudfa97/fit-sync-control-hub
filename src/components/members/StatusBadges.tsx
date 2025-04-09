@@ -9,9 +9,10 @@ export const statusStyles = {
 };
 
 export const paymentStatusStyles = {
-  paid: "text-green-600",
-  overdue: "text-red-600",
-  pending: "text-amber-600",
+  paid: "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500",
+  overdue: "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500",
+  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500",
+  canceled: "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500",
 };
 
 export const statusLabels = {
@@ -24,7 +25,8 @@ export const statusLabels = {
 export const paymentStatusLabels = {
   paid: "مدفوع",
   overdue: "متأخر",
-  pending: "معلق"
+  pending: "معلق",
+  canceled: "ملغي"
 };
 
 export const StatusBadge = ({ status }: { status: keyof typeof statusStyles }) => (

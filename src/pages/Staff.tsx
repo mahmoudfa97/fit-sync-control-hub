@@ -52,7 +52,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { filterStaffByDepartment, searchStaff, addStaffMember } from "@/store/slices/staffSlice";
+import { addStaffMember, filterStaffByDepartment, searchStaff } from "@/store/slices/staffSlice";
 
 const statusStyles = {
   active: "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500",
@@ -87,7 +87,7 @@ const roles = [
 
 export default function Staff() {
   const dispatch = useAppDispatch();
-  const { filteredStaff } = useAppSelector(state => state.staff);
+  const { staff, filteredStaff } = useAppSelector(state => state.staff);
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,23 +140,24 @@ export default function Staff() {
     // Default work days
     const workDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
     
-    const staffToAdd = {
-      id: `staff-${Date.now()}`,
-      name: newStaff.name,
-      email: newStaff.email,
-      phone: newStaff.phone,
-      role: newStaff.role,
-      department: newStaff.department,
-      hireDate: hireDateStr,
-      status: newStaff.status,
-      schedule: {
-        days: workDays,
-        shift: "صباحي (6ص - 2م)",
-      },
-      initials: initials,
-    };
-    
-    dispatch(addStaffMember(staffToAdd));
+    dispatch(
+      addStaffMember({
+        id: `staff-${Date.now()}`,
+        name: newStaff.name,
+        email: newStaff.email,
+        phone: newStaff.phone,
+        role: newStaff.role,
+        department: newStaff.department,
+        hireDate: hireDateStr,
+        status: newStaff.status,
+        schedule: {
+          days: workDays,
+          shift: "صباحي (6ص - 2م)",
+        },
+        initials: initials,
+        joinDate: today.toISOString(), // For backward compatibility
+      })
+    );
     
     toast({
       title: "تم إضافة الموظف بنجاح",

@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { addClass, cancelClass } from "@/store/slices/classesSlice";
+import { addClass, cancelClass, reactivateClass } from "@/store/slices/classesSlice";
 
 const weekdays = [
   { value: "sunday", label: "الأحد" },
@@ -60,7 +60,7 @@ export default function Classes() {
     endTime: "09:00",
     maxCapacity: 15,
     description: "",
-    level: "beginner",
+    level: "beginner" as "beginner" | "intermediate" | "advanced",
   });
   
   const filteredClasses = classes.filter(
@@ -129,6 +129,11 @@ export default function Classes() {
   const handleCancelClass = (classId: string) => {
     dispatch(cancelClass(classId));
     toast.success("تم إلغاء الحصة بنجاح");
+  };
+  
+  const handleReactivateClass = (classId: string) => {
+    dispatch(reactivateClass(classId));
+    toast.success("تم إعادة تفعيل الحصة بنجاح");
   };
   
   return (
@@ -211,6 +216,7 @@ export default function Classes() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleReactivateClass(gymClass.id)}
                         >
                           إعادة تفعيل
                         </Button>
@@ -259,7 +265,7 @@ export default function Classes() {
                 </SelectTrigger>
                 <SelectContent>
                   {staff
-                    .filter((s) => s.role === "trainer")
+                    .filter((s) => s.department === "التدريب")
                     .map((trainer) => (
                       <SelectItem key={trainer.id} value={trainer.id}>
                         {trainer.name}
@@ -291,7 +297,8 @@ export default function Classes() {
                 <Label htmlFor="level">المستوى</Label>
                 <Select
                   value={newClass.level}
-                  onValueChange={(value) => setNewClass({ ...newClass, level: value })}
+                  onValueChange={(value: "beginner" | "intermediate" | "advanced") => 
+                    setNewClass({ ...newClass, level: value })}
                 >
                   <SelectTrigger id="level">
                     <SelectValue placeholder="اختر المستوى" />

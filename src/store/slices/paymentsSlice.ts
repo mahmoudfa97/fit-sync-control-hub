@@ -5,17 +5,26 @@ export interface Payment {
   id: string;
   memberId: string;
   memberName: string;
+  memberInitials: string;
   amount: number;
-  date: string;
-  type: 'membership' | 'class' | 'product' | 'other';
-  status: 'completed' | 'pending' | 'failed' | 'refunded';
-  method: 'credit' | 'cash' | 'bank' | 'other';
-  invoiceNumber: string;
+  currency: string;
+  paymentMethod: 'card' | 'cash' | 'bank' | 'other';
+  paymentDate: string;
+  status: 'paid' | 'pending' | 'overdue' | 'canceled';
+  description: string;
+  receiptNumber: string;
+  // Old fields kept for backward compatibility
+  date?: string;
+  type?: 'membership' | 'class' | 'product' | 'other';
+  method?: 'credit' | 'cash' | 'bank' | 'other';
+  invoiceNumber?: string;
   notes?: string;
 }
 
 interface PaymentsState {
   payments: Payment[];
+  filteredPayments: Payment[];
+  filterStatus: string | null;
 }
 
 const initialState: PaymentsState = {
@@ -24,82 +33,143 @@ const initialState: PaymentsState = {
       id: "payment-1",
       memberId: "1",
       memberName: "سارة الحمدان",
+      memberInitials: "سح",
       amount: 500,
-      date: "2024-01-05T08:30:00.000Z",
-      type: "membership",
-      status: "completed",
-      method: "credit",
-      invoiceNumber: "INV-2024-001",
+      currency: "ريال",
+      paymentMethod: "card",
+      paymentDate: "5 يناير، 2024",
+      status: "paid",
+      description: "رسوم اشتراك",
+      receiptNumber: "REC-1001",
     },
     {
       id: "payment-2",
       memberId: "2",
       memberName: "خالد العمري",
+      memberInitials: "خع",
       amount: 350,
-      date: "2024-02-12T10:15:00.000Z",
-      type: "membership",
-      status: "completed",
-      method: "cash",
-      invoiceNumber: "INV-2024-002",
+      currency: "ريال",
+      paymentMethod: "cash",
+      paymentDate: "12 فبراير، 2024",
+      status: "paid",
+      description: "رسوم اشتراك",
+      receiptNumber: "REC-1002",
     },
     {
       id: "payment-3",
       memberId: "3",
       memberName: "منى الزهراني",
+      memberInitials: "مز",
       amount: 600,
-      date: "2023-11-08T14:45:00.000Z",
-      type: "membership",
-      status: "completed",
-      method: "bank",
-      invoiceNumber: "INV-2023-112",
+      currency: "ريال",
+      paymentMethod: "bank",
+      paymentDate: "8 نوفمبر، 2023",
+      status: "paid",
+      description: "رسوم اشتراك",
+      receiptNumber: "REC-1003",
     },
     {
       id: "payment-4",
       memberId: "5",
       memberName: "نورة الشمري",
+      memberInitials: "نش",
       amount: 750,
-      date: "2023-12-03T12:30:00.000Z",
-      type: "membership",
-      status: "completed",
-      method: "credit",
-      invoiceNumber: "INV-2023-128",
+      currency: "ريال",
+      paymentMethod: "card",
+      paymentDate: "3 ديسمبر، 2023",
+      status: "paid",
+      description: "رسوم اشتراك",
+      receiptNumber: "REC-1004",
     },
     {
       id: "payment-5",
       memberId: "6",
       memberName: "محمد العتيبي",
+      memberInitials: "مع",
       amount: 200,
-      date: "2024-02-18T09:00:00.000Z",
-      type: "membership",
+      currency: "ريال",
+      paymentMethod: "bank",
+      paymentDate: "18 فبراير، 2024",
       status: "pending",
-      method: "bank",
-      invoiceNumber: "INV-2024-018",
-      notes: "في انتظار تأكيد التحويل البنكي",
+      description: "في انتظار تأكيد التحويل البنكي",
+      receiptNumber: "REC-1005",
     },
   ],
+  filteredPayments: [],
+  filterStatus: null,
+};
+
+// Initialize filteredPayments with all payments
+const stateWithFilteredPayments = {
+  ...initialState,
+  filteredPayments: initialState.payments,
 };
 
 export const paymentsSlice = createSlice({
   name: 'payments',
-  initialState,
+  initialState: stateWithFilteredPayments,
   reducers: {
     addPayment: (state, action: PayloadAction<Payment>) => {
       state.payments.push(action.payload);
+      // Update filtered payments if no filter is applied
+      if (!state.filterStatus) {
+        state.filteredPayments = state.payments;
+      } else {
+        // Apply current filter to include the new payment if it matches
+        if (!state.filterStatus || action.payload.status === state.filterStatus) {
+          state.filteredPayments.push(action.payload);
+        }
+      }
     },
     updatePaymentStatus: (state, action: PayloadAction<{id: string, status: Payment['status']}>) => {
       const index = state.payments.findIndex(payment => payment.id === action.payload.id);
       if (index !== -1) {
         state.payments[index].status = action.payload.status;
+        // Update filtered payments as well
+        state.filteredPayments = state.payments.filter(payment => 
+          !state.filterStatus || payment.status === state.filterStatus
+        );
+      }
+    },
+    filterPaymentsByMember: (state, action: PayloadAction<string>) => {
+      if (action.payload) {
+        state.filteredPayments = state.payments.filter(payment => 
+          payment.memberName.toLowerCase().includes(action.payload.toLowerCase()) ||
+          payment.memberId.includes(action.payload)
+        );
+      } else {
+        state.filteredPayments = state.payments;
+      }
+    },
+    filterPaymentsByStatus: (state, action: PayloadAction<string | null>) => {
+      state.filterStatus = action.payload;
+      if (action.payload) {
+        state.filteredPayments = state.payments.filter(payment => 
+          payment.status === action.payload
+        );
+      } else {
+        state.filteredPayments = state.payments;
       }
     },
     refundPayment: (state, action: PayloadAction<string>) => {
       const index = state.payments.findIndex(payment => payment.id === action.payload);
       if (index !== -1) {
-        state.payments[index].status = 'refunded';
+        state.payments[index].status = 'canceled';
+        // Update filtered payments as well
+        state.filteredPayments = state.payments.filter(payment => 
+          !state.filterStatus || payment.status === state.filterStatus
+        );
       }
     },
   },
 });
 
-export const { addPayment, updatePaymentStatus, refundPayment } = paymentsSlice.actions;
+export const { 
+  addPayment, 
+  updatePaymentStatus, 
+  refundPayment, 
+  filterPaymentsByMember, 
+  filterPaymentsByStatus 
+} = paymentsSlice.actions;
+
 export default paymentsSlice.reducer;

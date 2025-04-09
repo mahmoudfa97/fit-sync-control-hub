@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface Member {
@@ -164,7 +165,7 @@ export const membersSlice = createSlice({
       const index = state.members.findIndex(m => m.id === action.payload);
       if (index !== -1) {
         const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
+        const hours = now.getHours();
         const minutes = now.getMinutes().toString().padStart(2, '0');
         state.members[index].lastCheckIn = `اليوم ${hours}:${minutes} ${hours >= 12 ? 'م' : 'ص'}`;
       }

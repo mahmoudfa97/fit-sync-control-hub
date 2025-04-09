@@ -33,7 +33,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { addAccessCard, revokeAccess } from "@/store/slices/accessControlSlice";
+import { addAccessCard, revokeAccess, reactivateAccess } from "@/store/slices/accessControlSlice";
+import { accessLevels } from "@/components/members/MembershipTypes";
 
 export default function AccessControl() {
   const dispatch = useAppDispatch();
@@ -45,7 +46,7 @@ export default function AccessControl() {
   const [newCard, setNewCard] = useState({
     memberId: "",
     cardNumber: "",
-    accessLevel: "standard",
+    accessLevel: "standard" as "standard" | "premium" | "vip" | "staff",
     isActive: true,
   });
   
@@ -104,6 +105,11 @@ export default function AccessControl() {
   const handleRevokeAccess = (cardId: string) => {
     dispatch(revokeAccess(cardId));
     toast.success("تم إلغاء الوصول بنجاح");
+  };
+  
+  const handleReactivateAccess = (cardId: string) => {
+    dispatch(reactivateAccess(cardId));
+    toast.success("تم إعادة تفعيل الوصول بنجاح");
   };
   
   return (
@@ -189,6 +195,7 @@ export default function AccessControl() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleReactivateAccess(card.id)}
                         >
                           إعادة تفعيل
                         </Button>
@@ -248,16 +255,18 @@ export default function AccessControl() {
               <Label htmlFor="accessLevel">مستوى الوصول</Label>
               <Select
                 value={newCard.accessLevel}
-                onValueChange={(value) => setNewCard({ ...newCard, accessLevel: value })}
+                onValueChange={(value: "standard" | "premium" | "vip" | "staff") => 
+                  setNewCard({ ...newCard, accessLevel: value })}
               >
                 <SelectTrigger id="accessLevel">
                   <SelectValue placeholder="اختر مستوى الوصول" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="standard">قياسي</SelectItem>
-                  <SelectItem value="premium">متميز</SelectItem>
-                  <SelectItem value="vip">كبار الشخصيات</SelectItem>
-                  <SelectItem value="staff">موظف</SelectItem>
+                  {accessLevels.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
