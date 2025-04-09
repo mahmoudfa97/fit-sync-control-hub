@@ -14,8 +14,7 @@ import {
   Settings, 
   ChevronLeft, 
   ChevronRight, 
-  LogOut,
-  LineChart
+  LogOut
 } from "lucide-react";
 
 interface NavItemProps {
