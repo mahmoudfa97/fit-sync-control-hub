@@ -45,14 +45,14 @@ const NavItem = ({ icon: Icon, label, to, collapsed }: NavItemProps) => {
 };
 
 const navItems = [
-  { icon: ActivitySquare, label: "لوحة التحكم", to: "/" },
-  { icon: Users, label: "الأعضاء", to: "/members" },
-  { icon: CalendarCheck, label: "تسجيل الحضور", to: "/checkins" },
-  { icon: CreditCard, label: "المدفوعات", to: "/payments" },
-  { icon: Dumbbell, label: "الحصص", to: "/classes" },
-  { icon: UserRound, label: "الموظفين", to: "/staff" },
-  { icon: KeyRound, label: "التحكم بالوصول", to: "/access" },
-  { icon: Settings, label: "الإعدادات", to: "/settings" },
+  { icon: ActivitySquare, label: "לוח בקרה", to: "/" },
+  { icon: Users, label: "חברים", to: "/members" },
+  { icon: CalendarCheck, label: "כניסות", to: "/checkins" },
+  { icon: CreditCard, label: "תשלומים", to: "/payments" },
+  { icon: Dumbbell, label: "שיעורים", to: "/classes" },
+  { icon: UserRound, label: "צוות", to: "/staff" },
+  { icon: KeyRound, label: "בקרת גישה", to: "/access" },
+  { icon: Settings, label: "הגדרות", to: "/settings" },
 ];
 
 export function Sidebar() {
@@ -69,7 +69,7 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex items-center gap-2">
             <Dumbbell className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg text-sidebar-foreground">سبارتا جيم</span>
+            <span className="font-bold text-lg text-sidebar-foreground">ספרטה ג'ים</span>
           </div>
         )}
         {collapsed && <Dumbbell className="h-6 w-6 text-primary" />}
@@ -109,8 +109,8 @@ export function Sidebar() {
             collapsed && "justify-center"
           )}
         >
-          <LogOut className="h-5 w-5 mr-2" />
-          {!collapsed && <span>تسجيل الخروج</span>}
+          <LogOut className="h-5 w-5 ml-2" />
+          {!collapsed && <span>התנתק</span>}
         </Button>
       </div>
     </aside>

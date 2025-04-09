@@ -11,44 +11,41 @@ import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
 import { MembershipExpiryCard } from "@/components/dashboard/MembershipExpiryCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { CheckInsChart } from "@/components/dashboard/CheckInsChart";
-import { useAppSelector } from "@/hooks/redux";
 import { t } from "@/utils/translations";
 
 export default function Dashboard() {
-  const language = useAppSelector((state) => state.settings.language);
-  
   return (
     <DashboardShell>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("dashboard", language)}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("dashboard")}</h1>
           <p className="text-muted-foreground">
-            {t("welcome", language)}
+            {t("welcome")}
           </p>
         </div>
       </div>
 
       <div className="dashboard-grid">
         <StatCard
-          title={t("activeMembers", language)}
+          title={t("activeMembers")}
           value="1,247"
           icon={Users}
           trend={{ value: 12, positive: true }}
         />
         <StatCard
-          title={t("todayCheckIns", language)}
+          title={t("todayCheckIns")}
           value="189"
           icon={CalendarClock}
           trend={{ value: 8, positive: true }}
         />
         <StatCard
-          title={t("monthlyRevenue", language)}
-          value={language === "ar" ? "25,800 ريال" : "25,800 SAR"}
+          title={t("monthlyRevenue")}
+          value={`25,800 ${t("riyal")}`}
           icon={CreditCard}
           trend={{ value: 14, positive: true }}
         />
         <StatCard
-          title={t("newSubscriptions", language)}
+          title={t("newSubscriptions")}
           value="24"
           icon={TrendingUp}
           trend={{ value: 2.5, positive: false }}

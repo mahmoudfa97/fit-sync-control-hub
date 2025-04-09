@@ -14,6 +14,7 @@ import {
   AvatarImage 
 } from "@/components/ui/avatar";
 import { BadgeAlert } from "lucide-react";
+import { t, tFormat } from "@/utils/translations";
 
 interface ExpiringMembership {
   id: string;
@@ -28,35 +29,35 @@ interface ExpiringMembership {
 const EXPIRING_MEMBERSHIPS: ExpiringMembership[] = [
   {
     id: "1",
-    name: "مريم العبدالله",
-    initials: "مع",
-    expiryDate: "15 أبريل، 2025",
+    name: "מרים העבדאללה",
+    initials: "מה",
+    expiryDate: "15 אפריל, 2025",
     daysLeft: 3,
-    plan: "فتنس بلس",
+    plan: "פיטנס פלוס",
   },
   {
     id: "2",
-    name: "فهد الشمري",
-    initials: "فش",
-    expiryDate: "17 أبريل، 2025",
+    name: "פהד אל-שמרי",
+    initials: "פש",
+    expiryDate: "17 אפריל, 2025",
     daysLeft: 5,
-    plan: "الخطة الأساسية",
+    plan: "תוכנית בסיסית",
   },
   {
     id: "3",
-    name: "نورة القحطاني",
-    initials: "نق",
-    expiryDate: "18 أبريل، 2025",
+    name: "נורה אל-קחטני",
+    initials: "נק",
+    expiryDate: "18 אפריל, 2025",
     daysLeft: 6,
-    plan: "الخطة المميزة",
+    plan: "תוכנית פרימיום",
   },
   {
     id: "4",
-    name: "عبدالله الغامدي",
-    initials: "عغ",
-    expiryDate: "20 أبريل، 2025",
+    name: "עבדאללה אל-ע'אמדי",
+    initials: "עג",
+    expiryDate: "20 אפריל, 2025",
     daysLeft: 8,
-    plan: "الباقة الشهرية",
+    plan: "חבילה חודשית",
   },
 ];
 
@@ -67,8 +68,8 @@ export function MembershipExpiryCard() {
         <div className="flex items-center gap-2">
           <BadgeAlert className="h-5 w-5 text-amber-500" />
           <div>
-            <CardTitle>العضويات المنتهية قريبًا</CardTitle>
-            <CardDescription>الأعضاء ذوو الاشتراكات المنتهية قريبًا</CardDescription>
+            <CardTitle>{t("upcomingExpiry")}</CardTitle>
+            <CardDescription>{t("membersWithExpiringSubs")}</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -88,9 +89,9 @@ export function MembershipExpiryCard() {
               </div>
               <div className="flex flex-col items-end">
                 <p className={`text-sm font-medium ${member.daysLeft <= 3 ? "text-destructive" : "text-amber-500"}`}>
-                  متبقي {member.daysLeft} أيام
+                  {tFormat("daysLeft", { days: member.daysLeft })}
                 </p>
-                <p className="text-xs text-muted-foreground">تنتهي في {member.expiryDate}</p>
+                <p className="text-xs text-muted-foreground">{tFormat("expiresOn", { date: member.expiryDate })}</p>
               </div>
             </div>
           ))}
@@ -98,9 +99,9 @@ export function MembershipExpiryCard() {
       </CardContent>
       <CardFooter className="border-t pt-4 flex justify-between">
         <Button variant="outline" size="sm">
-          إرسال تذكيرات
+          {t("sendReminders")}
         </Button>
-        <Button size="sm">عرض الكل</Button>
+        <Button size="sm">{t("viewAll")}</Button>
       </CardFooter>
     </Card>
   );

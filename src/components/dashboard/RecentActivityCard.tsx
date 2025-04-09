@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { useAppSelector } from "@/hooks/redux";
+import { t, tFormat } from "@/utils/translations";
 
-type ActivityType = "checkin" | "payment" | "new-member" | "access" | "renewal";
+type ActivityType = "checkin" | "payment" | "newMember" | "access" | "renewal";
 
 interface Activity {
   id: string;
@@ -29,20 +29,17 @@ interface Activity {
     avatar?: string;
     initials: string;
   };
-  time: {
-    en: string;
-    ar: string;
+  timeAgo: {
+    value: number;
+    unit: "minutes" | "hours" | "days"
   };
-  details: {
-    en: string;
-    ar: string;
-  };
+  details: string;
 }
 
 const activityIcons: Record<ActivityType, React.ReactNode> = {
   checkin: <CalendarClock className="h-4 w-4" />,
   payment: <DollarSign className="h-4 w-4" />,
-  "new-member": <UserPlus className="h-4 w-4" />,
+  newMember: <UserPlus className="h-4 w-4" />,
   access: <DoorOpen className="h-4 w-4" />,
   renewal: <CreditCard className="h-4 w-4" />,
 };
@@ -50,17 +47,9 @@ const activityIcons: Record<ActivityType, React.ReactNode> = {
 const activityClasses: Record<ActivityType, string> = {
   checkin: "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200",
   payment: "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200",
-  "new-member": "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-200",
+  newMember: "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-200",
   access: "bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-200",
   renewal: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-200",
-};
-
-const activityTypeLabels: Record<ActivityType, { en: string; ar: string }> = {
-  checkin: { en: "check in", ar: "تسجيل حضور" },
-  payment: { en: "payment", ar: "دفع" },
-  "new-member": { en: "new member", ar: "عضو جديد" },
-  access: { en: "access", ar: "دخول" },
-  renewal: { en: "renewal", ar: "تجديد" },
 };
 
 const ACTIVITIES: Activity[] = [
@@ -68,101 +57,98 @@ const ACTIVITIES: Activity[] = [
     id: "1",
     type: "checkin",
     user: {
-      name: "جون دو",
-      initials: "جد",
+      name: "ג'ון דו",
+      initials: "גד",
     },
-    time: {
-      en: "2 min ago",
-      ar: "منذ دقيقتين"
+    timeAgo: {
+      value: 2,
+      unit: "minutes"
     },
-    details: {
-      en: "Checked in for evening workout",
-      ar: "سجل حضور للتمرين المسائي"
-    },
+    details: "נכנס לאימון ערב",
   },
   {
     id: "2",
     type: "payment",
     user: {
-      name: "سارة ويلسون",
-      initials: "سو",
+      name: "שרה וילסון",
+      initials: "שו",
     },
-    time: {
-      en: "23 min ago",
-      ar: "منذ 23 دقيقة"
+    timeAgo: {
+      value: 23,
+      unit: "minutes"
     },
-    details: {
-      en: "Made payment of 59.99 SAR for monthly plan",
-      ar: "دفع مبلغ 59.99 ريال للاشتراك الشهري"
-    },
+    details: "שילמה 59.99 ₪ עבור תוכנית חודשית",
   },
   {
     id: "3",
-    type: "new-member",
+    type: "newMember",
     user: {
-      name: "مايكل تشين",
-      initials: "مت",
+      name: "מייקל צ'ן",
+      initials: "מצ",
     },
-    time: {
-      en: "1 hour ago",
-      ar: "منذ ساعة"
+    timeAgo: {
+      value: 1,
+      unit: "hours"
     },
-    details: {
-      en: "Registered for new premium membership",
-      ar: "سجل للحصول على عضوية مميزة جديدة"
-    },
+    details: "נרשם למנוי פרימיום חדש",
   },
   {
     id: "4",
     type: "access",
     user: {
-      name: "إميلي جونسون",
-      initials: "إج",
+      name: "אמילי ג'ונסון",
+      initials: "אג",
     },
-    time: {
-      en: "2 hours ago",
-      ar: "منذ ساعتين"
+    timeAgo: {
+      value: 2,
+      unit: "hours"
     },
-    details: {
-      en: "Accessed gym through south entrance",
-      ar: "دخل الصالة عبر المدخل الجنوبي"
-    },
+    details: "נכנסה לחדר כושר דרך הכניסה הדרומית",
   },
   {
     id: "5",
     type: "renewal",
     user: {
-      name: "روبرت سميث",
-      initials: "رس",
+      name: "רוברט סמית",
+      initials: "רס",
     },
-    time: {
-      en: "3 hours ago",
-      ar: "منذ 3 ساعات"
+    timeAgo: {
+      value: 3,
+      unit: "hours"
     },
-    details: {
-      en: "Renewed platinum membership for 12 months",
-      ar: "جدد العضوية البلاتينية لمدة 12 شهرًا"
-    },
+    details: "חידש חברות פלטינום ל-12 חודשים",
   },
 ];
 
-export function RecentActivityCard() {
-  const language = useAppSelector((state) => state.settings.language);
+function getTimeAgoText(activity: Activity): string {
+  const { value, unit } = activity.timeAgo;
   
+  if (unit === "minutes") {
+    return tFormat("minutesAgo", { time: value });
+  } else if (unit === "hours") {
+    if (value === 1) {
+      return t("dayAgo");
+    }
+    return tFormat("hoursAgo", { time: value });
+  } else {
+    if (value === 1) {
+      return t("dayAgo");
+    }
+    return tFormat("daysAgo", { time: value });
+  }
+}
+
+export function RecentActivityCard() {
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>{language === "ar" ? "النشاطات الأخيرة" : "Recent Activity"}</CardTitle>
-          <CardDescription>
-            {language === "ar" ? "آخر النشاطات في صالتك الرياضية" : "Latest activity across your gym"}
-          </CardDescription>
+          <CardTitle>{t("recentActivity")}</CardTitle>
+          <CardDescription>{t("latestActivity")}</CardDescription>
         </div>
         <Button variant="ghost" size="icon">
           <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">
-            {language === "ar" ? "خيارات أكثر" : "More options"}
-          </span>
+          <span className="sr-only">אפשרויות נוספות</span>
         </Button>
       </CardHeader>
       <CardContent>
@@ -184,12 +170,12 @@ export function RecentActivityCard() {
                   )}>
                     <span className="flex items-center gap-0.5">
                       {activityIcons[activity.type]}
-                      <span className="ml-1">{activityTypeLabels[activity.type][language]}</span>
+                      <span className="mr-1">{t(activity.type)}</span>
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{activity.details[language]}</p>
-                <p className="text-xs text-muted-foreground">{activity.time[language]}</p>
+                <p className="text-sm text-muted-foreground">{activity.details}</p>
+                <p className="text-xs text-muted-foreground">{getTimeAgoText(activity)}</p>
               </div>
             </div>
           ))}

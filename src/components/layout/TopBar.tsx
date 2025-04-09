@@ -21,11 +21,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { LanguageToggle } from '@/components/LanguageToggle';
-import { useAppSelector } from '@/hooks/redux';
+import { t } from '@/utils/translations';
 
 export function TopBar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const language = useAppSelector((state) => state.settings.language);
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 sticky top-0 z-30 w-full">
@@ -34,10 +33,10 @@ export function TopBar() {
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden">
               <MenuIcon className="h-5 w-5" />
-              <span className="sr-only">Toggle navigation menu</span>
+              <span className="sr-only">תפריט ניווט</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 max-w-[250px]">
+          <SheetContent side="right" className="p-0 max-w-[250px]">
             <Sidebar />
           </SheetContent>
         </Sheet>
@@ -48,11 +47,11 @@ export function TopBar() {
         isSearchOpen ? "hidden md:flex" : "flex"
       )}>
         <div className="hidden md:flex relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder={language === "ar" ? "بحث..." : "Search..."}
-            className="w-64 pl-8 bg-background"
+            placeholder={t("search")}
+            className="w-64 pr-8 bg-background"
           />
         </div>
 
@@ -63,7 +62,7 @@ export function TopBar() {
           onClick={() => setIsSearchOpen(!isSearchOpen)}
         >
           <Search className="h-5 w-5" />
-          <span className="sr-only">{language === "ar" ? "بحث" : "Search"}</span>
+          <span className="sr-only">{t("search")}</span>
         </Button>
 
         <LanguageToggle />
@@ -75,23 +74,21 @@ export function TopBar() {
               <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent text-accent-foreground">
                 3
               </Badge>
-              <span className="sr-only">{language === "ar" ? "الإشعارات" : "Notifications"}</span>
+              <span className="sr-only">{t("notifications")}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>{language === "ar" ? "الإشعارات" : "Notifications"}</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("notifications")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="max-h-80 overflow-y-auto">
               {[1, 2, 3].map((i) => (
                 <DropdownMenuItem key={i} className="flex flex-col items-start py-2 cursor-pointer">
-                  <p className="font-medium">{language === "ar" ? "تسجيل عضو جديد" : "New member signup"}</p>
+                  <p className="font-medium">הרשמת חבר חדש</p>
                   <p className="text-sm text-muted-foreground">
-                    {language === "ar" 
-                      ? "قام جون دو بالتسجيل للحصول على عضوية جديدة" 
-                      : "John Doe has registered for a new membership"}
+                    ג'ון דו נרשם למנוי חדש
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {language === "ar" ? "منذ 10 دقائق" : "10 minutes ago"}
+                    לפני 10 דקות
                   </p>
                 </DropdownMenuItem>
               ))}
@@ -106,17 +103,17 @@ export function TopBar() {
                 <AvatarImage src="/placeholder.svg" alt="Avatar" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
-              <span>{language === "ar" ? "المدير" : "Admin"}</span>
+              <span>{t("admin")}</span>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{language === "ar" ? "حسابي" : "My Account"}</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{language === "ar" ? "الملف الشخصي" : "Profile"}</DropdownMenuItem>
-            <DropdownMenuItem>{language === "ar" ? "الإعدادات" : "Settings"}</DropdownMenuItem>
+            <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
+            <DropdownMenuItem>{t("settings")}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{language === "ar" ? "تسجيل الخروج" : "Logout"}</DropdownMenuItem>
+            <DropdownMenuItem>{t("logout")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -124,16 +121,16 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden">
               <User className="h-5 w-5" />
-              <span className="sr-only">{language === "ar" ? "قائمة المستخدم" : "User menu"}</span>
+              <span className="sr-only">{t("userMenu")}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{language === "ar" ? "حسابي" : "My Account"}</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{language === "ar" ? "الملف الشخصي" : "Profile"}</DropdownMenuItem>
-            <DropdownMenuItem>{language === "ar" ? "الإعدادات" : "Settings"}</DropdownMenuItem>
+            <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
+            <DropdownMenuItem>{t("settings")}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{language === "ar" ? "تسجيل الخروج" : "Logout"}</DropdownMenuItem>
+            <DropdownMenuItem>{t("logout")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -141,17 +138,17 @@ export function TopBar() {
       <div className={`${isSearchOpen ? 'flex' : 'hidden'} md:hidden absolute inset-0 p-2 bg-background`}>
         <Input
           type="search"
-          placeholder={language === "ar" ? "بحث..." : "Search..."}
+          placeholder={t("search")}
           className="flex-1 bg-background"
           autoFocus
         />
         <Button
           variant="ghost"
           size="icon"
-          className="ml-1"
+          className="mr-1"
           onClick={() => setIsSearchOpen(false)}
         >
-          <span className="sr-only">{language === "ar" ? "إغلاق" : "Close"}</span>
+          <span className="sr-only">{t("close")}</span>
           <ChevronDown className="h-5 w-5" />
         </Button>
       </div>

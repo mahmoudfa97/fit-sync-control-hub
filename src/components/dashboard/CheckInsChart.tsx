@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
+import { t } from "@/utils/translations";
 
 interface DailyCheckins {
   name: string;
@@ -29,13 +30,13 @@ interface DailyCheckins {
 }
 
 const data: DailyCheckins[] = [
-  { name: "Mon", value: 120, avg: 90 },
-  { name: "Tue", value: 180, avg: 95 },
-  { name: "Wed", value: 200, avg: 100 },
-  { name: "Thu", value: 290, avg: 105 },
-  { name: "Fri", value: 300, avg: 110 },
-  { name: "Sat", value: 280, avg: 130 },
-  { name: "Sun", value: 190, avg: 120 },
+  { name: "יום ב", value: 120, avg: 90 },
+  { name: "יום ג", value: 180, avg: 95 },
+  { name: "יום ד", value: 200, avg: 100 },
+  { name: "יום ה", value: 290, avg: 105 },
+  { name: "יום ו", value: 300, avg: 110 },
+  { name: "שבת", value: 280, avg: 130 },
+  { name: "יום א", value: 190, avg: 120 },
 ];
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
@@ -51,10 +52,10 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
                 style={{ backgroundColor: entry.color }}
               />
               <span className="text-xs font-medium">
-                {entry.name === "value" ? "Today" : "Avg"}
+                {entry.name === "value" ? "היום" : "ממוצע"}
               </span>
-              <span className="text-xs font-medium ml-auto">
-                {entry.value} check-ins
+              <span className="text-xs font-medium mr-auto">
+                {entry.value} כניסות
               </span>
             </div>
           ))}
@@ -72,25 +73,25 @@ export function CheckInsChart() {
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <div>
-            <CardTitle>Weekly Check-ins</CardTitle>
-            <CardDescription>Daily check-ins compared to average</CardDescription>
+            <CardTitle>{t("weeklyCheckIns")}</CardTitle>
+            <CardDescription>{t("dailyCheckInsVsAverage")}</CardDescription>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1">
-                This Week
+                {t("thisWeek")}
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Time Range</DropdownMenuLabel>
+              <DropdownMenuLabel>טווח זמן</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>This Week</DropdownMenuItem>
-              <DropdownMenuItem>Last Week</DropdownMenuItem>
-              <DropdownMenuItem>Last 2 Weeks</DropdownMenuItem>
-              <DropdownMenuItem>This Month</DropdownMenuItem>
+              <DropdownMenuItem>השבוע</DropdownMenuItem>
+              <DropdownMenuItem>שבוע שעבר</DropdownMenuItem>
+              <DropdownMenuItem>שבועיים אחרונים</DropdownMenuItem>
+              <DropdownMenuItem>החודש</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -99,12 +100,12 @@ export function CheckInsChart() {
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <div className="text-2xl font-bold">1,560</div>
-            <div className="text-sm text-muted-foreground">Total check-ins this week</div>
+            <div className="text-sm text-muted-foreground">{t("totalWeeklyCheckIns")}</div>
           </div>
           <div className="flex items-center gap-1 text-sm font-medium text-success">
             <ArrowUpRight className="h-4 w-4" />
             <span>22.4%</span>
-            <span className="text-muted-foreground">vs last week</span>
+            <span className="text-muted-foreground">{t("vsLastWeek")}</span>
           </div>
         </div>
         <div className="h-[280px] w-full">
@@ -140,7 +141,7 @@ export function CheckInsChart() {
                 strokeWidth={2}
                 strokeDasharray="5 5"
                 dot={false}
-                name="Average"
+                name="ממוצע"
               />
               <Line
                 type="monotone"
@@ -159,7 +160,7 @@ export function CheckInsChart() {
                   strokeWidth: 2,
                   stroke: "#fff",
                 }}
-                name="Today"
+                name="היום"
               />
             </LineChart>
           </ResponsiveContainer>
