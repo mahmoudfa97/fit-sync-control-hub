@@ -40,10 +40,14 @@ const translations: Translations = {
   }
 };
 
-export function t(key: TranslationKey, language: "en" | "ar"): string {
+// Update the function to accept string as language parameter and handle type checking internally
+export function t(key: TranslationKey, language: string): string {
+  // Validate that language is either "en" or "ar"
+  const validLanguage = language === "ar" ? "ar" : "en";
+  
   if (!translations[key]) {
     console.warn(`Translation key not found: ${key}`);
     return key;
   }
-  return translations[key][language];
+  return translations[key][validLanguage];
 }
