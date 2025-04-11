@@ -37,7 +37,7 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
       <TableCell>
         <div className="flex flex-col">
           <span>{member.membershipType}</span>
-          <span className="text-xs text-muted-foreground">منذ {member.joinDate}</span>
+          <span className="text-xs text-muted-foreground">מאז {member.joinDate}</span>
         </div>
       </TableCell>
       <TableCell>
@@ -58,19 +58,18 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              إجراءات <ChevronDown className="ml-1 h-4 w-4" />
+            נהלים <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>عرض الملف الشخصي</DropdownMenuItem>
-            <DropdownMenuItem>تعديل العضو</DropdownMenuItem>
+            <DropdownMenuItem>צפה בפרופיל</DropdownMenuItem>
+            <DropdownMenuItem>ערוך חבר</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onCheckIn(member.id)}>
-              تسجيل حضور
-            </DropdownMenuItem>
-            <DropdownMenuItem>إدارة الخطة</DropdownMenuItem>
+            רישום נוכחות
+                        </DropdownMenuItem>
+            <DropdownMenuItem>ניהול תוכנית</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive">
-              إلغاء التفعيل
-            </DropdownMenuItem>
+            השבתה            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>

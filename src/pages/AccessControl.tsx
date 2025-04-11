@@ -58,7 +58,7 @@ export default function AccessControl() {
   
   const handleAddCard = () => {
     if (!newCard.memberId || !newCard.cardNumber) {
-      toast.error("يرجى تعبئة جميع الحقول المطلوبة");
+      toast.error(".נא למלא את כל השדות הנדרשים");
       return;
     }
     

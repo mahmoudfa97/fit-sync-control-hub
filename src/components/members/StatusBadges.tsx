@@ -16,17 +16,17 @@ export const paymentStatusStyles = {
 };
 
 export const statusLabels = {
-  active: "نشط",
-  inactive: "غير نشط",
-  pending: "معلق",
-  expired: "منتهي"
+  active: "פעיל",
+  inactive: "לא פעיל",
+  pending: "בהמתנה",
+  expired: "פג תוקף"
 };
 
 export const paymentStatusLabels = {
-  paid: "مدفوع",
-  overdue: "متأخر",
-  pending: "معلق",
-  canceled: "ملغي"
+  paid: "שולם",
+  overdue: "איחור",
+  pending: "בהמתנה",
+  canceled: "מבוטל"
 };
 
 export const StatusBadge = ({ status }: { status: keyof typeof statusStyles }) => (

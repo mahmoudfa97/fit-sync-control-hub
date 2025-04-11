@@ -30,13 +30,12 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>دليل الأعضاء</CardTitle>
+        <CardTitle>כל החברים</CardTitle>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-1">
-                جميع الأعضاء
-                <ChevronDown className="h-4 w-4 opacity-50" />
+              כל החברים                <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
