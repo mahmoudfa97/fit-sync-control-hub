@@ -14,7 +14,8 @@ import {
   Settings, 
   ChevronLeft, 
   ChevronRight, 
-  LogOut
+  LogOut,
+  FileText
 } from "lucide-react";
 import { t } from "@/utils/translations";
 
@@ -50,6 +51,7 @@ const navItems = [
   { icon: Users, label: t("members_menu"), to: "/members" },
   { icon: CalendarCheck, label: t("checkins_menu"), to: "/checkins" },
   { icon: CreditCard, label: t("payments_menu"), to: "/payments" },
+  { icon: FileText, label: t("invoices_menu"), to: "/invoices" },
   { icon: Dumbbell, label: t("classes_menu"), to: "/classes" },
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
   { icon: KeyRound, label: t("access_menu"), to: "/access" },

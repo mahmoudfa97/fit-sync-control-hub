@@ -7,12 +7,14 @@ import classesReducer from './slices/classesSlice';
 import staffReducer from './slices/staffSlice';
 import accessControlReducer from './slices/accessControlSlice';
 import settingsReducer from './slices/settingsSlice';
+import invoicesReducer from './slices/invoicesSlice';
 
 export const store = configureStore({
   reducer: {
     members: membersReducer,
     checkIns: checkInsReducer,
     payments: paymentsReducer,
+    invoices: invoicesReducer,
     classes: classesReducer,
     staff: staffReducer,
     accessControl: accessControlReducer,
