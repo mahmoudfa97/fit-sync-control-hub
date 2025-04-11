@@ -1,4 +1,3 @@
-
 type TranslationKey = string;
 
 interface Translations {
@@ -60,6 +59,17 @@ const translations: Translations = {
   staff_menu: "צוות",
   access_menu: "בקרת גישה",
   settings_menu: "הגדרות",
+  // New translations for the additional stat cards and charts
+  totalDebts: "סה\"כ חובות",
+  totalReceipts: "סה\"כ קבלות",
+  totalInvoices: "סה\"כ חשבוניות",
+  checkInsHourlyForecast: "תחזית תנועת כניסות לפי שעה",
+  sixMonthsProfit: "רווח 6 חודשים",
+  activeMembersByGroup: "מנויים פעילים לפי קבוצה",
+  expiringMembers: "מנויים עומדים להסתיים",
+  recentlyAddedMembers: "מנויים הוספו לאחרונה",
+  viewMore: "צפה בעוד",
+  by: "לפי"
 };
 
 // Simple translation function
