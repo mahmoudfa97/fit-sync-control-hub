@@ -30,27 +30,34 @@ const data: MemberGroupData[] = [
   { name: "בסיסי", value: 152, color: "#ef4444" },
 ];
 
+// Calculate the total once, outside of any component
+const totalMembersCount = data.reduce((sum, item) => sum + item.value, 0);
+
 const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
+    const dataItem = payload[0].payload as MemberGroupData;
+    
+    // Calculate percentage without using reduce inside the component
+    const percentage = Math.round((dataItem.value / totalMembersCount) * 100);
+    
     return (
       <div className="bg-background border rounded-md shadow-md p-3">
         <div className="flex items-center gap-2">
           <div 
             className="w-3 h-3 rounded-full" 
-            style={{ backgroundColor: data.color }}
+            style={{ backgroundColor: dataItem.color }}
           />
-          <span className="font-medium">{data.name}</span>
+          <span className="font-medium">{dataItem.name}</span>
         </div>
         <div className="mt-1">
           <div className="flex justify-between items-center mt-1">
             <span className="text-sm text-muted-foreground">סה"כ</span>
-            <span className="font-medium">{data.value}</span>
+            <span className="font-medium">{dataItem.value}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">אחוז</span>
             <span className="font-medium">
-              {Math.round((data.value / data.reduce((a: number, b: any) => a + b.value, 0)) * 100)}%
+              {percentage}%
             </span>
           </div>
         </div>
@@ -78,7 +85,8 @@ const CustomLegend = ({ payload }: { payload?: any[] }) => {
 };
 
 export function ActiveMembersByGroup() {
-  const totalMembers = data.reduce((sum, item) => sum + item.value, 0);
+  // Using the pre-calculated total
+  const totalMembers = totalMembersCount;
   
   return (
     <Card className="col-span-1 lg:col-span-2">
