@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { 
@@ -29,7 +30,12 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
             <AvatarFallback>{member.initials}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium">{member.name}</p>
+            <Link 
+              to={`/members/${member.id}`} 
+              className="font-medium hover:underline"
+            >
+              {member.name}
+            </Link>
             <p className="text-xs text-muted-foreground">{member.email}</p>
           </div>
         </div>
@@ -62,7 +68,9 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>צפה בפרופיל</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={`/members/${member.id}`}>צפה בפרופיל</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>ערוך חבר</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onCheckIn(member.id)}>
             רישום נוכחות

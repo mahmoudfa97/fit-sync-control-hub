@@ -1,126 +1,158 @@
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface Member {
   id: string;
   name: string;
   email: string;
-  membershipType: string;
-  status: "active" | "inactive" | "pending" | "expired";
-  joinDate: string;
-  lastCheckIn: string;
-  paymentStatus: "paid" | "overdue" | "pending";
-  initials: string;
+  phone: string;
   avatar?: string;
-  phone?: string;
-  address?: string;
-  membershipEnd?: string;
+  initials: string;
+  membershipType: string;
+  joinDate: string;
+  membershipEndDate?: string;
+  status: 'active' | 'inactive' | 'pending' | 'blocked';
+  paymentStatus: 'paid' | 'pending' | 'overdue' | 'canceled';
   notes?: string;
+  lastCheckIn?: string;
+  address?: string;
+  emergencyContact?: string;
+  birthDate?: string;
+  gender?: 'male' | 'female' | 'other';
 }
 
 interface MembersState {
   members: Member[];
   filteredMembers: Member[];
+  searchQuery: string;
   filterStatus: string | null;
 }
 
 const initialMembers: Member[] = [
   {
     id: "1",
-    name: "سارة الحمدان",
-    email: "sarah.alh@example.com",
-    membershipType: "بريميوم",
+    name: "فراس علي شعبان",
+    email: "firas@example.com",
+    phone: "050-1234567",
+    initials: "فع",
+    membershipType: "שנתי",
+    joinDate: "10 ינואר, 2023",
+    membershipEndDate: "2025-01-10",
     status: "active",
-    joinDate: "5 يناير، 2024",
-    lastCheckIn: "اليوم 8:45 ص",
     paymentStatus: "paid",
-    initials: "سح",
-    membershipEnd: "5 يناير، 2025",
-    phone: "050-1234567"
+    lastCheckIn: "היום, 09:45",
+    address: "רחוב הזית 15, חיפה",
+    emergencyContact: "עלי שעבאן: 052-7654321",
+    birthDate: "1985-06-12",
+    gender: "male"
   },
   {
     id: "2",
-    name: "خالد العمري",
-    email: "khalid.a@example.com",
-    membershipType: "قياسي",
+    name: "יוסי לוי",
+    email: "yossi@example.com",
+    phone: "054-7654321",
+    initials: "יל",
+    membershipType: "חודשי",
+    joinDate: "5 מרץ, 2024",
+    membershipEndDate: "2024-05-05",
     status: "active",
-    joinDate: "12 فبراير، 2024",
-    lastCheckIn: "اليوم 7:30 ص",
     paymentStatus: "paid",
-    initials: "خع",
-    membershipEnd: "12 فبراير، 2025",
-    phone: "050-7654321"
+    lastCheckIn: "אתמול, 18:30",
+    address: "רחוב הרצל 42, תל אביב",
+    emergencyContact: "שרה לוי: 050-1234567",
+    birthDate: "1990-03-15",
+    gender: "male"
   },
   {
     id: "3",
-    name: "منى الزهراني",
-    email: "mona.z@example.com",
-    membershipType: "بريميوم",
+    name: "מיכל גולדברג",
+    email: "michal@example.com",
+    phone: "052-9876543",
+    initials: "מג",
+    membershipType: "חצי שנתי",
+    joinDate: "15 אפריל, 2023",
+    membershipEndDate: "2024-04-25",
     status: "active",
-    joinDate: "8 نوفمبر، 2023",
-    lastCheckIn: "بالأمس 6:15 م",
-    paymentStatus: "paid",
-    initials: "مز",
-    membershipEnd: "8 نوفمبر، 2024",
-    phone: "055-1234567"
+    paymentStatus: "overdue",
+    lastCheckIn: "לפני 3 ימים, 12:15",
+    address: "רחוב יפו 8, ירושלים",
+    emergencyContact: "דוד גולדברג: 053-6543210",
+    birthDate: "1988-09-20",
+    gender: "female"
   },
   {
     id: "4",
-    name: "أحمد السعيد",
-    email: "ahmed.s@example.com",
-    membershipType: "قياسي",
+    name: "דוד ישראלי",
+    email: "david.i@example.com",
+    phone: "056-7654321",
+    initials: "די",
+    membershipType: "רגיל",
+    joinDate: "21 מרץ, 2023",
+    membershipEndDate: "2024-03-21",
     status: "inactive",
-    joinDate: "21 مارس، 2023",
-    lastCheckIn: "2 أبريل، 2025",
     paymentStatus: "overdue",
-    initials: "أس",
-    membershipEnd: "21 مارس، 2024",
-    phone: "056-7654321"
+    lastCheckIn: "2 אפריל, 2025",
+    address: "רחוב הדר 10, רמת גן",
+    emergencyContact: "רוני ישראלי: 052-1234567",
+    birthDate: "1980-07-14",
+    gender: "male"
   },
   {
     id: "5",
-    name: "نورة الشمري",
-    email: "noura.s@example.com",
-    membershipType: "بريميوم بلس",
+    name: "רונית אברהם",
+    email: "ronit.a@example.com",
+    phone: "054-1234567",
+    initials: "רא",
+    membershipType: "פרימיום פלוס",
+    joinDate: "3 דצמבר, 2023",
+    membershipEndDate: "2024-12-03",
     status: "active",
-    joinDate: "3 ديسمبر، 2023",
-    lastCheckIn: "اليوم 10:20 ص",
     paymentStatus: "paid",
-    initials: "نش",
-    membershipEnd: "3 ديسمبر، 2024",
-    phone: "054-1234567"
+    lastCheckIn: "היום 10:20",
+    address: "רחוב הדר 10, רמת גן",
+    emergencyContact: "רוני ישראלי: 052-1234567",
+    birthDate: "1980-07-14",
+    gender: "male"
   },
   {
     id: "6",
-    name: "محمد العتيبي",
-    email: "mohammed.o@example.com",
-    membershipType: "شهري",
+    name: "משה יעקובי",
+    email: "moshe.y@example.com",
+    phone: "050-9876543",
+    initials: "מי",
+    membershipType: "חודשי",
+    joinDate: "18 פברואר, 2024",
+    membershipEndDate: "2024-02-18",
     status: "active",
-    joinDate: "18 فبراير، 2024",
-    lastCheckIn: "بالأمس 8:00 م",
     paymentStatus: "pending",
-    initials: "مع",
-    membershipEnd: "18 مارس، 2024",
-    phone: "050-9876543"
+    lastCheckIn: "אתמול 20:00",
+    address: "רחוב הדר 10, רמת גן",
+    emergencyContact: "רוני ישראלי: 052-1234567",
+    birthDate: "1980-07-14",
+    gender: "male"
   },
   {
     id: "7",
-    name: "ليلى القاسم",
-    email: "layla.q@example.com",
-    membershipType: "سنوي",
+    name: "לאה פרידמן",
+    email: "leah.f@example.com",
+    phone: "055-9876543",
+    initials: "לפ",
+    membershipType: "שנתי",
+    joinDate: "5 אפריל, 2023",
+    membershipEndDate: "2024-04-05",
     status: "expired",
-    joinDate: "5 أبريل، 2023",
-    lastCheckIn: "20 مارس، 2024",
     paymentStatus: "overdue",
-    initials: "لق",
-    membershipEnd: "5 أبريل، 2024",
-    phone: "055-9876543"
+    lastCheckIn: "20 מרץ, 2024",
+    address: "רחוב הדר 10, רמת גן",
+    emergencyContact: "רוני ישראלי: 052-1234567",
+    birthDate: "1980-07-14",
+    gender: "male"
   },
 ];
 
 const initialState: MembersState = {
   members: initialMembers,
-  filteredMembers: initialMembers,
+  filteredMembers: [],
+  searchQuery: '',
   filterStatus: null,
 };
 
@@ -167,7 +199,7 @@ export const membersSlice = createSlice({
         const now = new Date();
         const hours = now.getHours();
         const minutes = now.getMinutes().toString().padStart(2, '0');
-        state.members[index].lastCheckIn = `اليوم ${hours}:${minutes} ${hours >= 12 ? 'م' : 'ص'}`;
+        state.members[index].lastCheckIn = `היום ${hours}:${minutes}`;
       }
       state.filteredMembers = state.members.filter(member => 
         !state.filterStatus || member.status === state.filterStatus

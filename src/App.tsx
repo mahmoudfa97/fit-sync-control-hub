@@ -11,8 +11,10 @@ import { useLanguage } from "@/hooks/useLanguage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Members from "./pages/Members";
+import MemberProfile from "./pages/MemberProfile";
 import CheckIns from "./pages/CheckIns";
 import Payments from "./pages/Payments";
+import Invoices from "./pages/Invoices";
 import Classes from "./pages/Classes";
 import Staff from "./pages/Staff";
 import AccessControl from "./pages/AccessControl";
@@ -33,8 +35,10 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/members" element={<Members />} />
+          <Route path="/members/:memberId" element={<MemberProfile />} />
           <Route path="/checkins" element={<CheckIns />} />
           <Route path="/payments" element={<Payments />} />
+          <Route path="/invoices" element={<Invoices />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/staff" element={<Staff />} />
           <Route path="/access" element={<AccessControl />} />
