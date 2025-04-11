@@ -10,7 +10,7 @@ export interface Member {
   membershipType: string;
   joinDate: string;
   membershipEndDate?: string;
-  status: 'active' | 'inactive' | 'pending' | 'blocked';
+  status: 'active' | 'inactive' | 'pending' | 'expired';
   paymentStatus: 'paid' | 'pending' | 'overdue' | 'canceled';
   notes?: string;
   lastCheckIn?: string;

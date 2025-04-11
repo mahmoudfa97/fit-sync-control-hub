@@ -16,9 +16,8 @@ import {
   ChevronRight, 
   LogOut,
   FileText
-  FileText
 } from "lucide-react";
-import { t } from "@/utils/translations";
+import t from "@/utils/translations";
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -48,14 +47,15 @@ const NavItem = ({ icon: Icon, label, to, collapsed }: NavItemProps) => {
 };
 
 const navItems = [
-  { icon: ActivitySquare, label: "לוח בקרה", to: "/" },
-  { icon: Users, label: "חברים", to: "/members" },
-  { icon: CalendarCheck, label: "כניסות", to: "/checkins" },
-  { icon: CreditCard, label: "תשלומים", to: "/payments" },
-  { icon: Dumbbell, label: "שיעורים", to: "/classes" },
-  { icon: UserRound, label: "צוות", to: "/staff" },
-  { icon: KeyRound, label: "בקרת גישה", to: "/access" },
-  { icon: Settings, label: "הגדרות", to: "/settings" },
+  { icon: ActivitySquare, label: t("dashboard_menu"), to: "/" },
+  { icon: Users, label: t("members_menu"), to: "/members" },
+  { icon: CalendarCheck, label: t("checkins_menu"), to: "/checkins" },
+  { icon: CreditCard, label: t("payments_menu"), to: "/payments" },
+  { icon: FileText, label: t("invoices_menu"), to: "/invoices" },
+  { icon: Dumbbell, label: t("classes_menu"), to: "/classes" },
+  { icon: UserRound, label: t("staff_menu"), to: "/staff" },
+  { icon: KeyRound, label: t("access_menu"), to: "/access" },
+  { icon: Settings, label: t("settings_menu"), to: "/settings" },
 ];
 
 export function Sidebar() {
@@ -113,7 +113,7 @@ export function Sidebar() {
           )}
         >
           <LogOut className="h-5 w-5 ml-2" />
-          {!collapsed && <span>התנתק</span>}
+          {!collapsed && <span>{t("logout")}</span>}
         </Button>
       </div>
     </aside>
