@@ -32,42 +32,42 @@ interface DataPoint {
 
 const data: DataPoint[] = [
   {
-    name: "Jan",
+    name: "ינו",
     total: 18500,
     memberships: 12000,
     classes: 5000,
     other: 1500,
   },
   {
-    name: "Feb",
+    name: "פבר",
     total: 20100,
     memberships: 14000,
     classes: 4600,
     other: 1500,
   },
   {
-    name: "Mar",
+    name: "מרץ",
     total: 19200,
     memberships: 13500,
     classes: 4200,
     other: 1500,
   },
   {
-    name: "Apr",
+    name: "אפר",
     total: 22800,
     memberships: 16000,
     classes: 5300,
     other: 1500,
   },
   {
-    name: "May",
+    name: "מאי",
     total: 23900,
     memberships: 16500,
     classes: 5900,
     other: 1500,
   },
   {
-    name: "Jun",
+    name: "יוני",
     total: 25800,
     memberships: 18000,
     classes: 6300,
@@ -89,9 +89,13 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-xs font-medium">{entry.name}</span>
-              <span className="text-xs font-medium ml-auto">
-                ${entry.value?.toLocaleString()}
+              <span className="text-xs font-medium">
+                {entry.name === "memberships" ? "מנויים" : 
+                 entry.name === "classes" ? "שיעורים" :
+                 entry.name === "other" ? "אחר" : entry.name}
+              </span>
+              <span className="text-xs font-medium mr-auto">
+                ₪{entry.value?.toLocaleString()}
               </span>
             </div>
           ))}
@@ -107,11 +111,11 @@ export function RevenueChart() {
   const [timeRange, setTimeRange] = useState<TimeRange>("6m");
 
   const timeRangeOptions: { value: TimeRange; label: string }[] = [
-    { value: "30d", label: "Last 30 days" },
-    { value: "60d", label: "Last 60 days" },
-    { value: "90d", label: "Last 90 days" },
-    { value: "6m", label: "Last 6 months" },
-    { value: "1y", label: "Last year" },
+    { value: "30d", label: "30 ימים אחרונים" },
+    { value: "60d", label: "60 ימים אחרונים" },
+    { value: "90d", label: "90 ימים אחרונים" },
+    { value: "6m", label: "6 חודשים אחרונים" },
+    { value: "1y", label: "שנה אחרונה" },
   ];
 
   const selectedRange = timeRangeOptions.find((option) => option.value === timeRange);
@@ -120,8 +124,8 @@ export function RevenueChart() {
     <Card className="col-span-1 lg:col-span-3">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Revenue Overview</CardTitle>
-          <CardDescription>Monthly revenue breakdown</CardDescription>
+          <CardTitle>סקירת הכנסות</CardTitle>
+          <CardDescription>פילוח הכנסות חודשי</CardDescription>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -132,7 +136,7 @@ export function RevenueChart() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Time Range</DropdownMenuLabel>
+              <DropdownMenuLabel>טווח זמן</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {timeRangeOptions.map((option) => (
                 <DropdownMenuItem
@@ -146,7 +150,7 @@ export function RevenueChart() {
           </DropdownMenu>
           <Button variant="outline" size="icon">
             <DownloadCloud className="h-4 w-4" />
-            <span className="sr-only">Download data</span>
+            <span className="sr-only">הורד נתונים</span>
           </Button>
         </div>
       </CardHeader>
@@ -175,7 +179,7 @@ export function RevenueChart() {
                 axisLine={false}
                 fontSize={12}
                 tickMargin={8}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}k`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar
@@ -183,21 +187,21 @@ export function RevenueChart() {
                 stackId="a"
                 fill="#3b82f6"
                 radius={[0, 0, 0, 0]}
-                name="Memberships"
+                name="מנויים"
               />
               <Bar
                 dataKey="classes"
                 stackId="a"
                 fill="#10b981"
                 radius={[0, 0, 0, 0]}
-                name="Classes"
+                name="שיעורים"
               />
               <Bar
                 dataKey="other"
                 stackId="a"
                 fill="#f97316"
                 radius={[4, 4, 0, 0]}
-                name="Other"
+                name="אחר"
               />
             </BarChart>
           </ResponsiveContainer>

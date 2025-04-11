@@ -11,7 +11,7 @@ export function LanguageToggle() {
   return (
     <Toggle 
       variant="outline" 
-      aria-label="Hebrew language indicator"
+      aria-label="מחוון שפה עברית"
       pressed={true}
       className="flex items-center gap-2"
     >

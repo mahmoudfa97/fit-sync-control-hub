@@ -5,11 +5,11 @@ interface Translations {
   [key: TranslationKey]: string;
 }
 
-// Dashboard translations in Hebrew
+// Hebrew translations for the dashboard
 const translations: Translations = {
   dashboard: "לוח בקרה",
-  welcome: "ברוך שובך! הנה מה שקורה בחדר כושר שלך היום.",
-  activeMembers: "חברים פעילים",
+  welcome: "ברוך הבא! הנה מה שקורה בחדר הכושר שלך היום.",
+  activeMembers: "מנויים פעילים",
   todayCheckIns: "כניסות היום",
   monthlyRevenue: "הכנסה חודשית",
   newSubscriptions: "מנויים חדשים",
@@ -17,10 +17,10 @@ const translations: Translations = {
   recentActivity: "פעילות אחרונה",
   latestActivity: "פעילות אחרונה בחדר הכושר שלך",
   upcomingExpiry: "מנויים שעומדים לפוג",
-  membersWithExpiringSubs: "חברים עם מנויים שעומדים לפוג",
+  membersWithExpiringSubs: "לקוחות עם מנויים שעומדים לפוג",
   weeklyCheckIns: "כניסות שבועיות",
   dailyCheckInsVsAverage: "כניסות יומיות בהשוואה לממוצע",
-  totalCheckIns: "סך כל הכניסות השבוע",
+  totalCheckIns: "סך הכל כניסות השבוע",
   vsLastWeek: "לעומת השבוע שעבר",
   sendReminders: "שלח תזכורות",
   viewAll: "הצג הכל",
@@ -37,11 +37,13 @@ const translations: Translations = {
   daysLeft: "נותרו {days} ימים",
   expiresOn: "פג תוקף ב {date}",
   thisWeek: "השבוע הזה",
-  totalWeeklyCheckIns: "סך כל הכניסות השבוע",
+  totalWeeklyCheckIns: "סך הכל כניסות השבוע",
+  members: "לקוחות",
+  clients: "לקוחות",
   // Activity types
   checkin: "כניסה",
   payment: "תשלום",
-  newMember: "חבר חדש",
+  newMember: "לקוח חדש",
   access: "גישה",
   renewal: "חידוש",
   // Time expressions
@@ -49,6 +51,15 @@ const translations: Translations = {
   hoursAgo: "לפני {time} שעות",
   dayAgo: "לפני יום",
   daysAgo: "לפני {time} ימים",
+  // Sidebar menu items
+  dashboard_menu: "לוח בקרה",
+  members_menu: "לקוחות",
+  checkins_menu: "כניסות",
+  payments_menu: "תשלומים",
+  classes_menu: "שיעורים",
+  staff_menu: "צוות",
+  access_menu: "בקרת גישה",
+  settings_menu: "הגדרות",
 };
 
 // Simple translation function

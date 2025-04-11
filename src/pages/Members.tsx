@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MembersHeader } from "@/components/members/MembersHeader";
 import { MemberList } from "@/components/members/MemberList";
 import { AddMemberDialog } from "@/components/members/AddMemberDialog";
+import { t } from "@/utils/translations";
 
 export default function Members() {
   const dispatch = useAppDispatch();
@@ -19,7 +20,7 @@ export default function Members() {
     name: "",
     email: "",
     phone: "",
-    membershipType: "قياسي",
+    membershipType: "רגיל",
     status: "active" as "active" | "inactive" | "pending" | "expired",
     paymentStatus: "paid" as "paid" | "overdue" | "pending",
   });
@@ -36,15 +37,16 @@ export default function Members() {
   const handleAddMember = () => {
     if (!newMember.name || !newMember.email) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى إدخال اسم وبريد إلكتروني صالحين",
+        title: "שגיאת קלט",
+        description: "אנא הזן שם ודוא״ל תקינים",
         variant: "destructive",
       });
       return;
     }
     
     const today = new Date();
-    const joinDateStr = `${today.getDate()} ${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][today.getMonth()]}، ${today.getFullYear()}`;
+    const hebrewMonths = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+    const joinDateStr = `${today.getDate()} ${hebrewMonths[today.getMonth()]}, ${today.getFullYear()}`;
     
     const nameParts = newMember.name.split(' ');
     const initials = nameParts.length > 1 
@@ -59,7 +61,7 @@ export default function Members() {
       membershipType: newMember.membershipType,
       status: newMember.status,
       joinDate: joinDateStr,
-      lastCheckIn: "لم يسجل بعد",
+      lastCheckIn: "טרם נרשם",
       paymentStatus: newMember.paymentStatus,
       initials: initials,
     };
@@ -67,15 +69,15 @@ export default function Members() {
     dispatch(addMember(memberToAdd));
     
     toast({
-      title: "تم إضافة العضو بنجاح",
-      description: `تمت إضافة ${newMember.name} إلى قائمة الأعضاء`,
+      title: "לקוח נוסף בהצלחה",
+      description: `${newMember.name} נוסף לרשימת הלקוחות`,
     });
     
     setNewMember({
       name: "",
       email: "",
       phone: "",
-      membershipType: "قياسي",
+      membershipType: "רגיל",
       status: "active",
       paymentStatus: "paid",
     });
@@ -86,8 +88,8 @@ export default function Members() {
   const handleCheckIn = (memberId: string) => {
     dispatch(recordCheckIn(memberId));
     toast({
-      title: "تم تسجيل الحضور",
-      description: "تم تسجيل حضور العضو بنجاح",
+      title: "כניסה נרשמה",
+      description: "כניסת הלקוח נרשמה בהצלחה",
     });
   };
 
