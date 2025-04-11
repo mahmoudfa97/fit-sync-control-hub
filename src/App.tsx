@@ -11,6 +11,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Members from "./pages/Members";
+import MemberProfile from "./pages/MemberProfile";
 import CheckIns from "./pages/CheckIns";
 import Payments from "./pages/Payments";
 import Classes from "./pages/Classes";
@@ -33,6 +34,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/members" element={<Members />} />
+          <Route path="/members/:memberId" element={<MemberProfile />} />
           <Route path="/checkins" element={<CheckIns />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/classes" element={<Classes />} />

@@ -16,6 +16,8 @@ export interface Member {
   address?: string;
   membershipEnd?: string;
   notes?: string;
+  balance?: number;
+  age?: number;
 }
 
 interface MembersState {
@@ -27,16 +29,18 @@ interface MembersState {
 const initialMembers: Member[] = [
   {
     id: "1",
-    name: "שרה כהן",
-    email: "sarah.cohen@example.com",
+    name: "فراس علي شعبان",
+    email: "firas.ali@example.com",
     membershipType: "פרימיום",
     status: "active",
     joinDate: "5 ינואר, 2024",
     lastCheckIn: "היום 8:45",
     paymentStatus: "paid",
-    initials: "שכ",
+    initials: "פש",
     membershipEnd: "5 ינואר, 2025",
-    phone: "050-1234567"
+    phone: "052-3939093",
+    balance: 20000,
+    age: 30
   },
   {
     id: "2",
@@ -49,7 +53,9 @@ const initialMembers: Member[] = [
     paymentStatus: "paid",
     initials: "יל",
     membershipEnd: "12 פברואר, 2025",
-    phone: "050-7654321"
+    phone: "050-7654321",
+    balance: 5000,
+    age: 28
   },
   {
     id: "3",
@@ -62,7 +68,9 @@ const initialMembers: Member[] = [
     paymentStatus: "paid",
     initials: "מג",
     membershipEnd: "8 נובמבר, 2024",
-    phone: "055-1234567"
+    phone: "055-1234567",
+    balance: 12000,
+    age: 34
   },
   {
     id: "4",
@@ -75,7 +83,9 @@ const initialMembers: Member[] = [
     paymentStatus: "overdue",
     initials: "די",
     membershipEnd: "21 מרץ, 2024",
-    phone: "056-7654321"
+    phone: "056-7654321",
+    balance: -500,
+    age: 42
   },
   {
     id: "5",
@@ -88,7 +98,9 @@ const initialMembers: Member[] = [
     paymentStatus: "paid",
     initials: "רא",
     membershipEnd: "3 דצמבר, 2024",
-    phone: "054-1234567"
+    phone: "054-1234567",
+    balance: 8500,
+    age: 29
   },
   {
     id: "6",
@@ -101,7 +113,9 @@ const initialMembers: Member[] = [
     paymentStatus: "pending",
     initials: "מי",
     membershipEnd: "18 מרץ, 2024",
-    phone: "050-9876543"
+    phone: "050-9876543",
+    balance: 1200,
+    age: 36
   },
   {
     id: "7",
@@ -114,7 +128,9 @@ const initialMembers: Member[] = [
     paymentStatus: "overdue",
     initials: "לפ",
     membershipEnd: "5 אפריל, 2024",
-    phone: "055-9876543"
+    phone: "055-9876543",
+    balance: -2500,
+    age: 45
   },
 ];
 

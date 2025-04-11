@@ -1,3 +1,4 @@
+
 type TranslationKey = string;
 
 interface Translations {
@@ -69,7 +70,40 @@ const translations: Translations = {
   expiringMembers: "מנויים עומדים להסתיים",
   recentlyAddedMembers: "מנויים הוספו לאחרונה",
   viewMore: "צפה בעוד",
-  by: "לפי"
+  by: "לפי",
+  // Member profile page translations
+  memberProfile: "פרופיל לקוח",
+  memberDetails: "פרטי לקוח",
+  membershipDetails: "פרטי מנוי",
+  age: "גיל",
+  balance: "יתרה",
+  lastCheckIn: "כניסה אחרונה",
+  sendMessage: "שלח הודעה",
+  addDetails: "הוספת פרטים",
+  paymentManagement: "טיפול בחיוב",
+  customerManagement: "טיפול בלקוח",
+  detailsTab: "פרטים",
+  attendanceTab: "נוכחות",
+  paymentsTab: "תשלומים",
+  notificationsTab: "הודעות",
+  documentsTab: "מסמכים",
+  historyTab: "היסטוריית פניות",
+  newSubscription: "מנוי חדש",
+  searchSubscriptions: "חיפוש במנויים...",
+  activeSubscriptions: "מנויים פעילים",
+  inactiveSubscriptions: "מנויים לא פעילים",
+  entriesColumn: "כניסות",
+  endDateColumn: "עד תאריך",
+  startDateColumn: "מתאריך",
+  groupColumn: "קבוצה",
+  statusColumn: "סטטוס",
+  active: "פעיל",
+  inactive: "לא פעיל",
+  rowsTotal: "סך הכל שורות: {start}-{end} מתוך {total}",
+  home: "ראשי",
+  backToMembers: "חזרה לרשימת הלקוחות",
+  memberNotFound: "לקוח לא נמצא",
+  memberIdNotFound: "המזהה שביקשת לא נמצא במערכת"
 };
 
 // Simple translation function
