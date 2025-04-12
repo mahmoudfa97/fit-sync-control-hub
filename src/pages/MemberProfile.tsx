@@ -8,29 +8,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { 
-  Edit, 
   Search, 
   Plus, 
-  Trash, 
-  Play, 
-  Pause, 
-  Copy, 
+  Clock,
   ChevronLeft, 
   ChevronRight, 
   ChevronsLeft, 
-  ChevronsRight, 
-  Phone, 
-  CalendarCheck,
+  ChevronsRight,
+  Phone,
   CreditCard,
-  History,
+  RefreshCw,
+  Edit,
+  MessageSquare,
+  CalendarClock,
   FileText,
-  MessageCircle,
-  Settings,
-  Archive,
-  ChevronDown
+  History,
+  ClipboardList
 } from "lucide-react";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { t } from "@/utils/translations";
 
 export default function MemberProfile() {
@@ -38,7 +34,8 @@ export default function MemberProfile() {
   const { members } = useAppSelector(state => state.members);
   const member = members.find(m => m.id === memberId);
   
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState("memberships");
+  const [currentFilter, setCurrentFilter] = useState("active"); // active or inactive
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   
@@ -67,163 +64,65 @@ export default function MemberProfile() {
     <DashboardShell>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
-          <Link to="/members" className="text-muted-foreground hover:text-foreground mr-2">
-            ראשי / 
+          <Link to="/members" className="text-muted-foreground hover:text-foreground ml-2">
+            ראשי
           </Link>
+          <span className="text-muted-foreground mx-2">/</span>
           <span>פרופיל לקוח</span>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left sidebar with member info */}
-        <div className="col-span-1">
-          <Card className="mb-4">
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center">
-                <Avatar className="w-28 h-28 mb-4">
-                  <AvatarImage src={member.avatar} />
-                  <AvatarFallback className="text-xl">{member.initials}</AvatarFallback>
-                </Avatar>
-                
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-2xl font-bold">{member.name}</h2>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4 w-full mt-2">
-                  <div className="flex items-center">
-                    <span className="text-muted-foreground">גיל:</span>
-                    <span className="mr-2">30</span>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 text-muted-foreground mr-2" />
-                    <span className="text-primary" dir="ltr">{member.phone || "052-3939093"}</span>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <span className="text-muted-foreground">יתרה:</span>
-                    <span className="mr-2 text-emerald-500 font-medium">20000 ₪</span>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <span className="text-muted-foreground">כניסה אחרונה:</span>
-                    <span className="mr-2">12:05, 11/04/2025</span>
-                  </div>
-                </div>
-                
-                <Button className="mt-6 w-full">
-                  שלח הודעה
-                </Button>
-                
-                <div className="grid grid-cols-2 gap-3 mt-4 w-full">
-                  <Button variant="outline" className="flex gap-2">
-                    <MessageCircle className="h-4 w-4" />
-                    הוספת פרטים
-                  </Button>
-                  
-                  <Button variant="outline" className="flex gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    טיפול בחיוב
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full col-span-2 flex gap-2">
-                    <History className="h-4 w-4" />
-                    טיפול בלקוח
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Sidebar navigation */}
-          <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="#" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>הגדרות</span>
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="#" className="flex items-center">
-                <MessageCircle className="mr-2 h-4 w-4" />
-                <span>הודעות</span>
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="#" className="flex items-center">
-                <FileText className="mr-2 h-4 w-4" />
-                <span>קבוצת מנויים</span>
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="#" className="flex items-center">
-                <History className="mr-2 h-4 w-4" />
-                <span>חזרות</span>
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="#" className="flex items-center">
-                <Archive className="mr-2 h-4 w-4" />
-                <span>ארכיון</span>
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="#" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>הגדרות</span>
-              </Link>
-            </Button>
-          </div>
-        </div>
-        
-        {/* Main content area */}
-        <div className="col-span-1 md:col-span-2">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start mb-6 overflow-x-auto">
-              <TabsTrigger value="details" className="flex gap-2">
-                <FileText className="h-4 w-4" />
-                פרטים
-              </TabsTrigger>
-              <TabsTrigger value="attendance" className="flex gap-2">
-                <CalendarCheck className="h-4 w-4" />
-                נוכחות
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="flex gap-2">
-                <CreditCard className="h-4 w-4" />
-                תשלומים
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex gap-2">
-                <MessageCircle className="h-4 w-4" />
-                הודעות
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex gap-2">
-                <FileText className="h-4 w-4" />
-                מסמכים
-              </TabsTrigger>
-              <TabsTrigger value="history" className="flex gap-2">
-                <History className="h-4 w-4" />
-                היסטוריית פניות
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="details" className="mt-0">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between mb-6">
-                    <div className="flex gap-2">
-                      <Button variant="default" size="sm">
-                        <Plus className="h-4 w-4 mr-1" />
-                        מנוי חדש
-                      </Button>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Main content area - 3 columns */}
+        <div className="col-span-1 md:col-span-3">
+          <Card className="mb-6">
+            <CardContent className="p-0">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full justify-start bg-white border-b rounded-none h-14 p-0 gap-8">
+                  <TabsTrigger value="memberships" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4">
+                    <div className="flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4" />
+                      מנויים
                     </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="payments" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      תשלומים ומעקב
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="messages" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      הודעות
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="checkins" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4">
+                    <div className="flex items-center gap-2">
+                      <CalendarClock className="h-4 w-4" />
+                      היסטוריית כניסות
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4">
+                    <div className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      הנהלת חשבונות
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      היסטוריית פניות
+                    </div>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <Button variant="default" className="bg-primary text-white">
+                      <Plus className="h-4 w-4 mr-2" />
+                      מנוי חדש
+                    </Button>
                     
                     <div className="relative">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -234,58 +133,76 @@ export default function MemberProfile() {
                     </div>
                   </div>
                   
-                  <div className="mb-4">
+                  <div className="mb-6">
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="rounded-full">
+                      <Button 
+                        variant={currentFilter === "active" ? "default" : "outline"} 
+                        size="sm" 
+                        className="rounded-full"
+                        onClick={() => setCurrentFilter("active")}
+                      >
                         מנויים פעילים
                       </Button>
-                      <Button variant="ghost" size="sm" className="rounded-full">
+                      <Button 
+                        variant={currentFilter === "inactive" ? "default" : "outline"} 
+                        size="sm" 
+                        className="rounded-full"
+                        onClick={() => setCurrentFilter("inactive")}
+                      >
                         מנויים לא פעילים
                       </Button>
                     </div>
                   </div>
-                  
+                </div>
+                
+                <TabsContent value="memberships" className="mt-0 border-0 p-0 px-6">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>כניסות</TableHead>
-                        <TableHead>עד תאריך</TableHead>
-                        <TableHead>מתאריך</TableHead>
-                        <TableHead>קבוצה</TableHead>
-                        <TableHead>סטטוס</TableHead>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-center">סטטוס</TableHead>
+                        <TableHead className="text-center">עד תאריך</TableHead>
+                        <TableHead className="text-center">מתאריך</TableHead>
+                        <TableHead className="text-center">קבוצה</TableHead>
+                        <TableHead className="text-center">כניסות</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        <TableCell>פעיל</TableCell>
-                        <TableCell>22/12/2024</TableCell>
-                        <TableCell>22/12/2025</TableCell>
-                        <TableCell>תשלומים</TableCell>
-                        <TableCell>
-                          <span className="text-emerald-500 font-medium">פעיל</span>
-                        </TableCell>
-                        <TableCell className="flex gap-2">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Play className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      {currentFilter === "active" ? (
+                        <TableRow>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-green-100 text-green-800">
+                              פעיל
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">22/12/2024</TableCell>
+                          <TableCell className="text-center">22/12/2023</TableCell>
+                          <TableCell className="text-center">מנוי שנתי</TableCell>
+                          <TableCell className="text-center">ללא הגבלה</TableCell>
+                          <TableCell className="text-left">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                            אין נתונים בטבלה
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                   
-                  <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center justify-between my-4 pb-6">
                     <div className="text-sm text-muted-foreground">
-                      סך הכל שורות: 1-1 מתוך 1
+                      סך הכל שורות: 0 מתוך 0
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
@@ -347,55 +264,104 @@ export default function MemberProfile() {
                       </select>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </TabsContent>
+                
+                <TabsContent value="payments" className="mt-0 border-0 p-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <p>אין נתוני תשלומים להצגה</p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="messages" className="mt-0 border-0 p-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <p>אין הודעות להצגה</p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="checkins" className="mt-0 border-0 p-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <p>אין נתוני כניסות להצגה</p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="history" className="mt-0 border-0 p-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <p>אין נתוני הנהלת חשבונות להצגה</p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="profile" className="mt-0 border-0 p-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <p>אין היסטוריית פניות להצגה</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Right sidebar - profile info */}
+        <div className="col-span-1">
+          <Card className="overflow-hidden">
+            <div className="flex flex-col items-center bg-blue-50 p-6">
+              <Avatar className="w-28 h-28 mb-4 bg-blue-100 border-4 border-white">
+                <AvatarImage src={member.avatar} />
+                <AvatarFallback className="text-xl text-blue-500 bg-blue-100">
+                  {member.name.split(' ').map(part => part[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              
+              <h2 className="text-xl font-semibold mb-2 text-center">{member.name}</h2>
+              
+              <Button variant="default" className="w-full mt-4" size="sm">
+                שלח הודעה
+              </Button>
+            </div>
             
-            <TabsContent value="attendance">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-4">רשימת נוכחות</h3>
-                  <p className="text-muted-foreground">כאן יוצגו נתוני הנוכחות של הלקוח</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="payments">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-4">היסטוריית תשלומים</h3>
-                  <p className="text-muted-foreground">כאן יוצגו נתוני התשלומים של הלקוח</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="notifications">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-4">הודעות</h3>
-                  <p className="text-muted-foreground">כאן יוצגו ההודעות שנשלחו ללקוח</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="documents">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-4">מסמכים</h3>
-                  <p className="text-muted-foreground">כאן יוצגו המסמכים של הלקוח</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="history">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium mb-4">היסטוריית פניות</h3>
-                  <p className="text-muted-foreground">כאן תוצג היסטוריית הפניות של הלקוח</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            <CardContent className="px-6 py-4">
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-muted-foreground">גיל:</span>
+                    <span className="font-medium">2024</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-sm font-medium text-muted-foreground flex items-center">
+                      <Phone className="h-3.5 w-3.5 mr-1" />
+                    </span>
+                    <span className="font-medium" dir="ltr">{member.phone || "052-5603573"}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-sm font-medium text-muted-foreground">יתרה:</span>
+                    <span className="font-medium text-green-600">0 ₪</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-sm font-medium text-muted-foreground">כניסה אחרונה:</span>
+                    <span className="font-medium text-sm">11:40 ,29/04/2022</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    הוספת כרטיס
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    טיפול באשראי
+                  </Button>
+                </div>
+                
+                <Button variant="outline" className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  סנכרן ללקוח
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardShell>
