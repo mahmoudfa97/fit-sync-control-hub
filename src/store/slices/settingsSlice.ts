@@ -41,24 +41,24 @@ interface SettingsState {
 }
 
 const initialState: SettingsState = {
-  gymName: "سبارتا جيم",
+  gymName: "ספרטה ג'ים", // Changed to Hebrew
   email: "info@spartagym.com",
   phone: "0501234567",
-  address: "طريق الملك فهد، الرياض",
+  address: "דרך העצמאות, תל אביב", // Changed to Hebrew
   notifications: {
     email: true,
     sms: false,
     app: true,
   },
-  language: "ar",
+  language: "he", // Changed to Hebrew language code
   theme: "light",
   memberReminders: true,
   autoRenewals: true,
   workingHours: {
-    weekdays: "6:00 ص - 10:00 م",
-    weekends: "8:00 ص - 6:00 م",
+    weekdays: "6:00 - 22:00", // Changed to 24-hour format
+    weekends: "8:00 - 18:00", // Changed to 24-hour format
   },
-  taxRate: 15,
+  taxRate: 17, // Changed to Israeli VAT rate
   businessInfo: {
     taxNumber: "123456789",
     commercialRegister: "1234567890",

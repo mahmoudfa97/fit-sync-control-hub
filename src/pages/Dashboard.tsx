@@ -130,7 +130,7 @@ export default function Dashboard() {
           chartColor="#f59e0b"
         />
         <StatCard
-          title="השוואה חודשית"
+          title={t("monthlyComparison")}
           value="₪1,500.00"
           icon={TrendingUp}
           trend={{ value: 4, positive: true }}

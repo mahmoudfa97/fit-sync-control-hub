@@ -3,16 +3,25 @@ import { Toggle } from "@/components/ui/toggle";
 import { Globe } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/utils/translations";
+import { useAppDispatch } from "@/hooks/redux";
+import { updateSettings } from "@/store/slices/settingsSlice";
 
 export function LanguageToggle() {
-  // Initialize language handling
   const currentLanguage = useLanguage();
+  const dispatch = useAppDispatch();
+  
+  const toggleLanguage = () => {
+    // Toggle between Hebrew and English
+    const newLanguage = currentLanguage === "he" ? "en" : "he";
+    dispatch(updateSettings({ language: newLanguage }));
+  };
   
   return (
     <Toggle 
       variant="outline" 
-      aria-label="מחוון שפה עברית"
+      aria-label="Toggle language"
       pressed={currentLanguage === "he"}
+      onPressedChange={toggleLanguage}
       className="flex items-center gap-2"
     >
       <Globe className="h-4 w-4" />

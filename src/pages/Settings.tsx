@@ -16,92 +16,87 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Send } from "lucide-react";
+import { t } from "@/utils/translations";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { updateSettings, updateNotifications } from "@/store/slices/settingsSlice";
 
 export default function Settings() {
-  const [settings, setSettings] = useState({
-    gymName: "سبارتا جيم",
-    email: "info@spartagym.com",
-    phone: "0501234567",
-    address: "طريق الملك فهد، الرياض",
-    notifications: {
-      email: true,
-      sms: false,
-      app: true,
-    },
-    language: "ar",
-    theme: "light",
-    memberReminders: true,
-    autoRenewals: true,
-    workingHours: {
-      weekdays: "6:00 ص - 10:00 م",
-      weekends: "8:00 ص - 6:00 م",
-    },
-    taxRate: 15,
-    businessInfo: {
-      taxNumber: "123456789",
-      commercialRegister: "1234567890",
-    },
-    privacySettings: {
-      shareData: false,
-      membersCanSeeOthers: false,
-      publicProfile: true,
-    },
-    backupFrequency: "daily",
+  const dispatch = useAppDispatch();
+  const settings = useAppSelector((state) => state.settings);
+  const [smsSettings, setSmsSettings] = useState({
+    provider: "twilio",
+    apiKey: "",
+    apiSecret: "",
+    fromNumber: "",
+    testMessage: ""
   });
 
   const handleInputChange = (field, value) => {
-    setSettings({
-      ...settings,
-      [field]: value,
-    });
+    dispatch(updateSettings({ [field]: value }));
   };
 
   const handleNestedChange = (parent, field, value) => {
-    setSettings({
-      ...settings,
+    dispatch(updateSettings({
       [parent]: {
         ...settings[parent],
         [field]: value,
-      },
+      }
+    }));
+  };
+
+  const handleSmsChange = (field, value) => {
+    setSmsSettings({
+      ...smsSettings,
+      [field]: value
     });
   };
 
   const saveSettings = () => {
     // Save settings logic would go here
-    toast.success("تم حفظ الإعدادات بنجاح");
+    toast.success(t("smsConfigSuccess"));
+  };
+
+  const sendTestMessage = () => {
+    // Logic to send test SMS would go here
+    if (smsSettings.apiKey && smsSettings.fromNumber) {
+      toast.success(t("smsTestSuccess"));
+    } else {
+      toast.error(t("smsTestFail"));
+    }
   };
 
   return (
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">الإعدادات</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("settings")}</h1>
           <p className="text-muted-foreground">
-            قم بإدارة وتخصيص إعدادات وتفضيلات صالتك الرياضية
+            {t("settingsDesc")}
           </p>
         </div>
-        <Button onClick={saveSettings}>حفظ الإعدادات</Button>
+        <Button onClick={saveSettings}>{t("saveSettings")}</Button>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList className="flex flex-wrap">
-          <TabsTrigger value="general">عام</TabsTrigger>
-          <TabsTrigger value="notifications">الإشعارات</TabsTrigger>
-          <TabsTrigger value="business">معلومات الأعمال</TabsTrigger>
-          <TabsTrigger value="privacy">الخصوصية والأمان</TabsTrigger>
-          <TabsTrigger value="system">النظام والنسخ الاحتياطي</TabsTrigger>
+          <TabsTrigger value="general">{t("general")}</TabsTrigger>
+          <TabsTrigger value="notifications">{t("notifications")}</TabsTrigger>
+          <TabsTrigger value="business">{t("businessInfo")}</TabsTrigger>
+          <TabsTrigger value="privacy">{t("privacyAndSecurity")}</TabsTrigger>
+          <TabsTrigger value="system">{t("system")}</TabsTrigger>
+          <TabsTrigger value="sms">{t("smsProvider")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>المعلومات الأساسية</CardTitle>
+              <CardTitle>{t("basicInfo")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="gymName">اسم الصالة الرياضية</Label>
+                  <Label htmlFor="gymName">{t("gymName")}</Label>
                   <Input
                     id="gymName"
                     value={settings.gymName}
@@ -109,7 +104,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Label htmlFor="email">{t("email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -118,7 +113,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">رقم الهاتف</Label>
+                  <Label htmlFor="phone">{t("phone")}</Label>
                   <Input
                     id="phone"
                     value={settings.phone}
@@ -126,18 +121,18 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="language">اللغة</Label>
+                  <Label htmlFor="language">{t("language")}</Label>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="w-full justify-between">
-                        {settings.language === "ar" ? "العربية" : "English"}
+                        {settings.language === "ar" ? "עברית" : "English"}
                         <ChevronDown className="h-4 w-4 opacity-50" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
                       <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={() => handleInputChange("language", "ar")}>
-                          العربية
+                        <DropdownMenuItem onClick={() => handleInputChange("language", "he")}>
+                          עברית
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleInputChange("language", "en")}>
                           English
@@ -148,7 +143,7 @@ export default function Settings() {
                 </div>
               </div>
               <div className="space-y-2 pt-2">
-                <Label htmlFor="address">العنوان</Label>
+                <Label htmlFor="address">{t("address")}</Label>
                 <Textarea
                   id="address"
                   value={settings.address}
@@ -161,12 +156,12 @@ export default function Settings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>ساعات العمل</CardTitle>
+              <CardTitle>{t("workingHours")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weekdays">أيام الأسبوع</Label>
+                  <Label htmlFor="weekdays">{t("weekdays")}</Label>
                   <Input
                     id="weekdays"
                     value={settings.workingHours.weekdays}
@@ -174,7 +169,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="weekends">عطلة نهاية الأسبوع</Label>
+                  <Label htmlFor="weekends">{t("weekends")}</Label>
                   <Input
                     id="weekends"
                     value={settings.workingHours.weekends}
@@ -189,14 +184,14 @@ export default function Settings() {
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>إعدادات الإشعارات</CardTitle>
+              <CardTitle>{t("notificationSettings")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>إشعارات البريد الإلكتروني</Label>
+                  <Label>{t("emailNotifications")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    تلقي إشعارات عبر البريد الإلكتروني
+                    {t("receiveEmailNotifications")}
                   </p>
                 </div>
                 <Switch
@@ -206,9 +201,9 @@ export default function Settings() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>إشعارات الرسائل النصية</Label>
+                  <Label>{t("smsNotifications")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    تلقي إشعارات عبر الرسائل النصية
+                    {t("receiveSmsNotifications")}
                   </p>
                 </div>
                 <Switch
@@ -218,9 +213,9 @@ export default function Settings() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>إشعارات التطبيق</Label>
+                  <Label>{t("appNotifications")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    تلقي إشعارات داخل التطبيق
+                    {t("receiveAppNotifications")}
                   </p>
                 </div>
                 <Switch
@@ -233,14 +228,14 @@ export default function Settings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>تذكيرات الأعضاء</CardTitle>
+              <CardTitle>{t("membershipReminders")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>تذكيرات انتهاء العضوية</Label>
+                  <Label>{t("expiryReminders")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    إرسال تذكيرات قبل انتهاء عضوية الأعضاء
+                    {t("sendRemindersBeforeExpiry")}
                   </p>
                 </div>
                 <Switch
@@ -250,9 +245,9 @@ export default function Settings() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>التجديد التلقائي</Label>
+                  <Label>{t("autoRenewals")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    تجديد العضويات تلقائياً عند انتهائها
+                    {t("renewMembershipsAutomatically")}
                   </p>
                 </div>
                 <Switch
@@ -267,12 +262,12 @@ export default function Settings() {
         <TabsContent value="business" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>معلومات الأعمال</CardTitle>
+              <CardTitle>{t("businessInfo")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="taxNumber">الرقم الضريبي</Label>
+                  <Label htmlFor="taxNumber">{t("taxNumber")}</Label>
                   <Input
                     id="taxNumber"
                     value={settings.businessInfo.taxNumber}
@@ -280,7 +275,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="commercialRegister">السجل التجاري</Label>
+                  <Label htmlFor="commercialRegister">{t("commercialRegister")}</Label>
                   <Input
                     id="commercialRegister"
                     value={settings.businessInfo.commercialRegister}
@@ -288,7 +283,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="taxRate">نسبة الضريبة (%)</Label>
+                  <Label htmlFor="taxRate">{t("taxRate")}</Label>
                   <Input
                     id="taxRate"
                     type="number"
@@ -304,14 +299,14 @@ export default function Settings() {
         <TabsContent value="privacy" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>الخصوصية والأمان</CardTitle>
+              <CardTitle>{t("privacyAndSecurity")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>مشاركة البيانات</Label>
+                  <Label>{t("dataSharing")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    مشاركة البيانات مع شركاء خارجيين
+                    {t("shareDataWithPartners")}
                   </p>
                 </div>
                 <Switch
@@ -321,9 +316,9 @@ export default function Settings() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>رؤية الأعضاء</Label>
+                  <Label>{t("memberVisibility")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    السماح للأعضاء برؤية أعضاء آخرين
+                    {t("membersCanSeeOthers")}
                   </p>
                 </div>
                 <Switch
@@ -333,9 +328,9 @@ export default function Settings() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>الملف الشخصي العام</Label>
+                  <Label>{t("publicProfile")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    جعل ملف الصالة الرياضية عاماً
+                    {t("makeGymProfilePublic")}
                   </p>
                 </div>
                 <Switch
@@ -350,41 +345,129 @@ export default function Settings() {
         <TabsContent value="system" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>النسخ الاحتياطي</CardTitle>
+              <CardTitle>{t("backupAndSystem")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="backupFrequency">تكرار النسخ الاحتياطي</Label>
+                <Label htmlFor="backupFrequency">{t("backupFrequency")}</Label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
-                      {settings.backupFrequency === "daily" ? "يومي" : 
-                       settings.backupFrequency === "weekly" ? "أسبوعي" : 
-                       settings.backupFrequency === "monthly" ? "شهري" : "معطل"}
+                      {settings.backupFrequency === "daily" ? t("daily") : 
+                       settings.backupFrequency === "weekly" ? t("weekly") : 
+                       settings.backupFrequency === "monthly" ? t("monthly") : t("disabled")}
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56">
                     <DropdownMenuGroup>
                       <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "daily")}>
-                        يومي
+                        {t("daily")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "weekly")}>
-                        أسبوعي
+                        {t("weekly")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "monthly")}>
-                        شهري
+                        {t("monthly")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "disabled")}>
-                        معطل
+                        {t("disabled")}
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
               <div className="space-y-4 pt-4">
-                <Button variant="secondary">إجراء نسخ احتياطي الآن</Button>
-                <Button variant="outline">استعادة من نسخة احتياطية</Button>
+                <Button variant="secondary">{t("backupNow")}</Button>
+                <Button variant="outline">{t("restoreFromBackup")}</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sms" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("smsProvider")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                {t("smsProviderDesc")}
+              </p>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="smsProvider">{t("smsProviderSelect")}</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        {smsSettings.provider === "twilio" ? t("twilioProvider") : t("nexmoProvider")}
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56">
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem onClick={() => handleSmsChange("provider", "twilio")}>
+                          {t("twilioProvider")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSmsChange("provider", "nexmo")}>
+                          {t("nexmoProvider")}
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="smsApiKey">{t("smsApiKey")}</Label>
+                    <Input
+                      id="smsApiKey"
+                      value={smsSettings.apiKey}
+                      onChange={(e) => handleSmsChange("apiKey", e.target.value)}
+                      placeholder="xxxxxxxxxxxxxxxxxxxx"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="smsApiSecret">{t("smsApiSecret")}</Label>
+                    <Input
+                      id="smsApiSecret"
+                      type="password"
+                      value={smsSettings.apiSecret}
+                      onChange={(e) => handleSmsChange("apiSecret", e.target.value)}
+                      placeholder="••••••••••••••••••••"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="smsFromNumber">{t("smsFromNumber")}</Label>
+                  <Input
+                    id="smsFromNumber"
+                    value={smsSettings.fromNumber}
+                    onChange={(e) => handleSmsChange("fromNumber", e.target.value)}
+                    placeholder="+972xxxxxxxxx"
+                  />
+                </div>
+                
+                <div className="border-t pt-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="smsTestMessage">{t("smsTestMessage")}</Label>
+                    <div className="flex space-x-2">
+                      <Input
+                        id="smsTestMessage"
+                        value={smsSettings.testMessage}
+                        onChange={(e) => handleSmsChange("testMessage", e.target.value)}
+                        placeholder="Enter a test message"
+                        className="flex-1"
+                      />
+                      <Button onClick={sendTestMessage} type="button">
+                        <Send className="mr-2 h-4 w-4" />
+                        {t("smsTestMessage")}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
