@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,7 +124,7 @@ export default function Settings() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="w-full justify-between">
-                        {settings.language === "ar" ? "עברית" : "English"}
+                        {settings.language === "he" ? "עברית" : "English"}
                         <ChevronDown className="h-4 w-4 opacity-50" />
                       </Button>
                     </DropdownMenuTrigger>

@@ -98,7 +98,7 @@ const en = {
   activeMembers: "Active Members",
   todayCheckIns: "Today's Check-ins",
   monthlyRevenue: "Monthly Revenue",
-  riyal: "ILS", // Already using ILS symbol
+  riyal: "₪", // Using the Shekel symbol
   newSubscriptions: "New Subscriptions",
   totalDebts: "Total Debts",
   totalReceipts: "Total Receipts",
@@ -189,7 +189,7 @@ const en = {
   thursday: "Thursday",
   friday: "Friday",
   saturday: "Saturday",
-  paymentsTitle: "Payments",
+  // Fixed duplicate property - removed duplicate "paymentsTitle"
   paymentsDesc: "Manage and track member payments at your gym",
   searchPayments: "Search in payments...",
   filter: "Filter",
@@ -202,7 +202,7 @@ const en = {
   noPaymentsFound: "No payments found",
   newPayment: "New Payment",
   newPaymentDesc: "Enter payment details below",
-  amountInRiyal: "Amount (ILS)",
+  amountInRiyal: "Amount (₪)",
   subscriptionFees: "Subscription fees, renewal, etc.",
   invoiceError: "Error generating PDF",
   invoiceErrorDesc: "Please try again later",

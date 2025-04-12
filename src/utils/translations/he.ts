@@ -189,7 +189,7 @@ const he = {
   thursday: "חמישי",
   friday: "שישי",
   saturday: "שבת",
-  paymentsTitle: "תשלומים",
+  // Fixed duplicate property - removed duplicate "paymentsTitle"
   paymentsDesc: "ניהול ומעקב אחר תשלומי חברים במכון",
   searchPayments: "חפש בתשלומים...",
   filter: "סינון",
