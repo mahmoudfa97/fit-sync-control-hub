@@ -35,6 +35,7 @@ import { Plus, Search } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addAccessCard, revokeAccess, reactivateAccess } from "@/store/slices/accessControlSlice";
 import { accessLevels } from "@/components/members/MembershipTypes";
+import { t } from "@/utils/translations";
 
 export default function AccessControl() {
   const dispatch = useAppDispatch();
@@ -58,13 +59,13 @@ export default function AccessControl() {
   
   const handleAddCard = () => {
     if (!newCard.memberId || !newCard.cardNumber) {
-      toast.error(".נא למלא את כל השדות הנדרשים");
+      toast.error(t("fillRequired"));
       return;
     }
     
     const member = members.find((m) => m.id === newCard.memberId);
     if (!member) {
-      toast.error("العضو غير موجود");
+      toast.error(t("memberNotFound"));
       return;
     }
     
@@ -72,7 +73,7 @@ export default function AccessControl() {
       (card) => card.cardNumber === newCard.cardNumber
     );
     if (cardExists) {
-      toast.error("رقم البطاقة مستخدم بالفعل");
+      toast.error(t("cardAlreadyExists"));
       return;
     }
     
@@ -87,7 +88,7 @@ export default function AccessControl() {
       })
     );
     
-    toast.success("تمت إضافة بطاقة الوصول بنجاح");
+    toast.success(t("accessCardAdded"));
     setNewCard({
       memberId: "",
       cardNumber: "",
@@ -99,26 +100,26 @@ export default function AccessControl() {
   
   const getMemberName = (memberId: string) => {
     const member = members.find((m) => m.id === memberId);
-    return member ? member.name : "غير معروف";
+    return member ? member.name : t("memberNotFound");
   };
   
   const handleRevokeAccess = (cardId: string) => {
     dispatch(revokeAccess(cardId));
-    toast.success("تم إلغاء الوصول بنجاح");
+    toast.success(t("accessRevoked"));
   };
   
   const handleReactivateAccess = (cardId: string) => {
     dispatch(reactivateAccess(cardId));
-    toast.success("تم إعادة تفعيل الوصول بنجاح");
+    toast.success(t("accessReactivated"));
   };
   
   return (
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">التحكم بالوصول</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("accessControl")}</h1>
           <p className="text-muted-foreground">
-            إدارة بطاقات الوصول وأذونات الدخول للصالة
+            {t("accessControlDesc")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -126,7 +127,7 @@ export default function AccessControl() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="البحث عن بطاقة أو عضو..."
+              placeholder={t("searchCardOrMember")}
               className="pl-8 w-full md:w-[300px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,25 +135,25 @@ export default function AccessControl() {
           </div>
           <Button onClick={() => setAddCardOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            إضافة بطاقة وصول
+            {t("addAccessCard")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>بطاقات الوصول</CardTitle>
+          <CardTitle>{t("accessCards")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>رقم البطاقة</TableHead>
-                <TableHead>اسم العضو</TableHead>
-                <TableHead>مستوى الوصول</TableHead>
-                <TableHead>تاريخ الإصدار</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead className="text-right">إجراءات</TableHead>
+                <TableHead>{t("cardNumber")}</TableHead>
+                <TableHead>{t("memberName")}</TableHead>
+                <TableHead>{t("accessLevel")}</TableHead>
+                <TableHead>{t("issueDate")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                <TableHead className="text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,22 +163,19 @@ export default function AccessControl() {
                     <TableCell className="font-medium">{card.cardNumber}</TableCell>
                     <TableCell>{getMemberName(card.memberId)}</TableCell>
                     <TableCell>
-                      {card.accessLevel === "standard" && "قياسي"}
-                      {card.accessLevel === "premium" && "متميز"}
-                      {card.accessLevel === "vip" && "كبار الشخصيات"}
-                      {card.accessLevel === "staff" && "موظف"}
+                      {t(card.accessLevel)}
                     </TableCell>
                     <TableCell>
-                      {new Date(card.issueDate).toLocaleDateString("ar-SA")}
+                      {new Date(card.issueDate).toLocaleDateString("he-IL")}
                     </TableCell>
                     <TableCell>
                       {card.isActive ? (
                         <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
-                          نشط
+                          {t("active")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
-                          ملغي
+                          {t("inactive")}
                         </Badge>
                       )}
                     </TableCell>
@@ -189,7 +187,7 @@ export default function AccessControl() {
                           className="text-destructive"
                           onClick={() => handleRevokeAccess(card.id)}
                         >
-                          إلغاء الوصول
+                          {t("revokeAccess")}
                         </Button>
                       ) : (
                         <Button
@@ -197,7 +195,7 @@ export default function AccessControl() {
                           size="sm"
                           onClick={() => handleReactivateAccess(card.id)}
                         >
-                          إعادة تفعيل
+                          {t("reactivate")}
                         </Button>
                       )}
                     </TableCell>
@@ -206,7 +204,7 @@ export default function AccessControl() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    لم يتم العثور على بطاقات وصول.
+                    {t("noCheckIns")}
                   </TableCell>
                 </TableRow>
               )}
@@ -218,20 +216,20 @@ export default function AccessControl() {
       <Dialog open={addCardOpen} onOpenChange={setAddCardOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>إضافة بطاقة وصول جديدة</DialogTitle>
+            <DialogTitle>{t("newAccessCard")}</DialogTitle>
             <DialogDescription>
-              أدخل معلومات بطاقة الوصول للعضو.
+              {t("newAccessCardDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="memberId">العضو</Label>
+              <Label htmlFor="memberId">{t("memberName")}</Label>
               <Select
                 value={newCard.memberId}
                 onValueChange={(value) => setNewCard({ ...newCard, memberId: value })}
               >
                 <SelectTrigger id="memberId">
-                  <SelectValue placeholder="اختر العضو" />
+                  <SelectValue placeholder={t("chooseMember")} />
                 </SelectTrigger>
                 <SelectContent>
                   {members.map((member) => (
@@ -243,35 +241,35 @@ export default function AccessControl() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="cardNumber">رقم البطاقة</Label>
+              <Label htmlFor="cardNumber">{t("cardNumber")}</Label>
               <Input
                 id="cardNumber"
-                placeholder="أدخل رقم البطاقة"
+                placeholder={t("cardNumber")}
                 value={newCard.cardNumber}
                 onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="accessLevel">مستوى الوصول</Label>
+              <Label htmlFor="accessLevel">{t("accessLevel")}</Label>
               <Select
                 value={newCard.accessLevel}
                 onValueChange={(value: "standard" | "premium" | "vip" | "staff") => 
                   setNewCard({ ...newCard, accessLevel: value })}
               >
                 <SelectTrigger id="accessLevel">
-                  <SelectValue placeholder="اختر مستوى الوصول" />
+                  <SelectValue placeholder={t("chooseLevel")} />
                 </SelectTrigger>
                 <SelectContent>
                   {accessLevels.map((level) => (
                     <SelectItem key={level.value} value={level.value}>
-                      {level.label}
+                      {t(level.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">نشط</Label>
+              <Label htmlFor="isActive">{t("isActive")}</Label>
               <Switch
                 id="isActive"
                 checked={newCard.isActive}
@@ -281,9 +279,9 @@ export default function AccessControl() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddCardOpen(false)}>
-              إلغاء
+              {t("cancel")}
             </Button>
-            <Button onClick={handleAddCard}>إضافة البطاقة</Button>
+            <Button onClick={handleAddCard}>{t("addCard")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

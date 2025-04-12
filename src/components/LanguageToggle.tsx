@@ -6,17 +6,17 @@ import { t } from "@/utils/translations";
 
 export function LanguageToggle() {
   // Initialize language handling
-  useLanguage();
+  const currentLanguage = useLanguage();
   
   return (
     <Toggle 
       variant="outline" 
       aria-label="מחוון שפה עברית"
-      pressed={true}
+      pressed={currentLanguage === "he"}
       className="flex items-center gap-2"
     >
       <Globe className="h-4 w-4" />
-      <span className="hidden md:inline">שפה</span>
+      <span className="hidden md:inline">{t("language")}</span>
     </Toggle>
   );
 }

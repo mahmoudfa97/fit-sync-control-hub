@@ -34,15 +34,16 @@ import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addClass, cancelClass, reactivateClass } from "@/store/slices/classesSlice";
+import { t } from "@/utils/translations";
 
 const weekdays = [
-  { value: "sunday", label: "الأحد" },
-  { value: "monday", label: "الإثنين" },
-  { value: "tuesday", label: "الثلاثاء" },
-  { value: "wednesday", label: "الأربعاء" },
-  { value: "thursday", label: "الخميس" },
-  { value: "friday", label: "الجمعة" },
-  { value: "saturday", label: "السبت" },
+  { value: "sunday", label: t("sunday") },
+  { value: "monday", label: t("monday") },
+  { value: "tuesday", label: t("tuesday") },
+  { value: "wednesday", label: t("wednesday") },
+  { value: "thursday", label: t("thursday") },
+  { value: "friday", label: t("friday") },
+  { value: "saturday", label: t("saturday") },
 ];
 
 export default function Classes() {
@@ -71,13 +72,13 @@ export default function Classes() {
   
   const handleAddClass = () => {
     if (!newClass.name || !newClass.trainerId) {
-      toast.error("يرجى تعبئة جميع الحقول المطلوبة");
+      toast.error(t("fillAllRequired"));
       return;
     }
     
     const trainer = staff.find((s) => s.id === newClass.trainerId);
     if (!trainer) {
-      toast.error("المدرب غير موجود");
+      toast.error(t("trainerNotFound"));
       return;
     }
     
@@ -98,7 +99,7 @@ export default function Classes() {
       })
     );
     
-    toast.success("تمت إضافة الحصة بنجاح");
+    toast.success(t("classAdded"));
     setNewClass({
       name: "",
       trainerId: "",
@@ -118,31 +119,26 @@ export default function Classes() {
   };
   
   const getLevelName = (level: string) => {
-    switch (level) {
-      case "beginner": return "مبتدئ";
-      case "intermediate": return "متوسط";
-      case "advanced": return "متقدم";
-      default: return level;
-    }
+    return t(level);
   };
   
   const handleCancelClass = (classId: string) => {
     dispatch(cancelClass(classId));
-    toast.success("تم إلغاء الحصة بنجاح");
+    toast.success(t("classCanceled"));
   };
   
   const handleReactivateClass = (classId: string) => {
     dispatch(reactivateClass(classId));
-    toast.success("تم إعادة تفعيل الحصة بنجاح");
+    toast.success(t("classReactivated"));
   };
   
   return (
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">الحصص</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("classesTitle")}</h1>
           <p className="text-muted-foreground">
-            إدارة وجدولة الحصص والفعاليات في الصالة الرياضية
+            {t("classesDesc")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -150,7 +146,7 @@ export default function Classes() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="البحث عن حصة أو مدرب..."
+              placeholder={t("searchClassOrTrainer")}
               className="pl-8 w-full md:w-[300px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -158,27 +154,27 @@ export default function Classes() {
           </div>
           <Button onClick={() => setAddClassOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            إضافة حصة
+            {t("addClass")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>جدول الحصص</CardTitle>
+          <CardTitle>{t("classSchedule")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>اسم الحصة</TableHead>
-                <TableHead>المدرب</TableHead>
-                <TableHead>اليوم</TableHead>
-                <TableHead>الوقت</TableHead>
-                <TableHead>المستوى</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>التسجيل</TableHead>
-                <TableHead className="text-right">إجراءات</TableHead>
+                <TableHead>{t("className")}</TableHead>
+                <TableHead>{t("trainer")}</TableHead>
+                <TableHead>{t("day")}</TableHead>
+                <TableHead>{t("time")}</TableHead>
+                <TableHead>{t("level")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                <TableHead>{t("enrollment")}</TableHead>
+                <TableHead className="text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -193,11 +189,11 @@ export default function Classes() {
                     <TableCell>
                       {gymClass.status === "active" ? (
                         <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
-                          نشط
+                          {t("active")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
-                          ملغي
+                          {t("inactive")}
                         </Badge>
                       )}
                     </TableCell>
@@ -210,7 +206,7 @@ export default function Classes() {
                           className="text-destructive"
                           onClick={() => handleCancelClass(gymClass.id)}
                         >
-                          إلغاء الحصة
+                          {t("removeClass")}
                         </Button>
                       ) : (
                         <Button
@@ -218,7 +214,7 @@ export default function Classes() {
                           size="sm"
                           onClick={() => handleReactivateClass(gymClass.id)}
                         >
-                          إعادة تفعيل
+                          {t("reactivateClass")}
                         </Button>
                       )}
                     </TableCell>
@@ -227,7 +223,7 @@ export default function Classes() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
-                    لم يتم العثور على حصص.
+                    {t("noCheckIns")}
                   </TableCell>
                 </TableRow>
               )}
@@ -239,33 +235,33 @@ export default function Classes() {
       <Dialog open={addClassOpen} onOpenChange={setAddClassOpen}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
-            <DialogTitle>إضافة حصة جديدة</DialogTitle>
+            <DialogTitle>{t("newClass")}</DialogTitle>
             <DialogDescription>
-              أدخل معلومات الحصة الجديدة.
+              {t("newClassDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">اسم الحصة</Label>
+              <Label htmlFor="name">{t("className")}</Label>
               <Input
                 id="name"
-                placeholder="أدخل اسم الحصة"
+                placeholder={t("enterClassName")}
                 value={newClass.name}
                 onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="trainerId">المدرب</Label>
+              <Label htmlFor="trainerId">{t("trainer")}</Label>
               <Select
                 value={newClass.trainerId}
                 onValueChange={(value) => setNewClass({ ...newClass, trainerId: value })}
               >
                 <SelectTrigger id="trainerId">
-                  <SelectValue placeholder="اختر المدرب" />
+                  <SelectValue placeholder={t("chooseTrainer")} />
                 </SelectTrigger>
                 <SelectContent>
                   {staff
-                    .filter((s) => s.department === "التدريب")
+                    .filter((s) => s.department === "התדריב")
                     .map((trainer) => (
                       <SelectItem key={trainer.id} value={trainer.id}>
                         {trainer.name}
@@ -276,13 +272,13 @@ export default function Classes() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="dayOfWeek">اليوم</Label>
+                <Label htmlFor="dayOfWeek">{t("day")}</Label>
                 <Select
                   value={newClass.dayOfWeek}
                   onValueChange={(value) => setNewClass({ ...newClass, dayOfWeek: value })}
                 >
                   <SelectTrigger id="dayOfWeek">
-                    <SelectValue placeholder="اختر اليوم" />
+                    <SelectValue placeholder={t("chooseDay")} />
                   </SelectTrigger>
                   <SelectContent>
                     {weekdays.map((day) => (
@@ -294,26 +290,26 @@ export default function Classes() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="level">المستوى</Label>
+                <Label htmlFor="level">{t("level")}</Label>
                 <Select
                   value={newClass.level}
                   onValueChange={(value: "beginner" | "intermediate" | "advanced") => 
                     setNewClass({ ...newClass, level: value })}
                 >
                   <SelectTrigger id="level">
-                    <SelectValue placeholder="اختر المستوى" />
+                    <SelectValue placeholder={t("chooseLevel")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">مبتدئ</SelectItem>
-                    <SelectItem value="intermediate">متوسط</SelectItem>
-                    <SelectItem value="advanced">متقدم</SelectItem>
+                    <SelectItem value="beginner">{t("beginner")}</SelectItem>
+                    <SelectItem value="intermediate">{t("intermediate")}</SelectItem>
+                    <SelectItem value="advanced">{t("advanced")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="startTime">وقت البدء</Label>
+                <Label htmlFor="startTime">{t("startTime")}</Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -322,7 +318,7 @@ export default function Classes() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="endTime">وقت الانتهاء</Label>
+                <Label htmlFor="endTime">{t("endTime")}</Label>
                 <Input
                   id="endTime"
                   type="time"
@@ -332,7 +328,7 @@ export default function Classes() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="maxCapacity">الحد الأقصى للمشاركين</Label>
+              <Label htmlFor="maxCapacity">{t("maxParticipants")}</Label>
               <Input
                 id="maxCapacity"
                 type="number"
@@ -341,10 +337,10 @@ export default function Classes() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">الوصف</Label>
+              <Label htmlFor="description">{t("classDescription")}</Label>
               <Textarea
                 id="description"
-                placeholder="أدخل وصفاً للحصة"
+                placeholder={t("enterClassDesc")}
                 value={newClass.description}
                 onChange={(e) => setNewClass({ ...newClass, description: e.target.value })}
               />
@@ -352,9 +348,9 @@ export default function Classes() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddClassOpen(false)}>
-              إلغاء
+              {t("cancel")}
             </Button>
-            <Button onClick={handleAddClass}>إضافة الحصة</Button>
+            <Button onClick={handleAddClass}>{t("addClass")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -54,19 +54,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addPayment, filterPaymentsByMember, filterPaymentsByStatus } from "@/store/slices/paymentsSlice";
 import { paymentStatusStyles, paymentStatusLabels } from "@/components/members/StatusBadges";
+import { t } from "@/utils/translations";
 
 const paymentMethodIcons = {
   card: <CreditCard className="h-4 w-4" />,
   cash: <Wallet className="h-4 w-4" />,
   bank: <CreditCard className="h-4 w-4" />,
   other: <CreditCard className="h-4 w-4" />,
-};
-
-const paymentMethodLabels = {
-  card: "بطاقة ائتمان",
-  cash: "نقدي",
-  bank: "تحويل بنكي",
-  other: "أخرى",
 };
 
 export default function Payments() {
@@ -101,8 +95,8 @@ export default function Payments() {
   const handleAddPayment = () => {
     if (!newPayment.memberId || !newPayment.amount || isNaN(Number(newPayment.amount))) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى إدخال عضو ومبلغ صالح",
+        title: t("invoiceError"),
+        description: t("fillAllRequired"),
         variant: "destructive",
       });
       return;
@@ -112,15 +106,16 @@ export default function Payments() {
     
     if (!member) {
       toast({
-        title: "خطأ",
-        description: "لم يتم العثور على العضو",
+        title: t("invoiceError"),
+        description: t("memberNotFound"),
         variant: "destructive",
       });
       return;
     }
     
     const today = new Date();
-    const paymentDateStr = `${today.getDate()} ${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][today.getMonth()]}، ${today.getFullYear()}`;
+    const hebrewMonths = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+    const paymentDateStr = `${today.getDate()} ${hebrewMonths[today.getMonth()]}, ${today.getFullYear()}`;
     
     dispatch(
       addPayment({
@@ -129,11 +124,11 @@ export default function Payments() {
         memberName: member.name,
         memberInitials: member.initials,
         amount: Number(newPayment.amount),
-        currency: 'ريال',
+        currency: t("riyal"),
         paymentMethod: newPayment.paymentMethod,
         paymentDate: paymentDateStr,
         status: newPayment.status,
-        description: newPayment.description || 'رسوم اشتراك',
+        description: newPayment.description || t("subscriptionFees"),
         receiptNumber: `REC-${Math.floor(1000 + Math.random() * 9000)}`,
         date: new Date().toISOString(), // For backward compatibility
         type: 'membership', // For backward compatibility
@@ -143,8 +138,8 @@ export default function Payments() {
     );
     
     toast({
-      title: "تم إضافة الدفعة بنجاح",
-      description: `تمت إضافة دفعة بقيمة ${newPayment.amount} ريال لـ ${member.name}`,
+      title: t("invoiceSuccess"),
+      description: `${t("addPayment")} ${newPayment.amount} ${t("riyal")} ${t("for")} ${member.name}`,
     });
     
     setNewPayment({
@@ -162,9 +157,9 @@ export default function Payments() {
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">المدفوعات</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("paymentsTitle")}</h1>
           <p className="text-muted-foreground">
-            إدارة ومتابعة مدفوعات الأعضاء في صالتك الرياضية.
+            {t("paymentsDesc")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -172,7 +167,7 @@ export default function Payments() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="البحث في المدفوعات..."
+              placeholder={t("searchPayments")}
               className="pl-8 w-full md:w-[300px]"
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
@@ -182,40 +177,40 @@ export default function Payments() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
-                <span className="sr-only">فلترة</span>
+                <span className="sr-only">{t("filter")}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => handleFilterChange(null)}>
-                  جميع المدفوعات
+                  {t("allPayments")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleFilterChange("paid")}>
-                  المدفوعات المكتملة
+                  {t("completedPayments")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleFilterChange("pending")}>
-                  المدفوعات المعلقة
+                  {t("pendingPayments")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleFilterChange("overdue")}>
-                  المدفوعات المتأخرة
+                  {t("overduePayments")}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button onClick={() => setAddPaymentOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            إضافة دفعة
+            {t("addPayment")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>سجل المدفوعات</CardTitle>
+          <CardTitle>{t("paymentLog")}</CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon">
               <Download className="h-4 w-4" />
-              <span className="sr-only">تنزيل CSV</span>
+              <span className="sr-only">{t("downloadCSV")}</span>
             </Button>
           </div>
         </CardHeader>
@@ -223,13 +218,13 @@ export default function Payments() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">العضو</TableHead>
-                <TableHead>المبلغ</TableHead>
-                <TableHead>طريقة الدفع</TableHead>
-                <TableHead>التاريخ</TableHead>
-                <TableHead>الوصف</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead className="text-right">رقم الإيصال</TableHead>
+                <TableHead className="w-[200px]">{t("memberName")}</TableHead>
+                <TableHead>{t("amount")}</TableHead>
+                <TableHead>{t("paymentMethod")}</TableHead>
+                <TableHead>{t("date")}</TableHead>
+                <TableHead>{t("description")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                <TableHead className="text-right">{t("receiptNumber")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -250,7 +245,7 @@ export default function Payments() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         {paymentMethodIcons[payment.paymentMethod]}
-                        <span>{paymentMethodLabels[payment.paymentMethod]}</span>
+                        <span>{t(payment.paymentMethod)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -261,7 +256,7 @@ export default function Payments() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={paymentStatusStyles[payment.status]}>
-                        {paymentStatusLabels[payment.status]}
+                        {t(payment.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
@@ -272,7 +267,7 @@ export default function Payments() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
-                    لم يتم العثور على مدفوعات.
+                    {t("noPaymentsFound")}
                   </TableCell>
                 </TableRow>
               )}
@@ -285,20 +280,20 @@ export default function Payments() {
       <Dialog open={addPaymentOpen} onOpenChange={setAddPaymentOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>إضافة دفعة جديدة</DialogTitle>
+            <DialogTitle>{t("newPayment")}</DialogTitle>
             <DialogDescription>
-              أدخل تفاصيل المدفوعات أدناه.
+              {t("newPaymentDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="member">العضو</Label>
+              <Label htmlFor="member">{t("memberName")}</Label>
               <Select
                 value={newPayment.memberId}
                 onValueChange={(value) => setNewPayment({...newPayment, memberId: value})}
               >
                 <SelectTrigger id="member">
-                  <SelectValue placeholder="اختر العضو" />
+                  <SelectValue placeholder={t("chooseMember")} />
                 </SelectTrigger>
                 <SelectContent>
                   {members.map((member) => (
@@ -310,7 +305,7 @@ export default function Payments() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="amount">المبلغ (ريال)</Label>
+              <Label htmlFor="amount">{t("amountInRiyal")}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -320,7 +315,7 @@ export default function Payments() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="paymentMethod">طريقة الدفع</Label>
+              <Label htmlFor="paymentMethod">{t("paymentMethod")}</Label>
               <Select
                 value={newPayment.paymentMethod}
                 onValueChange={(value: "card" | "cash" | "bank" | "other") => 
@@ -328,18 +323,18 @@ export default function Payments() {
                 }
               >
                 <SelectTrigger id="paymentMethod">
-                  <SelectValue placeholder="اختر طريقة الدفع" />
+                  <SelectValue placeholder={t("paymentMethod")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">نقدي</SelectItem>
-                  <SelectItem value="card">بطاقة ائتمان</SelectItem>
-                  <SelectItem value="bank">تحويل بنكي</SelectItem>
-                  <SelectItem value="other">أخرى</SelectItem>
+                  <SelectItem value="cash">{t("cash")}</SelectItem>
+                  <SelectItem value="card">{t("card")}</SelectItem>
+                  <SelectItem value="bank">{t("bank")}</SelectItem>
+                  <SelectItem value="other">{t("other")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="status">الحالة</Label>
+              <Label htmlFor="status">{t("status")}</Label>
               <Select
                 value={newPayment.status}
                 onValueChange={(value: "paid" | "pending" | "overdue" | "canceled") => 
@@ -347,21 +342,21 @@ export default function Payments() {
                 }
               >
                 <SelectTrigger id="status">
-                  <SelectValue placeholder="اختر الحالة" />
+                  <SelectValue placeholder={t("status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="paid">مدفوع</SelectItem>
-                  <SelectItem value="pending">معلق</SelectItem>
-                  <SelectItem value="overdue">متأخر</SelectItem>
-                  <SelectItem value="canceled">ملغي</SelectItem>
+                  <SelectItem value="paid">{t("paid")}</SelectItem>
+                  <SelectItem value="pending">{t("pending")}</SelectItem>
+                  <SelectItem value="overdue">{t("overdue")}</SelectItem>
+                  <SelectItem value="canceled">{t("canceled")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">الوصف</Label>
+              <Label htmlFor="description">{t("description")}</Label>
               <Input
                 id="description"
-                placeholder="رسوم اشتراك، تجديد، إلخ."
+                placeholder={t("subscriptionFees")}
                 value={newPayment.description}
                 onChange={(e) => setNewPayment({...newPayment, description: e.target.value})}
               />
@@ -369,10 +364,10 @@ export default function Payments() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddPaymentOpen(false)}>
-              إلغاء
+              {t("cancel")}
             </Button>
             <Button onClick={handleAddPayment}>
-              إضافة دفعة
+              {t("addPayment")}
             </Button>
           </DialogFooter>
         </DialogContent>
