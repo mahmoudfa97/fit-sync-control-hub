@@ -72,7 +72,6 @@ export const translations = {
     showProfile: "Show Profile",
     today: "Today",
     yesterday: "Yesterday",
-    daysAgo: "days ago",
     payments: "Payments",
     refund: "Refund",
     updateStatus: "Update Status",
@@ -229,7 +228,8 @@ export const translations = {
     minutesAgo: "{time} minutes ago",
     hoursAgo: "{time} hours ago",
     dayAgo: "1 day ago",
-    daysAgo: "{time} days ago"
+    daysAgo: "{time} days ago",
+    for: "for"
   },
   he: {
     dashboard_menu: "לוח בקרה",
@@ -455,7 +455,8 @@ export const translations = {
     minutesAgo: "לפני {time} דקות",
     hoursAgo: "לפני {time} שעות",
     dayAgo: "לפני יום",
-    daysAgo: "לפני {time} ימים"
+    daysAgo: "לפני {time} ימים",
+    for: "עבור"
   },
 };
 
