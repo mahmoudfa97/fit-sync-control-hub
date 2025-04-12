@@ -217,14 +217,14 @@ i18next
     }
   });
 
-// Export the translation function
+// Export the translation function with the correct return type
 export const t = (key: string): string => {
-  return i18next.t(key);
+  return i18next.t(key).toString();
 };
 
-// Export the format translation function
+// Export the format translation function with the correct return type
 export const tFormat = (key: string, options: Record<string, any>): string => {
-  return i18next.t(key, options);
+  return i18next.t(key, options).toString();
 };
 
 export default i18next;
