@@ -19,14 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { membershipTypes } from "./MembershipTypes";
+import { Member } from "@/store/slices/membersSlice";
 
 interface NewMemberForm {
   name: string;
   email: string;
   phone: string;
   membershipType: string;
-  status: "active" | "inactive" | "pending" | "expired";
-  paymentStatus: "paid" | "overdue" | "pending";
+  status: Member['status'];
+  paymentStatus: Member['paymentStatus'];
 }
 
 interface AddMemberDialogProps {
@@ -104,7 +105,7 @@ export const AddMemberDialog = ({
             <Label htmlFor="status">الحالة</Label>
             <Select
               value={newMember.status}
-              onValueChange={(value: "active" | "inactive" | "pending" | "expired") => 
+              onValueChange={(value: Member['status']) => 
                 setNewMember({...newMember, status: value})
               }
             >
@@ -123,7 +124,7 @@ export const AddMemberDialog = ({
             <Label htmlFor="paymentStatus">حالة الدفع</Label>
             <Select
               value={newMember.paymentStatus}
-              onValueChange={(value: "paid" | "overdue" | "pending") => 
+              onValueChange={(value: Member['paymentStatus']) => 
                 setNewMember({...newMember, paymentStatus: value})
               }
             >
@@ -134,6 +135,7 @@ export const AddMemberDialog = ({
                 <SelectItem value="paid">مدفوع</SelectItem>
                 <SelectItem value="pending">معلق</SelectItem>
                 <SelectItem value="overdue">متأخر</SelectItem>
+                <SelectItem value="canceled">ملغى</SelectItem>
               </SelectContent>
             </Select>
           </div>

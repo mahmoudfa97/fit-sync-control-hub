@@ -16,7 +16,7 @@ export function LanguageToggle() {
       className="flex items-center gap-2"
     >
       <Globe className="h-4 w-4" />
-      <span className="hidden md:inline">{t("language")}</span>
+      <span className="hidden md:inline">שפה</span>
     </Toggle>
   );
 }

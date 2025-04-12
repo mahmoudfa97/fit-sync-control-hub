@@ -218,12 +218,12 @@ i18next
   });
 
 // Export the translation function
-export const t = (key: string) => {
+export const t = (key: string): string => {
   return i18next.t(key);
 };
 
 // Export the format translation function
-export const tFormat = (key: string, options: object) => {
+export const tFormat = (key: string, options: Record<string, any>): string => {
   return i18next.t(key, options);
 };
 

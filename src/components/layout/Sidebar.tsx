@@ -17,7 +17,7 @@ import {
   LogOut,
   FileText
 } from "lucide-react";
-import t from "@/utils/translations";
+import { t } from "@/utils/translations";
 
 interface NavItemProps {
   icon: React.ElementType;
