@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface Member {
@@ -152,7 +151,7 @@ const initialMembers: Member[] = [
 
 const initialState: MembersState = {
   members: initialMembers,
-  filteredMembers: [],
+  filteredMembers: initialMembers,
   searchQuery: '',
   filterStatus: null,
 };
@@ -202,9 +201,18 @@ export const membersSlice = createSlice({
         const minutes = now.getMinutes().toString().padStart(2, '0');
         state.members[index].lastCheckIn = `היום ${hours}:${minutes}`;
       }
-      state.filteredMembers = state.members.filter(member => 
-        !state.filterStatus || member.status === state.filterStatus
-      );
+      
+      const status = state.filterStatus;
+      const searchTerm = state.searchQuery;
+      
+      state.filteredMembers = state.members.filter(member => {
+        const matchesStatus = !status || member.status === status;
+        const matchesSearch = !searchTerm || 
+                           member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           member.email.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        return matchesStatus && matchesSearch;
+      });
     },
   },
 });

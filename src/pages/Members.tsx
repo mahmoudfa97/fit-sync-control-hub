@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addMember, filterMembers, recordCheckIn, Member } from "@/store/slices/membersSlice";
@@ -11,7 +11,7 @@ import { t } from "@/utils/translations";
 
 export default function Members() {
   const dispatch = useAppDispatch();
-  const { filteredMembers } = useAppSelector(state => state.members);
+  const { members, filteredMembers } = useAppSelector(state => state.members);
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,6 +24,11 @@ export default function Members() {
     status: "active" as Member['status'],
     paymentStatus: "paid" as Member['paymentStatus'],
   });
+  
+  // Initialize filtered members with all members on component mount
+  useEffect(() => {
+    dispatch(filterMembers({ status: null, searchTerm: "" }));
+  }, [dispatch]);
   
   const handleSearch = (term: string) => {
     setSearchTerm(term);
