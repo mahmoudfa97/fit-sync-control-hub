@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { addMember, filterMembers, recordCheckIn } from "@/store/slices/membersSlice";
+import { addMember, filterMembers, recordCheckIn, Member } from "@/store/slices/membersSlice";
 import { useToast } from "@/hooks/use-toast";
 import { MembersHeader } from "@/components/members/MembersHeader";
 import { MemberList } from "@/components/members/MemberList";
@@ -21,8 +21,8 @@ export default function Members() {
     email: "",
     phone: "",
     membershipType: "רגיל",
-    status: "active" as "active" | "inactive" | "pending" | "expired",
-    paymentStatus: "paid" as "paid" | "overdue" | "pending",
+    status: "active" as Member['status'],
+    paymentStatus: "paid" as Member['paymentStatus'],
   });
   
   const handleSearch = (term: string) => {
@@ -64,7 +64,7 @@ export default function Members() {
       lastCheckIn: "טרם נרשם",
       paymentStatus: newMember.paymentStatus,
       initials: initials,
-    };
+    } as Member;
     
     dispatch(addMember(memberToAdd));
     
@@ -78,8 +78,8 @@ export default function Members() {
       email: "",
       phone: "",
       membershipType: "רגיל",
-      status: "active",
-      paymentStatus: "paid",
+      status: "active" as Member['status'],
+      paymentStatus: "paid" as Member['paymentStatus'],
     });
     
     setAddMemberOpen(false);

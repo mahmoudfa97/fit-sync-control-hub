@@ -29,7 +29,10 @@ export const paymentStatusLabels = {
   canceled: "מבוטל"
 };
 
-export const StatusBadge = ({ status }: { status: keyof typeof statusStyles }) => (
+export type MemberStatus = keyof typeof statusStyles;
+export type PaymentStatus = keyof typeof paymentStatusStyles;
+
+export const StatusBadge = ({ status }: { status: MemberStatus }) => (
   <Badge variant="outline" className={statusStyles[status]}>
     {statusLabels[status]}
   </Badge>

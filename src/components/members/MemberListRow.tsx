@@ -12,7 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CalendarClock, ChevronDown } from "lucide-react";
-import { StatusBadge, paymentStatusStyles, paymentStatusLabels } from "./StatusBadges";
+import { 
+  StatusBadge, 
+  paymentStatusStyles, 
+  paymentStatusLabels,
+  MemberStatus,
+  PaymentStatus
+} from "./StatusBadges";
 import { Member } from "@/store/slices/membersSlice";
 
 interface MemberListRowProps {
@@ -47,7 +53,7 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
         </div>
       </TableCell>
       <TableCell>
-        <StatusBadge status={member.status} />
+        <StatusBadge status={member.status as MemberStatus} />
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
@@ -56,8 +62,8 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
         </div>
       </TableCell>
       <TableCell>
-        <span className={`font-medium ${paymentStatusStyles[member.paymentStatus]}`}>
-          {paymentStatusLabels[member.paymentStatus]}
+        <span className={`font-medium ${paymentStatusStyles[member.paymentStatus as PaymentStatus]}`}>
+          {paymentStatusLabels[member.paymentStatus as PaymentStatus]}
         </span>
       </TableCell>
       <TableCell className="text-right">

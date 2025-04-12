@@ -1,4 +1,5 @@
-import i18n from "i18next";
+
+import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from 'i18next-browser-languagedetector';
 
@@ -197,7 +198,7 @@ export const translations = {
   },
 };
 
-i18n
+i18next
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -216,4 +217,14 @@ i18n
     }
   });
 
-export default i18n;
+// Export the translation function
+export const t = (key: string) => {
+  return i18next.t(key);
+};
+
+// Export the format translation function
+export const tFormat = (key: string, options: object) => {
+  return i18next.t(key, options);
+};
+
+export default i18next;

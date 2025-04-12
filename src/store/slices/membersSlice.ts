@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface Member {
@@ -30,10 +31,10 @@ interface MembersState {
 const initialMembers: Member[] = [
   {
     id: "1",
-    name: "فراس علي شعبان",
+    name: "פראס עלי שעבאן",
     email: "firas@example.com",
     phone: "050-1234567",
-    initials: "فع",
+    initials: "פע",
     membershipType: "שנתי",
     joinDate: "10 ינואר, 2023",
     membershipEndDate: "2025-01-10",
