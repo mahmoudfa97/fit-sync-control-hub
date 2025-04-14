@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Banknote, Bank, Plus } from "lucide-react";
+import { Loader2, CreditCard, Banknote, Building, Plus } from "lucide-react";
 import { Member } from "@/store/slices/membersSlice";
 import { PaymentService, PaymentMethod } from "@/services/PaymentService";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +39,7 @@ const paymentSchema = z.object({
   memberId: z.string({
     required_error: "יש לבחור לקוח",
   }),
-  amount: z.string().min(1, { message: "יש להזין סכום" }).transform(Number),
+  amount: z.string().min(1, { message: "יש להזין סכום" }).transform(val => Number(val)),
   paymentMethod: z.string({
     required_error: "יש לבחור אמצעי תשלום",
   }),
@@ -134,7 +134,7 @@ export default function AddPaymentForm({
                     <SelectContent>
                       {members.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          {member.name} {member.lastName}
+                          {member.name} {member.lastName || member.last_name || ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -211,7 +211,7 @@ export default function AddPaymentForm({
                             {method.paymentType === 'card' ? (
                               <CreditCard className="mr-2 h-4 w-4" />
                             ) : method.paymentType === 'bank' ? (
-                              <Bank className="mr-2 h-4 w-4" />
+                              <Building className="mr-2 h-4 w-4" />
                             ) : (
                               <Banknote className="mr-2 h-4 w-4" />
                             )}

@@ -27,7 +27,7 @@ import { Switch } from "@/components/ui/switch";
 
 const cardPaymentMethodSchema = z.object({
   paymentType: z.literal('card'),
-  provider: z.string({
+  provider: z.enum(['visa', 'mastercard', 'other'], {
     required_error: "יש לבחור ספק כרטיס אשראי",
   }),
   lastFour: z.string().length(4, { message: "יש להזין 4 ספרות אחרונות" }),

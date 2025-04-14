@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardShell } from "@/components/layout/DashboardShell";
@@ -21,7 +20,7 @@ import {
 import {
   CreditCard,
   Banknote,
-  Bank,
+  Building,
   Plus,
   Filter,
   XCircle,
@@ -59,24 +58,20 @@ export default function Payments() {
   const [isAddPaymentMethodOpen, setIsAddPaymentMethodOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is logged in
   useEffect(() => {
     if (!session && !isLoading) {
       navigate("/auth");
     }
   }, [session, navigate, isLoading]);
 
-  // Fetch data when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch members
         const membersData = await MemberService.fetchMembers();
         setMembers(membersData);
 
         if (session) {
-          // Fetch payment methods
           const paymentMethodsData = await PaymentService.getPaymentMethods();
           setPaymentMethods(paymentMethodsData);
         }
@@ -95,19 +90,16 @@ export default function Payments() {
     fetchData();
   }, [session, toast]);
 
-  // Handle searching for payments
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     dispatch(filterPaymentsByMember(term));
   };
 
-  // Handle filtering payments by status
   const handleStatusFilter = (status: string | null) => {
     setStatusFilter(status);
     dispatch(filterPaymentsByStatus(status));
   };
 
-  // Refresh payment methods
   const refreshPaymentMethods = async () => {
     try {
       const paymentMethodsData = await PaymentService.getPaymentMethods();
@@ -231,7 +223,7 @@ export default function Payments() {
                             ) : payment.paymentMethod === "cash" ? (
                               <Banknote className="h-5 w-5 text-primary" />
                             ) : (
-                              <Bank className="h-5 w-5 text-primary" />
+                              <Building className="h-5 w-5 text-primary" />
                             )}
                           </div>
                           <div>
@@ -275,7 +267,6 @@ export default function Payments() {
         </div>
       </div>
 
-      {/* Add Payment Dialog */}
       <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -296,7 +287,6 @@ export default function Payments() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Payment Method Dialog */}
       <Dialog
         open={isAddPaymentMethodOpen}
         onOpenChange={setIsAddPaymentMethodOpen}
