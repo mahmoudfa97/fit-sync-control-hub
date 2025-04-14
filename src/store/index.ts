@@ -1,6 +1,6 @@
 
 import { configureStore } from '@reduxjs/toolkit';
-import membersReducer from './slices/membersSlice';
+import membersReducer from './slices/members';
 import checkInsReducer from './slices/checkInsSlice';
 import paymentsReducer from './slices/paymentsSlice';
 import classesReducer from './slices/classesSlice';
