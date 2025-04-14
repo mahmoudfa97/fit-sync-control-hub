@@ -144,7 +144,7 @@ export default function AccessControl() {
         <CardHeader>
           <CardTitle>{t("accessCards")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent dir="ltr" className="overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>

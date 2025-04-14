@@ -158,7 +158,7 @@ export default function Payments() {
                       <SelectValue placeholder="כל הסטטוסים" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל הסטטוסים</SelectItem>
+                      <SelectItem value="all">כל הסטטוסים</SelectItem>
                       <SelectItem value="paid">שולם</SelectItem>
                       <SelectItem value="pending">ממתין</SelectItem>
                       <SelectItem value="overdue">באיחור</SelectItem>

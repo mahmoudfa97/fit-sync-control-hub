@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { addMember, filterMembers, recordCheckIn, Member } from "@/store/slices/membersSlice";
+import { addMember, filterMembers, recordCheckIn, Member } from "@/store/slices/members/membersSlice";
 import { useToast } from "@/hooks/use-toast";
 import { MembersHeader } from "@/components/members/MembersHeader";
 import { MemberList } from "@/components/members/MemberList";

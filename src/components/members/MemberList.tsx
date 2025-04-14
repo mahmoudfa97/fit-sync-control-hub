@@ -19,7 +19,7 @@ import {
 import { ChevronDown, Download } from "lucide-react";
 import { MemberListRow } from "./MemberListRow";
 import { Member } from "@/store/slices/membersSlice";
-
+import {t} from "@/utils/translations";
 interface MemberListProps {
   members: Member[];
   onFilterChange: (status: string | null) => void;
@@ -43,11 +43,10 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
                 جميع الأعضاء
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onFilterChange("active")}>
-                الأعضاء النشطين
-              </DropdownMenuItem>
+              {t("activeMembers")}     
+                       </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onFilterChange("inactive")}>
-                الأعضاء غير النشطين
-              </DropdownMenuItem>
+              {t("inActiveMembers")}              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onFilterChange("expired")}>
                 العضويات المنتهية
               </DropdownMenuItem>
@@ -59,16 +58,16 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent dir="ltr" className="overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">العضو</TableHead>
-              <TableHead>العضوية</TableHead>
-              <TableHead>الحالة</TableHead>
-              <TableHead>آخر تسجيل حضور</TableHead>
-              <TableHead>الدفع</TableHead>
-              <TableHead className="text-right">إجراءات</TableHead>
+              <TableHead className="w-[250px]">{t("member")}</TableHead>
+              <TableHead>{t("membershipType")}</TableHead>
+              <TableHead>{t("status")}</TableHead>
+              <TableHead>{t("lastCheckIn")}</TableHead>
+              <TableHead>{t("paymentStatus")}</TableHead>
+              <TableHead className="text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

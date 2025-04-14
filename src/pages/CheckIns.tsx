@@ -32,7 +32,7 @@ import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addCheckIn } from "@/store/slices/checkInsSlice";
-import { recordCheckIn } from "@/store/slices/membersSlice";
+import { recordCheckIn } from "@/store/slices/members/membersSlice";
 import { t } from "@/utils/translations";
 import { CheckInService, CheckIn, Member } from "@/services/CheckInService";
 

@@ -25,10 +25,10 @@ export default function Settings() {
   const settings = useAppSelector((state) => state.settings);
   const [smsSettings, setSmsSettings] = useState({
     provider: "twilio",
-    apiKey: "",
-    apiSecret: "",
-    fromNumber: "",
-    testMessage: ""
+    apiKey: "ACa870fec19638ae914a50786ae817b296",
+    apiSecret: "c31e10506569f727c12ea511a9456cf1",
+    fromNumber: "+972522498402",
+    testMessage: "test2134"
   });
 
   const handleInputChange = (field, value) => {
@@ -475,3 +475,4 @@ export default function Settings() {
     </DashboardShell>
   );
 }
+ 
