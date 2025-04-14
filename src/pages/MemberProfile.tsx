@@ -24,49 +24,19 @@ import {
   CalendarClock,
   History,
   ClipboardList,
+  FileText,
 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { CreateMembershipModal } from "../components/members/create-membership-modal"
+import type { Tables } from "@/integrations/supabase/types"
 
-// Define interfaces for our data types
-interface Profile {
-  id: string
-  name: string
-  last_name: string
-  email: string
-  phone: string | null
-  avatar_url: string | null
-  created_at: string
-}
-
-interface Membership {
-  id: string
-  profile_id: string
-  membership_type: string
-  start_date: string
-  end_date: string | null
-  status: string
-  payment_status: string
-  created_at: string
-}
-
-interface CheckIn {
-  id: string
-  profile_id: string
-  check_in_time: string
-  notes: string | null
-}
-
-interface Payment {
-  id: string
-  profile_id: string
-  amount: number
-  payment_method: string
-  payment_date: string
-  status: string
-  description: string | null
-  receipt_number: string | null
-}
+// Use the types from your constants file
+type Profile = Tables<"profiles">
+type Membership = Tables<"memberships">
+type CheckIn = Tables<"checkins">
+type Payment = Tables<"payments">
+type AccessCard = Tables<"access_cards">
 
 export default function MemberProfile() {
   const { memberId } = useParams()
@@ -77,7 +47,9 @@ export default function MemberProfile() {
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
+  const [accessCards, setAccessCards] = useState<AccessCard[]>([])
   const [loading, setLoading] = useState(true)
+  const [isCreateMembershipOpen, setIsCreateMembershipOpen] = useState(false)
 
   // UI state
   const [activeTab, setActiveTab] = useState("memberships")
@@ -104,22 +76,21 @@ export default function MemberProfile() {
 
         setProfile(profileData)
 
-        // Fetch memberships
-        const { data: membershipsData, error: membershipsError } = await supabase
-          .from("memberships")
+        // Fetch access cards
+        const { data: accessCardsData, error: accessCardsError } = await supabase
+          .from("access_cards")
           .select("*")
-          .eq("profile_id", memberId)
-          .order("created_at", { ascending: false })
+          .eq("member_id", memberId)
 
-        if (membershipsError) throw membershipsError
+        if (accessCardsError) throw accessCardsError
 
-        setMemberships(membershipsData || [])
+        setAccessCards(accessCardsData || [])
 
         // Fetch check-ins
         const { data: checkInsData, error: checkInsError } = await supabase
           .from("checkins")
           .select("*")
-          .eq("profile_id", memberId)
+          .eq("member_id", memberId)
           .order("check_in_time", { ascending: false })
           .limit(10)
 
@@ -131,7 +102,7 @@ export default function MemberProfile() {
         const { data: paymentsData, error: paymentsError } = await supabase
           .from("payments")
           .select("*")
-          .eq("profile_id", memberId)
+          .eq("member_id", memberId)
           .order("payment_date", { ascending: false })
           .limit(10)
 
@@ -160,7 +131,7 @@ export default function MemberProfile() {
     async function fetchMemberships() {
       try {
         // Create base query
-        let query = supabase.from("memberships").select("*", { count: "exact" }).eq("profile_id", memberId)
+        let query = supabase.from("memberships").select("*", { count: "exact" }).eq("member_id", memberId)
 
         // Apply status filter
         if (currentFilter === "active") {
@@ -209,6 +180,8 @@ export default function MemberProfile() {
 
   // Format relative time (today, yesterday, or date)
   const formatRelativeTime = (dateStr: string) => {
+    if (!dateStr) return "-"
+
     const date = new Date(dateStr)
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
@@ -221,10 +194,84 @@ export default function MemberProfile() {
 
   // Format date and time
   const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return "-"
+
     const date = new Date(dateStr)
     const timeStr = date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
     const dateStr2 = date.toLocaleDateString("he-IL")
     return `${timeStr}, ${dateStr2}`
+  }
+
+  // Handle membership refresh/renewal
+  const handleRenewMembership = async (membershipId: string) => {
+    try {
+      const membership = memberships.find((m) => m.id === membershipId)
+      if (!membership) return
+
+      // Calculate new dates based on current membership
+      const startDate = new Date()
+      let endDate: Date | null = null
+
+      if (membership.end_date) {
+        const duration = new Date(membership.end_date).getTime() - new Date(membership.start_date).getTime()
+        endDate = new Date(startDate.getTime() + duration)
+      }
+
+      const { error } = await supabase.from("memberships").insert({
+        member_id: memberId as string,
+        membership_type: membership.membership_type,
+        start_date: startDate.toISOString(),
+        end_date: endDate ? endDate.toISOString() : null,
+        status: "active",
+        payment_status: "pending",
+      })
+
+      if (error) throw error
+
+      toast({
+        title: "המנוי חודש בהצלחה",
+        description: "נוצר מנוי חדש בהתבסס על המנוי הקודם",
+      })
+
+      // Refresh memberships list
+      fetchMemberships()
+    } catch (error: any) {
+      console.error("Error renewing membership:", error)
+      toast({
+        title: "שגיאה בחידוש המנוי",
+        description: error.message || "אירעה שגיאה בעת חידוש המנוי",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Function to fetch memberships (used after creating a new one)
+  const fetchMemberships = async () => {
+    try {
+      let query = supabase.from("memberships").select("*", { count: "exact" }).eq("member_id", memberId)
+
+      if (currentFilter === "active") {
+        query = query.eq("status", "active")
+      } else if (currentFilter === "inactive") {
+        query = query.neq("status", "active")
+      }
+
+      if (searchQuery) {
+        query = query.ilike("membership_type", `%${searchQuery}%`)
+      }
+
+      const from = (page - 1) * perPage
+      const to = from + perPage - 1
+
+      const { data, error, count } = await query.order("created_at", { ascending: false }).range(from, to)
+
+      if (error) throw error
+
+      setMemberships(data || [])
+      setTotalCount(count || 0)
+    } catch (error) {
+      console.error("Error fetching memberships:", error)
+    }
   }
 
   // If member not found, show error state
@@ -300,6 +347,15 @@ export default function MemberProfile() {
                       הנהלת חשבונות
                     </div>
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="profile"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      היסטוריית פניות
+                    </div>
+                  </TabsTrigger>
                 </TabsList>
 
                 <div className="p-6">
@@ -307,10 +363,7 @@ export default function MemberProfile() {
                     <Button
                       variant="default"
                       className="bg-primary text-white"
-                      onClick={() => {
-                        // Handle new membership creation
-                        // You could navigate to a form or open a modal
-                      }}
+                      onClick={() => setIsCreateMembershipOpen(true)}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       מנוי חדש
@@ -418,9 +471,7 @@ export default function MemberProfile() {
                                       variant="ghost"
                                       size="sm"
                                       className="h-8 w-8 p-0"
-                                      onClick={() => {
-                                        // Handle renew membership
-                                      }}
+                                      onClick={() => handleRenewMembership(membership.id)}
                                     >
                                       <RefreshCw className="h-4 w-4" />
                                     </Button>
@@ -525,7 +576,9 @@ export default function MemberProfile() {
                       <TableBody>
                         {payments.map((payment) => (
                           <TableRow key={payment.id}>
-                            <TableCell>{new Date(payment.payment_date).toLocaleDateString("he-IL")}</TableCell>
+                            <TableCell>
+                              {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString("he-IL") : "-"}
+                            </TableCell>
                             <TableCell>{payment.amount} ₪</TableCell>
                             <TableCell>{payment.payment_method}</TableCell>
                             <TableCell>
@@ -568,7 +621,7 @@ export default function MemberProfile() {
                       <TableBody>
                         {checkIns.map((checkIn) => (
                           <TableRow key={checkIn.id}>
-                            <TableCell>{formatDateTime(checkIn.check_in_time)}</TableCell>
+                            <TableCell>{formatDateTime(checkIn.check_in_time || "")}</TableCell>
                             <TableCell>{checkIn.notes || "-"}</TableCell>
                           </TableRow>
                         ))}
@@ -584,6 +637,12 @@ export default function MemberProfile() {
                 <TabsContent value="history" className="mt-0 border-0 p-6">
                   <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                     <p>אין נתוני הנהלת חשבונות להצגה</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="profile" className="mt-0 border-0 p-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <p>אין היסטוריית פניות להצגה</p>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -643,6 +702,13 @@ export default function MemberProfile() {
                 <CardContent className="px-6 py-4">
                   <div className="space-y-4">
                     <div>
+                      {profile.age && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-muted-foreground">גיל:</span>
+                          <span className="font-medium">{profile.age}</span>
+                        </div>
+                      )}
+
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-sm font-medium text-muted-foreground flex items-center">
                           <Phone className="h-3.5 w-3.5 mr-1" />
@@ -660,7 +726,7 @@ export default function MemberProfile() {
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-sm font-medium text-muted-foreground">הצטרף:</span>
                         <span className="font-medium text-sm">
-                          {new Date(profile.created_at).toLocaleDateString("he-IL")}
+                          {new Date(profile.created_at || "").toLocaleDateString("he-IL")}
                         </span>
                       </div>
 
@@ -668,6 +734,14 @@ export default function MemberProfile() {
                         <span className="text-sm font-medium text-muted-foreground">כניסה אחרונה:</span>
                         <span className="font-medium text-sm">
                           {lastCheckIn ? formatDateTime(lastCheckIn) : "טרם נרשם"}
+                        </span>
+                      </div>
+
+                      {/* Access card information */}
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-sm font-medium text-muted-foreground">כרטיס גישה:</span>
+                        <span className="font-medium text-sm">
+                          {accessCards.length > 0 ? accessCards[0].card_number : "לא קיים"}
                         </span>
                       </div>
 
@@ -725,6 +799,16 @@ export default function MemberProfile() {
           )}
         </div>
       </div>
+
+      {/* Create Membership Modal */}
+      {isCreateMembershipOpen && memberId && (
+        <CreateMembershipModal
+          isOpen={isCreateMembershipOpen}
+          onClose={() => setIsCreateMembershipOpen(false)}
+          profileId={memberId}
+          onSuccess={fetchMemberships}
+        />
+      )}
     </DashboardShell>
   )
 }

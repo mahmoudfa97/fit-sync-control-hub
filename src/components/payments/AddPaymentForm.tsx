@@ -20,9 +20,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { PaymentService } from "@/services/PaymentService";
+import { PaymentMethod, PaymentService } from "@/services/PaymentService";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Member } from "@/store/slices/members";
 
 const cardPaymentMethodSchema = z.object({
   paymentType: z.literal('card'),
@@ -49,6 +50,10 @@ type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
 
 interface AddPaymentMethodFormProps {
   onSuccess?: () => void;
+  members: Member[];
+  paymentMethods: PaymentMethod[];
+  onPaymentAdded: () => void;
+  onAddPaymentMethod: () => void;
 }
 
 export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodFormProps) {

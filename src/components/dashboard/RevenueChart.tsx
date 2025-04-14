@@ -1,212 +1,166 @@
+"use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  BarChart, 
-  Bar, 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip,
-  TooltipProps
-} from "recharts";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, DownloadCloud } from "lucide-react";
-import { useState } from "react";
-
-interface DataPoint {
-  name: string;
-  total: number;
-  memberships: number;
-  classes: number;
-  other: number;
-}
-
-const data: DataPoint[] = [
-  {
-    name: "ינו",
-    total: 18500,
-    memberships: 12000,
-    classes: 5000,
-    other: 1500,
-  },
-  {
-    name: "פבר",
-    total: 20100,
-    memberships: 14000,
-    classes: 4600,
-    other: 1500,
-  },
-  {
-    name: "מרץ",
-    total: 19200,
-    memberships: 13500,
-    classes: 4200,
-    other: 1500,
-  },
-  {
-    name: "אפר",
-    total: 22800,
-    memberships: 16000,
-    classes: 5300,
-    other: 1500,
-  },
-  {
-    name: "מאי",
-    total: 23900,
-    memberships: 16500,
-    classes: 5900,
-    other: 1500,
-  },
-  {
-    name: "יוני",
-    total: 25800,
-    memberships: 18000,
-    classes: 6300,
-    other: 1500,
-  },
-];
-
-type TimeRange = "30d" | "60d" | "90d" | "6m" | "1y";
-
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-background border rounded-md shadow-md p-3">
-        <p className="font-medium">{label}</p>
-        <div className="mt-2 space-y-1">
-          {payload.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-xs font-medium">
-                {entry.name === "memberships" ? "מנויים" : 
-                 entry.name === "classes" ? "שיעורים" :
-                 entry.name === "other" ? "אחר" : entry.name}
-              </span>
-              <span className="text-xs font-medium mr-auto">
-                ₪{entry.value?.toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BarChart } from "@/components/ui/chart"
+import { supabase } from "@/integrations/supabase/client"
+import { t } from "@/utils/translations"
 
 export function RevenueChart() {
-  const [timeRange, setTimeRange] = useState<TimeRange>("6m");
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("week")
+  const [revenueData, setRevenueData] = useState({
+    week: {
+      labels: [] as string[],
+      data: [] as number[],
+    },
+    month: {
+      labels: [] as string[],
+      data: [] as number[],
+    },
+    year: {
+      labels: [] as string[],
+      data: [] as number[],
+    },
+  })
 
-  const timeRangeOptions: { value: TimeRange; label: string }[] = [
-    { value: "30d", label: "30 ימים אחרונים" },
-    { value: "60d", label: "60 ימים אחרונים" },
-    { value: "90d", label: "90 ימים אחרונים" },
-    { value: "6m", label: "6 חודשים אחרונים" },
-    { value: "1y", label: "שנה אחרונה" },
-  ];
+  useEffect(() => {
+    async function fetchRevenueData() {
+      try {
+        setLoading(true)
 
-  const selectedRange = timeRangeOptions.find((option) => option.value === timeRange);
+        // Get date ranges
+        const now = new Date()
+
+        // Week: last 7 days
+        const weekStart = new Date(now)
+        weekStart.setDate(weekStart.getDate() - 6)
+
+        // Month: last 30 days
+        const monthStart = new Date(now)
+        monthStart.setDate(monthStart.getDate() - 29)
+
+        // Year: last 12 months
+        const yearStart = new Date(now)
+        yearStart.setMonth(yearStart.getMonth() - 11)
+
+        // Fetch revenue data
+        const { data, error } = await supabase
+          .from("payments")
+          .select("amount, payment_date")
+          .eq("status", "paid")
+          .gte("payment_date", yearStart.toISOString())
+          .order("payment_date")
+
+        if (error) throw error
+
+        // Process weekly data
+        const weekLabels = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(now)
+          date.setDate(date.getDate() - 6 + i)
+          return date.toLocaleDateString("he-IL", { weekday: "short" })
+        })
+
+        const weekData = Array(7).fill(0)
+        data?.forEach((payment) => {
+          const paymentDate = new Date(payment.payment_date)
+          if (paymentDate >= weekStart) {
+            const dayIndex = Math.floor((paymentDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
+            if (dayIndex >= 0 && dayIndex < 7) {
+              weekData[dayIndex] += payment.amount || 0
+            }
+          }
+        })
+
+        // Process monthly data
+        const monthLabels = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date(now)
+          date.setDate(date.getDate() - 29 + i)
+          return date.getDate().toString()
+        })
+
+        const monthData = Array(30).fill(0)
+        data?.forEach((payment) => {
+          const paymentDate = new Date(payment.payment_date)
+          if (paymentDate >= monthStart) {
+            const dayIndex = Math.floor((paymentDate.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24))
+            if (dayIndex >= 0 && dayIndex < 30) {
+              monthData[dayIndex] += payment.amount || 0
+            }
+          }
+        })
+
+        // Process yearly data
+        const yearLabels = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date(now)
+          date.setMonth(date.getMonth() - 11 + i)
+          return date.toLocaleString("default", { month: "short" })
+        })
+
+        const yearData = Array(12).fill(0)
+        data?.forEach((payment) => {
+          const paymentDate = new Date(payment.payment_date)
+          if (paymentDate >= yearStart) {
+            const monthIndex = (paymentDate.getMonth() - yearStart.getMonth() + 12) % 12
+            if (monthIndex >= 0 && monthIndex < 12) {
+              yearData[monthIndex] += payment.amount || 0
+            }
+          }
+        })
+
+        setRevenueData({
+          week: { labels: weekLabels, data: weekData },
+          month: { labels: monthLabels, data: monthData },
+          year: { labels: yearLabels, data: yearData },
+        })
+      } catch (error) {
+        console.error("Error fetching revenue data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRevenueData()
+  }, [])
+
+  // Prepare chart data
+  const chartData = {
+    labels: revenueData[activeTab as keyof typeof revenueData].labels,
+    datasets: [
+      {
+        label: t("revenue"),
+        data: revenueData[activeTab as keyof typeof revenueData].data,
+        backgroundColor: "#22c55e",
+        borderRadius: 4,
+      },
+    ],
+  }
 
   return (
     <Card className="col-span-1 lg:col-span-3">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>סקירת הכנסות</CardTitle>
-          <CardDescription>פילוח הכנסות חודשי</CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                {selectedRange?.label}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>טווח זמן</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {timeRangeOptions.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => setTimeRange(option.value)}
-                >
-                  {option.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="icon">
-            <DownloadCloud className="h-4 w-4" />
-            <span className="sr-only">הורד נתונים</span>
-          </Button>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle>{t("revenueOverTime")}</CardTitle>
+        <CardDescription>{t("revenueOverTimeDescription")}</CardDescription>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="week">{t("week")}</TabsTrigger>
+            <TabsTrigger value="month">{t("month")}</TabsTrigger>
+            <TabsTrigger value="year">{t("year")}</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </CardHeader>
       <CardContent>
-        <div className="h-[320px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{
-                top: 20,
-                right: 15,
-                left: 10,
-                bottom: 15,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.2} />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tickMargin={8}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tickMargin={8}
-                tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}k`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar
-                dataKey="memberships"
-                stackId="a"
-                fill="#3b82f6"
-                radius={[0, 0, 0, 0]}
-                name="מנויים"
-              />
-              <Bar
-                dataKey="classes"
-                stackId="a"
-                fill="#10b981"
-                radius={[0, 0, 0, 0]}
-                name="שיעורים"
-              />
-              <Bar
-                dataKey="other"
-                stackId="a"
-                fill="#f97316"
-                radius={[4, 4, 0, 0]}
-                name="אחר"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-[300px]">
+            <div className="animate-pulse text-muted-foreground">{t("loading")}</div>
+          </div>
+        ) : (
+          <div className="h-[300px]">
+            <BarChart data={chartData} />
+          </div>
+        )}
       </CardContent>
     </Card>
-  );
+  )
 }

@@ -1,171 +1,165 @@
+"use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Line, 
-  LineChart, 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip,
-  TooltipProps,
-  Legend
-} from "recharts";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ChevronDown } from "lucide-react";
-import { t } from "@/utils/translations";
-
-interface DailyCheckins {
-  name: string;
-  value: number;
-  avg: number;
-}
-
-const data: DailyCheckins[] = [
-  { name: "יום ב", value: 120, avg: 90 },
-  { name: "יום ג", value: 180, avg: 95 },
-  { name: "יום ד", value: 200, avg: 100 },
-  { name: "יום ה", value: 290, avg: 105 },
-  { name: "יום ו", value: 300, avg: 110 },
-  { name: "שבת", value: 280, avg: 130 },
-  { name: "יום א", value: 190, avg: 120 },
-];
-
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-background border rounded-md shadow-md p-3">
-        <p className="font-medium">{label}</p>
-        <div className="mt-2 space-y-1">
-          {payload.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-xs font-medium">
-                {entry.name === "value" ? "היום" : "ממוצע"}
-              </span>
-              <span className="text-xs font-medium mr-auto">
-                {entry.value} כניסות
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BarChart } from "@/components/ui/chart"
+import { supabase } from "@/integrations/supabase/client"
+import { t } from "@/utils/translations"
 
 export function CheckInsChart() {
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("week")
+  const [checkInData, setCheckInData] = useState({
+    week: {
+      labels: [] as string[],
+      data: [] as number[],
+    },
+    month: {
+      labels: [] as string[],
+      data: [] as number[],
+    },
+    year: {
+      labels: [] as string[],
+      data: [] as number[],
+    },
+  })
+
+  useEffect(() => {
+    async function fetchCheckInData() {
+      try {
+        setLoading(true)
+
+        // Get date ranges
+        const now = new Date()
+
+        // Week: last 7 days
+        const weekStart = new Date(now)
+        weekStart.setDate(weekStart.getDate() - 6)
+
+        // Month: last 30 days
+        const monthStart = new Date(now)
+        monthStart.setDate(monthStart.getDate() - 29)
+
+        // Year: last 12 months
+        const yearStart = new Date(now)
+        yearStart.setMonth(yearStart.getMonth() - 11)
+
+        // Fetch check-in data
+        const { data, error } = await supabase
+          .from("checkins")
+          .select("check_in_time")
+          .gte("check_in_time", yearStart.toISOString())
+          .order("check_in_time")
+
+        if (error) throw error
+
+        // Process weekly data
+        const weekLabels = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(now)
+          date.setDate(date.getDate() - 6 + i)
+          return date.toLocaleDateString("he-IL", { weekday: "short" })
+        })
+
+        const weekData = Array(7).fill(0)
+        data?.forEach((checkIn) => {
+          const checkInDate = new Date(checkIn.check_in_time)
+          if (checkInDate >= weekStart) {
+            const dayIndex = Math.floor((checkInDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
+            if (dayIndex >= 0 && dayIndex < 7) {
+              weekData[dayIndex]++
+            }
+          }
+        })
+
+        // Process monthly data
+        const monthLabels = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date(now)
+          date.setDate(date.getDate() - 29 + i)
+          return date.getDate().toString()
+        })
+
+        const monthData = Array(30).fill(0)
+        data?.forEach((checkIn) => {
+          const checkInDate = new Date(checkIn.check_in_time)
+          if (checkInDate >= monthStart) {
+            const dayIndex = Math.floor((checkInDate.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24))
+            if (dayIndex >= 0 && dayIndex < 30) {
+              monthData[dayIndex]++
+            }
+          }
+        })
+
+        // Process yearly data
+        const yearLabels = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date(now)
+          date.setMonth(date.getMonth() - 11 + i)
+          return date.toLocaleString("default", { month: "short" })
+        })
+
+        const yearData = Array(12).fill(0)
+        data?.forEach((checkIn) => {
+          const checkInDate = new Date(checkIn.check_in_time)
+          if (checkInDate >= yearStart) {
+            const monthIndex = (checkInDate.getMonth() - yearStart.getMonth() + 12) % 12
+            if (monthIndex >= 0 && monthIndex < 12) {
+              yearData[monthIndex]++
+            }
+          }
+        })
+
+        setCheckInData({
+          week: { labels: weekLabels, data: weekData },
+          month: { labels: monthLabels, data: monthData },
+          year: { labels: yearLabels, data: yearData },
+        })
+      } catch (error) {
+        console.error("Error fetching check-in data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCheckInData()
+  }, [])
+
+  // Prepare chart data
+  const chartData = {
+    labels: checkInData[activeTab as keyof typeof checkInData].labels,
+    datasets: [
+      {
+        label: t("checkIns"),
+        data: checkInData[activeTab as keyof typeof checkInData].data,
+        backgroundColor: "#3b82f6",
+        borderRadius: 4,
+      },
+    ],
+  }
+
   return (
     <Card className="col-span-1 lg:col-span-3">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div>
-            <CardTitle>{t("weeklyCheckIns")}</CardTitle>
-            <CardDescription>{t("dailyCheckInsVsAverage")}</CardDescription>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                {t("thisWeek")}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>טווח זמן</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>השבוע</DropdownMenuItem>
-              <DropdownMenuItem>שבוע שעבר</DropdownMenuItem>
-              <DropdownMenuItem>שבועיים אחרונים</DropdownMenuItem>
-              <DropdownMenuItem>החודש</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle>{t("checkInsOverTime")}</CardTitle>
+        <CardDescription>{t("checkInsOverTimeDescription")}</CardDescription>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="week">{t("week")}</TabsTrigger>
+            <TabsTrigger value="month">{t("month")}</TabsTrigger>
+            <TabsTrigger value="year">{t("year")}</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <div className="text-2xl font-bold">1,560</div>
-            <div className="text-sm text-muted-foreground">{t("totalWeeklyCheckIns")}</div>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center items-center h-[300px]">
+            <div className="animate-pulse text-muted-foreground">{t("loading")}</div>
           </div>
-          <div className="flex items-center gap-1 text-sm font-medium text-success">
-            <ArrowUpRight className="h-4 w-4" />
-            <span>22.4%</span>
-            <span className="text-muted-foreground">{t("vsLastWeek")}</span>
+        ) : (
+          <div className="h-[300px]">
+            <BarChart data={chartData} />
           </div>
-        </div>
-        <div className="h-[280px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{
-                top: 5,
-                right: 10,
-                left: 10,
-                bottom: 0,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.2} />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tickMargin={8}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tickMargin={8}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="avg"
-                stroke="#94a3b8"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={false}
-                name="ממוצע"
-              />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                dot={{
-                  r: 4,
-                  fill: "#3b82f6",
-                  strokeWidth: 2,
-                  stroke: "#fff",
-                }}
-                activeDot={{
-                  r: 6,
-                  fill: "#3b82f6",
-                  strokeWidth: 2,
-                  stroke: "#fff",
-                }}
-                name="היום"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        )}
       </CardContent>
     </Card>
-  );
+  )
 }

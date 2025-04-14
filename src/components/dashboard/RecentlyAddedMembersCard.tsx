@@ -54,7 +54,7 @@ export function RecentlyAddedMembersCard() {
               const { data: membershipData, error: membershipError } = await supabase
                 .from("memberships")
                 .select("membership_type")
-                .eq("profile_id", profile.id)
+                .eq("member_id", profile.id)
                 .maybeSingle()
 
               if (membershipError) {

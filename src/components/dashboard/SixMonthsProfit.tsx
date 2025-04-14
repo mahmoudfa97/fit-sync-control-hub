@@ -1,156 +1,126 @@
+"use client"
 
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, TrendingUp } from "lucide-react";
-import { t } from "@/utils/translations";
-import { 
-  Bar, 
-  BarChart, 
-  CartesianGrid, 
-  ResponsiveContainer, 
-  Tooltip, 
-  TooltipProps, 
-  XAxis, 
-  YAxis 
-} from "recharts";
-
-interface MonthlyProfit {
-  month: string;
-  revenue: number;
-  expenses: number;
-  profit: number;
-}
-
-const data: MonthlyProfit[] = [
-  { month: "נוב", revenue: 45500, expenses: 32000, profit: 13500 },
-  { month: "דצמ", revenue: 48700, expenses: 34500, profit: 14200 },
-  { month: "ינו", revenue: 52800, expenses: 36200, profit: 16600 },
-  { month: "פבר", revenue: 49300, expenses: 33800, profit: 15500 },
-  { month: "מרץ", revenue: 54200, expenses: 37000, profit: 17200 },
-  { month: "אפר", revenue: 58700, expenses: 39500, profit: 19200 },
-];
-
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-background border rounded-md shadow-md p-3">
-        <p className="font-medium">{label}</p>
-        <div className="mt-2 space-y-1">
-          {payload.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-xs font-medium">
-                {entry.name === "revenue" 
-                  ? "הכנסות" 
-                  : entry.name === "expenses" 
-                    ? "הוצאות" 
-                    : "רווח"}
-              </span>
-              <span className="text-xs font-medium mr-auto">
-                {entry.value.toLocaleString()} ₪
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { LineChart } from "@/components/ui/chart"
+import { supabase } from "@/integrations/supabase/client"
+import { t } from "@/utils/translations"
 
 export function SixMonthsProfit() {
-  // Calculate total profit
-  const totalProfit = data.reduce((sum, month) => sum + month.profit, 0);
-  
+  const [loading, setLoading] = useState(true)
+  const [profitData, setProfitData] = useState({
+    months: [] as string[],
+    revenue: [] as number[],
+    expenses: [] as number[],
+    profit: [] as number[],
+  })
+
+  useEffect(() => {
+    async function fetchProfitData() {
+      try {
+        setLoading(true)
+
+        // Get last 6 months
+        const months = Array.from({ length: 6 }, (_, i) => {
+          const date = new Date()
+          date.setMonth(date.getMonth() - 5 + i)
+          return {
+            label: date.toLocaleString("default", { month: "short" }),
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            start: new Date(date.getFullYear(), date.getMonth(), 1).toISOString(),
+            end: new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString(),
+          }
+        })
+
+        // Fetch revenue data (paid payments)
+        const { data: revenueData, error: revenueError } = await supabase
+          .from("payments")
+          .select("amount, payment_date")
+          .eq("status", "paid")
+          .gte("payment_date", months[0].start)
+          .lte("payment_date", months[5].end)
+
+        if (revenueError) throw revenueError
+
+        // Calculate monthly revenue
+        const monthlyRevenue = months.map((month) => {
+          const monthPayments =
+            revenueData?.filter(
+              (payment) => payment.payment_date >= month.start && payment.payment_date <= month.end,
+            ) || []
+
+          return monthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+        })
+
+        // For expenses, we'll use a placeholder calculation since we don't have an expenses table
+        // In a real app, you would fetch from an expenses table
+        const monthlyExpenses = monthlyRevenue.map((revenue) => revenue * 0.6) // Placeholder: 60% of revenue
+
+        // Calculate profit
+        const monthlyProfit = monthlyRevenue.map((revenue, i) => revenue - monthlyExpenses[i])
+
+        setProfitData({
+          months: months.map((m) => m.label),
+          revenue: monthlyRevenue,
+          expenses: monthlyExpenses,
+          profit: monthlyProfit,
+        })
+      } catch (error) {
+        console.error("Error fetching profit data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfitData()
+  }, [])
+
+  // Prepare chart data
+  const chartData = {
+    labels: profitData.months,
+    datasets: [
+      {
+        label: t("revenue"),
+        data: profitData.revenue,
+        borderColor: "#22c55e",
+        backgroundColor: "rgba(34, 197, 94, 0.1)",
+        tension: 0.4,
+      },
+      {
+        label: t("expenses"),
+        data: profitData.expenses,
+        borderColor: "#ef4444",
+        backgroundColor: "rgba(239, 68, 68, 0.1)",
+        tension: 0.4,
+      },
+      {
+        label: t("profit"),
+        data: profitData.profit,
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        tension: 0.4,
+      },
+    ],
+  }
+
   return (
     <Card className="col-span-1 lg:col-span-3">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>{t("sixMonthsProfit")}</CardTitle>
-          <CardDescription>הכנסות, הוצאות ורווח ב-6 חודשים אחרונים</CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                6 חודשים
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>טווח זמן</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>3 חודשים</DropdownMenuItem>
-              <DropdownMenuItem>6 חודשים</DropdownMenuItem>
-              <DropdownMenuItem>שנה</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <CardHeader>
+        <CardTitle>{t("sixMonthsProfit")}</CardTitle>
+        <CardDescription>{t("sixMonthsProfitDescription")}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <div className="text-2xl font-bold">{totalProfit.toLocaleString()} ₪</div>
-            <div className="text-sm text-muted-foreground">סה"כ רווח לתקופה</div>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center items-center h-[300px]">
+            <div className="animate-pulse text-muted-foreground">{t("loading")}</div>
           </div>
-          <div className="flex items-center gap-1 text-sm font-medium text-success">
-            <TrendingUp className="h-4 w-4" />
-            <span>12.5%</span>
-            <span className="text-muted-foreground">מהתקופה הקודמת</span>
+        ) : (
+          <div className="h-[300px]">
+            <LineChart data={chartData} />
           </div>
-        </div>
-        <div className="h-[280px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{
-                top: 20,
-                right: 10,
-                left: 0,
-                bottom: 10,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.2} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tickMargin={8}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tickMargin={8}
-                tickFormatter={(value) => `${value / 1000}K`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} name="הכנסות" />
-              <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="הוצאות" />
-              <Bar dataKey="profit" fill="#22c55e" radius={[4, 4, 0, 0]} name="רווח" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        )}
       </CardContent>
     </Card>
-  );
+  )
 }

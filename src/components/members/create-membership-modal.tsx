@@ -21,6 +21,7 @@ import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import type { TablesInsert } from "@/integrations/supabase/types"
 
 interface CreateMembershipModalProps {
   isOpen: boolean
@@ -55,14 +56,16 @@ export function CreateMembershipModal({ isOpen, onClose, profileId, onSuccess }:
     try {
       setLoading(true)
 
-      const { data, error } = await supabase.from("memberships").insert({
-        profile_id: profileId,
+      const newMembership: TablesInsert<"memberships"> = {
+        member_id: profileId,
         membership_type: membershipType,
         start_date: startDate.toISOString(),
         end_date: endDate ? endDate.toISOString() : null,
         status,
         payment_status: paymentStatus,
-      })
+      }
+
+      const { error } = await supabase.from("memberships").insert(newMembership)
 
       if (error) throw error
 
