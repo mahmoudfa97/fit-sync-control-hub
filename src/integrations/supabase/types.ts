@@ -174,6 +174,45 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          card_holder_name: string | null
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          is_default: boolean | null
+          last_four: string | null
+          payment_type: string
+          provider: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          card_holder_name?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          payment_type: string
+          provider?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          card_holder_name?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          payment_type?: string
+          provider?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -183,6 +222,7 @@ export type Database = {
           member_id: string
           payment_date: string | null
           payment_method: string
+          payment_method_id: string | null
           receipt_number: string | null
           status: string
         }
@@ -194,6 +234,7 @@ export type Database = {
           member_id: string
           payment_date?: string | null
           payment_method: string
+          payment_method_id?: string | null
           receipt_number?: string | null
           status?: string
         }
@@ -205,6 +246,7 @@ export type Database = {
           member_id?: string
           payment_date?: string | null
           payment_method?: string
+          payment_method_id?: string | null
           receipt_number?: string | null
           status?: string
         }
@@ -214,6 +256,13 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
             referencedColumns: ["id"]
           },
         ]

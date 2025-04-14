@@ -3,12 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "@/store";
 import { useLanguage } from "@/hooks/useLanguage";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Members from "./pages/Members";
 import MemberProfile from "./pages/MemberProfile";
@@ -22,6 +24,21 @@ import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
+// Protected route component
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const { session, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+  
+  if (!session) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  return children;
+};
+
 // Create a wrapper component to use hooks
 const AppContent = () => {
   // Initialize language
@@ -33,16 +50,17 @@ const AppContent = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/members" element={<Members />} />
-          <Route path="/members/:memberId" element={<MemberProfile />} />
-          <Route path="/checkins" element={<CheckIns />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/classes" element={<Classes />} />
-          <Route path="/staff" element={<Staff />} />
-          <Route path="/access" element={<AccessControl />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
+          <Route path="/members/:memberId" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
+          <Route path="/checkins" element={<ProtectedRoute><CheckIns /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+          <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+          <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+          <Route path="/access" element={<ProtectedRoute><AccessControl /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -53,7 +71,9 @@ const AppContent = () => {
 const App = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </QueryClientProvider>
   </Provider>
 );

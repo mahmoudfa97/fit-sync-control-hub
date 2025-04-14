@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { Bell, ChevronDown, MenuIcon, Search, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, ChevronDown, MenuIcon, Search, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,9 +23,41 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { t } from '@/utils/translations';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function TopBar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user || !user.user_metadata) return 'U';
+    
+    const name = user.user_metadata.name || '';
+    const lastName = user.user_metadata.last_name || '';
+    
+    return `${name.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user || !user.user_metadata) return t("admin");
+    
+    const name = user.user_metadata.name || '';
+    const lastName = user.user_metadata.last_name || '';
+    
+    return name ? `${name} ${lastName}` : user.email?.split('@')[0] || t("admin");
+  };
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4 sticky top-0 z-30 w-full">
@@ -96,26 +129,35 @@ export function TopBar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-1 hidden md:flex">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-              <span>{t("admin")}</span>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
-            <DropdownMenuItem>{t("settings")}</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>{t("logout")}</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1 hidden md:flex">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src="/placeholder.svg" alt="Avatar" />
+                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                </Avatar>
+                <span>{getUserDisplayName()}</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/settings')}>{t("profile")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>{t("settings")}</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                {t("logout")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="outline" size="sm" onClick={() => navigate('/auth')} className="hidden md:flex">
+            התחברות
+          </Button>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -127,10 +169,19 @@ export function TopBar() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
-            <DropdownMenuItem>{t("settings")}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>{t("profile")}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>{t("settings")}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{t("logout")}</DropdownMenuItem>
+            {user ? (
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                {t("logout")}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => navigate('/auth')}>
+                התחברות
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -18,6 +18,12 @@ export interface Member {
 export class CheckInService {
   static async fetchCheckIns() {
     try {
+      // First check if user is authenticated
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase
         .from('checkins')
         .select(`
@@ -51,6 +57,12 @@ export class CheckInService {
 
   static async fetchMembers() {
     try {
+      // First check if user is authenticated
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, last_name')
@@ -69,6 +81,12 @@ export class CheckInService {
 
   static async addCheckIn(memberId: string, notes?: string) {
     try {
+      // First check if user is authenticated
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        throw new Error('Authentication required');
+      }
+
       const now = new Date();
       
       // Add check-in to Supabase
