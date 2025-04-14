@@ -14,6 +14,7 @@ import { t } from "@/utils/translations";
 import { UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 interface RecentMember {
   id: string;
@@ -52,12 +53,17 @@ export function RecentlyAddedMembersCard() {
         }
 
         // Transform the data to extract membership_type
-        const membersWithMembership = data.map(member => ({
-          ...member,
-          membership_type: member.memberships && member.memberships.length > 0 
+        const membersWithMembership = data.map(member => {
+          // Extract the membership type from the memberships array
+          const membershipType = member.memberships && member.memberships.length > 0 
             ? member.memberships[0].membership_type 
-            : "בסיסי"
-        }));
+            : "בסיסי";
+            
+          return {
+            ...member,
+            membership_type: membershipType
+          };
+        });
 
         setRecentMembers(membersWithMembership);
       } catch (error) {
@@ -145,8 +151,8 @@ export function RecentlyAddedMembersCard() {
             )}
           </div>
         )}
-        <Button variant="ghost" className="w-full mt-4 text-primary">
-          {t("viewAll")}
+        <Button variant="ghost" className="w-full mt-4 text-primary" asChild>
+          <Link to="/members">{t("viewAll")}</Link>
         </Button>
       </CardContent>
     </Card>

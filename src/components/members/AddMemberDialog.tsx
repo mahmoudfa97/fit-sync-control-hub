@@ -20,24 +20,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { membershipTypes } from "./MembershipTypes";
 import { type Member } from "@/store/slices/membersSlice";
-
-interface NewMemberForm {
-  name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  age: string;
-  gender: "male" | "female" | "";
-  membershipType: string;
-  status: Member['status'];
-  paymentStatus: Member['paymentStatus'];
-}
+import { MemberFormData } from "@/services/MemberService";
 
 interface AddMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  newMember: NewMemberForm;
-  setNewMember: React.Dispatch<React.SetStateAction<NewMemberForm>>;
+  newMember: MemberFormData;
+  setNewMember: React.Dispatch<React.SetStateAction<MemberFormData>>;
   onAddMember: () => void;
   isSubmitting?: boolean;
 }

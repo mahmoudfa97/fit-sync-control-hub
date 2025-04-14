@@ -34,26 +34,11 @@ import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addCheckIn } from "@/store/slices/checkInsSlice";
 import { recordCheckIn } from "@/store/slices/membersSlice";
 import { t } from "@/utils/translations";
-import { supabase } from "@/integrations/supabase/client";
-
-interface CheckIn {
-  id: string;
-  memberId: string;
-  memberName: string;
-  checkInTime: string;
-  notes?: string;
-}
-
-interface Member {
-  id: string;
-  name: string;
-  last_name?: string;
-}
+import { CheckInService, CheckIn, Member } from "@/services/CheckInService";
 
 export default function CheckIns() {
   const dispatch = useAppDispatch();
   const { checkIns } = useAppSelector((state) => state.checkIns);
-  const { members } = useAppSelector((state) => state.members);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [addCheckInOpen, setAddCheckInOpen] = useState(false);
@@ -74,31 +59,8 @@ export default function CheckIns() {
   const fetchCheckIns = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('checkins')
-        .select(`
-          id,
-          check_in_time,
-          notes,
-          member_id,
-          profiles:member_id(id, name, last_name)
-        `)
-        .order('check_in_time', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      // Transform the data to match our interface
-      const transformedData: CheckIn[] = data.map(item => ({
-        id: item.id,
-        memberId: item.member_id,
-        memberName: item.profiles ? `${item.profiles.name} ${item.profiles.last_name || ''}` : 'Unknown',
-        checkInTime: item.check_in_time,
-        notes: item.notes || undefined
-      }));
-
-      setSupabaseCheckIns(transformedData);
+      const data = await CheckInService.fetchCheckIns();
+      setSupabaseCheckIns(data);
     } catch (error) {
       console.error('Error fetching check-ins:', error);
       toast.error(t("errorFetchingData"));
@@ -109,15 +71,7 @@ export default function CheckIns() {
 
   const fetchMembers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, last_name')
-        .order('name');
-
-      if (error) {
-        throw error;
-      }
-
+      const data = await CheckInService.fetchMembers();
       setSupabaseMembers(data);
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -139,50 +93,15 @@ export default function CheckIns() {
     setIsSubmitting(true);
     
     try {
-      const now = new Date();
-      
-      // Add check-in to Supabase
-      const { data, error } = await supabase
-        .from('checkins')
-        .insert({
-          member_id: newCheckIn.memberId,
-          check_in_time: now.toISOString(),
-          notes: newCheckIn.notes || null
-        })
-        .select('id');
-
-      if (error) {
-        throw error;
-      }
-
-      const checkInId = data[0].id;
-      
-      // Find the member to get the name
-      const member = supabaseMembers.find(m => m.id === newCheckIn.memberId);
-      const memberName = member ? `${member.name} ${member.last_name || ''}` : 'Unknown';
-      
-      // Add to local state
-      const newCheckInEntry: CheckIn = {
-        id: checkInId,
-        memberId: newCheckIn.memberId,
-        memberName: memberName,
-        checkInTime: now.toISOString(),
-        notes: newCheckIn.notes || undefined
-      };
-      
-      setSupabaseCheckIns(prev => [newCheckInEntry, ...prev]);
-      
-      // Also update Redux for the UI components that depend on it
-      dispatch(
-        addCheckIn({
-          id: checkInId,
-          memberId: newCheckIn.memberId,
-          memberName: memberName,
-          checkInTime: now.toISOString(),
-          notes: newCheckIn.notes || undefined,
-        })
+      // Use the CheckInService to add a new check-in
+      const newCheckInEntry = await CheckInService.addCheckIn(
+        newCheckIn.memberId, 
+        newCheckIn.notes || undefined
       );
       
+      // Update state and Redux
+      setSupabaseCheckIns(prev => [newCheckInEntry, ...prev]);
+      dispatch(addCheckIn(newCheckInEntry));
       dispatch(recordCheckIn(newCheckIn.memberId));
       
       toast.success(t("checkInAdded"));
