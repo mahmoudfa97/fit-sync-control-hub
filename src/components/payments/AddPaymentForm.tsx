@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,14 +11,6 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
   Select, 
   SelectContent, 
   SelectItem, 
@@ -28,78 +19,75 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Banknote, Building, Plus } from "lucide-react";
-import { Member } from "@/store/slices/membersSlice";
-import { PaymentService, PaymentMethod } from "@/services/PaymentService";
+import { Loader2 } from "lucide-react";
+import { PaymentService } from "@/services/PaymentService";
 import { useToast } from "@/hooks/use-toast";
-import { useAppDispatch } from "@/hooks/redux";
-import { addPayment } from "@/store/slices/paymentsSlice";
+import { Switch } from "@/components/ui/switch";
 
-const paymentSchema = z.object({
-  memberId: z.string({
-    required_error: "יש לבחור לקוח",
+const cardPaymentMethodSchema = z.object({
+  paymentType: z.literal('card'),
+  provider: z.enum(['visa', 'mastercard', 'other'], {
+    required_error: "יש לבחור ספק כרטיס אשראי",
   }),
-  amount: z.string().min(1, { message: "יש להזין סכום" }).transform(val => Number(val)),
-  paymentMethod: z.string({
-    required_error: "יש לבחור אמצעי תשלום",
-  }),
-  description: z.string().optional(),
+  lastFour: z.string().length(4, { message: "יש להזין 4 ספרות אחרונות" }),
+  cardHolderName: z.string().min(2, { message: "יש להזין שם בעל הכרטיס" }),
+  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/[0-9]{2}$/, { message: "פורמט לא תקין (MM/YY)" }),
+  isDefault: z.boolean().default(false),
 });
 
-interface AddPaymentFormProps {
-  members: Member[];
-  paymentMethods: PaymentMethod[];
-  onPaymentAdded?: () => void;
-  onAddPaymentMethod?: () => void;
+const otherPaymentMethodSchema = z.object({
+  paymentType: z.enum(['bank', 'other']),
+  isDefault: z.boolean().default(false),
+});
+
+const paymentMethodSchema = z.discriminatedUnion('paymentType', [
+  cardPaymentMethodSchema,
+  otherPaymentMethodSchema,
+]);
+
+type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
+
+interface AddPaymentMethodFormProps {
+  onSuccess?: () => void;
 }
 
-export default function AddPaymentForm({
-  members,
-  paymentMethods,
-  onPaymentAdded,
-  onAddPaymentMethod
-}: AddPaymentFormProps) {
+export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodFormProps) {
   const { toast } = useToast();
-  const dispatch = useAppDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof paymentSchema>>({
-    resolver: zodResolver(paymentSchema),
+  const form = useForm<PaymentMethodFormValues>({
+    resolver: zodResolver(paymentMethodSchema),
     defaultValues: {
-      memberId: "",
-      amount: "",
-      paymentMethod: "",
-      description: "",
+      paymentType: 'card',
+      isDefault: false,
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof paymentSchema>) => {
+  const paymentType = form.watch('paymentType');
+
+  const onSubmit = async (values: PaymentMethodFormValues) => {
     try {
       setIsSubmitting(true);
       
-      const newPayment = await PaymentService.processPayment(
-        values.memberId,
-        values.amount,
-        values.paymentMethod,
-        values.description
-      );
-      
-      dispatch(addPayment(newPayment));
+      await PaymentService.addPaymentMethod(values);
       
       toast({
-        title: "תשלום נוסף בהצלחה",
-        description: `קבלה מספר ${newPayment.receiptNumber} נוצרה`,
+        title: "אמצעי תשלום נוסף בהצלחה",
+        description: "אמצעי התשלום זמין כעת לשימוש",
       });
       
-      form.reset();
+      form.reset({
+        paymentType: 'card',
+        isDefault: false,
+      });
       
-      if (onPaymentAdded) {
-        onPaymentAdded();
+      if (onSuccess) {
+        onSuccess();
       }
     } catch (error: any) {
       toast({
-        title: "שגיאה בהוספת תשלום",
-        description: error.message || "אירעה שגיאה בעיבוד התשלום, אנא נסה שנית",
+        title: "שגיאה בהוספת אמצעי תשלום",
+        description: error.message || "אירעה שגיאה, אנא נסה שנית",
         variant: "destructive",
       });
     } finally {
@@ -108,35 +96,61 @@ export default function AddPaymentForm({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>תשלום חדש</CardTitle>
-        <CardDescription>הוסף תשלום חדש למערכת</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="paymentType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>סוג אמצעי תשלום</FormLabel>
+              <Select 
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  form.reset({
+                    paymentType: value as 'card' | 'bank' | 'other',
+                    isDefault: form.getValues('isDefault'),
+                  });
+                }}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר סוג אמצעי תשלום" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="card">כרטיס אשראי</SelectItem>
+                  <SelectItem value="bank">העברה בנקאית</SelectItem>
+                  <SelectItem value="other">אחר</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {paymentType === 'card' && (
+          <>
             <FormField
               control={form.control}
-              name="memberId"
+              name="provider"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>בחר לקוח</FormLabel>
+                  <FormLabel>סוג כרטיס</FormLabel>
                   <Select 
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="בחר לקוח" />
+                        <SelectValue placeholder="בחר סוג כרטיס" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name} {member.lastName || member.last_name || ""}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="visa">Visa</SelectItem>
+                      <SelectItem value="mastercard">Mastercard</SelectItem>
+                      <SelectItem value="other">אחר</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -146,22 +160,20 @@ export default function AddPaymentForm({
 
             <FormField
               control={form.control}
-              name="amount"
+              name="lastFour"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>סכום</FormLabel>
+                  <FormLabel>4 ספרות אחרונות של הכרטיס</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Input 
-                        type="number" 
-                        placeholder="100" 
-                        {...field} 
-                        className="ltr:pr-8 rtl:pl-8"
-                      />
-                      <div className="absolute inset-y-0 rtl:right-3 ltr:left-3 flex items-center pointer-events-none">
-                        ₪
-                      </div>
-                    </div>
+                    <Input 
+                      placeholder="1234" 
+                      maxLength={4}
+                      {...field} 
+                      onChange={e => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        field.onChange(value);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,63 +182,13 @@ export default function AddPaymentForm({
 
             <FormField
               control={form.control}
-              name="paymentMethod"
+              name="cardHolderName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    <div className="flex justify-between items-center">
-                      <span>אמצעי תשלום</span>
-                      {onAddPaymentMethod && (
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={onAddPaymentMethod}
-                          className="h-8 px-2"
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> הוסף אמצעי תשלום
-                        </Button>
-                      )}
-                    </div>
-                  </FormLabel>
-                  <Select 
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר אמצעי תשלום" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="cash">
-                        <div className="flex items-center">
-                          <Banknote className="mr-2 h-4 w-4" />
-                          <span>מזומן</span>
-                        </div>
-                      </SelectItem>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method.id} value={method.id}>
-                          <div className="flex items-center">
-                            {method.paymentType === 'card' ? (
-                              <CreditCard className="mr-2 h-4 w-4" />
-                            ) : method.paymentType === 'bank' ? (
-                              <Building className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Banknote className="mr-2 h-4 w-4" />
-                            )}
-                            <span>
-                              {method.paymentType === 'card' 
-                                ? `${method.provider} (${method.lastFour})` 
-                                : method.paymentType === 'bank' 
-                                  ? 'העברה בנקאית' 
-                                  : 'אחר'}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>שם בעל הכרטיס</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ישראל ישראלי" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -234,35 +196,63 @@ export default function AddPaymentForm({
 
             <FormField
               control={form.control}
-              name="description"
+              name="expiryDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>תיאור (אופציונלי)</FormLabel>
+                  <FormLabel>תוקף</FormLabel>
                   <FormControl>
-                    <Input placeholder="תשלום עבור..." {...field} />
+                    <Input 
+                      placeholder="MM/YY" 
+                      {...field} 
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^\d/]/g, '');
+                        let formatted = value;
+                        if (value.length === 2 && !value.includes('/') && field.value.length !== 3) {
+                          formatted = value + '/';
+                        }
+                        field.onChange(formatted.slice(0, 5));
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </>
+        )}
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  מעבד תשלום...
-                </>
-              ) : (
-                "בצע תשלום"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <FormField
+          control={form.control}
+          name="isDefault"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between space-x-2 space-x-reverse">
+              <FormLabel>הגדר כאמצעי תשלום ברירת מחדל</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              שומר...
+            </>
+          ) : (
+            "שמור אמצעי תשלום"
+          )}
+        </Button>
+      </form>
+    </Form>
   );
 }

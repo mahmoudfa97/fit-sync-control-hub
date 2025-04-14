@@ -1,3 +1,3 @@
 
-export * from './members';
-export { default } from './members';
+export { membersReducer } from './members';
+export * from './members/types';

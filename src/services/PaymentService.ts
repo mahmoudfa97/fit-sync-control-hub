@@ -1,11 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Payment } from "@/store/slices/paymentsSlice";
 
 export interface PaymentMethod {
   id: string;
   userId: string;
-  paymentType: 'card' | 'cash' | 'bank' | 'other';
+  paymentType: 'card' | 'bank' | 'other';
   provider?: 'visa' | 'mastercard' | 'other';
   lastFour?: string;
   cardHolderName?: string;
@@ -13,6 +12,15 @@ export interface PaymentMethod {
   isDefault?: boolean;
   createdAt: string;
 }
+
+type AddPaymentMethodInput = {
+  paymentType: 'card' | 'bank' | 'other';
+  provider?: 'visa' | 'mastercard' | 'other';
+  lastFour?: string;
+  cardHolderName?: string;
+  expiryDate?: string;
+  isDefault: boolean;
+};
 
 export class PaymentService {
   static async getPaymentMethods() {
@@ -38,7 +46,7 @@ export class PaymentService {
     })) as PaymentMethod[];
   }
 
-  static async addPaymentMethod(paymentMethod: Omit<PaymentMethod, 'id' | 'userId' | 'createdAt'>) {
+  static async addPaymentMethod(paymentMethod: AddPaymentMethodInput) {
     const { data: user } = await supabase.auth.getUser();
     
     if (!user.user) {
@@ -85,7 +93,6 @@ export class PaymentService {
 
     let paymentMethodId = null;
     if (paymentMethod !== 'cash') {
-      // Fetch payment method details
       const { data, error } = await supabase
         .from('payment_methods')
         .select('id')
@@ -98,10 +105,8 @@ export class PaymentService {
       paymentMethodId = data.id;
     }
 
-    // Generate receipt number
     const receiptNumber = `REC-${Date.now().toString().slice(-6)}`;
 
-    // Add payment to database
     const { data, error } = await supabase
       .from('payments')
       .insert({
@@ -130,7 +135,6 @@ export class PaymentService {
       throw error;
     }
 
-    // Format the payment for the redux store
     return {
       id: data.id,
       memberId: data.member_id,
