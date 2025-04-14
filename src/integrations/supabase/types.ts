@@ -9,7 +9,296 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      access_cards: {
+        Row: {
+          access_level: string
+          card_number: string
+          created_at: string | null
+          id: string
+          is_active: boolean
+          issue_date: string | null
+          member_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_level?: string
+          card_number: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          issue_date?: string | null
+          member_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: string
+          card_number?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          issue_date?: string | null
+          member_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_cards_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkins: {
+        Row: {
+          check_in_time: string | null
+          created_at: string | null
+          id: string
+          member_id: string
+          notes: string | null
+        }
+        Insert: {
+          check_in_time?: string | null
+          created_at?: string | null
+          id?: string
+          member_id: string
+          notes?: string | null
+        }
+        Update: {
+          check_in_time?: string | null
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          created_at: string | null
+          current_enrollment: number
+          day_of_week: string
+          description: string | null
+          end_time: string
+          id: string
+          level: string
+          max_capacity: number
+          name: string
+          start_time: string
+          status: string
+          trainer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_enrollment?: number
+          day_of_week: string
+          description?: string | null
+          end_time: string
+          id?: string
+          level: string
+          max_capacity?: number
+          name: string
+          start_time: string
+          status?: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_enrollment?: number
+          day_of_week?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          level?: string
+          max_capacity?: number
+          name?: string
+          start_time?: string
+          status?: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      memberships: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: string
+          member_id: string
+          membership_type: string
+          payment_status: string
+          start_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          member_id: string
+          membership_type: string
+          payment_status?: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          member_id?: string
+          membership_type?: string
+          payment_status?: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          member_id: string
+          payment_date: string | null
+          payment_method: string
+          receipt_number: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_id: string
+          payment_date?: string | null
+          payment_method: string
+          receipt_number?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_id?: string
+          payment_date?: string | null
+          payment_method?: string
+          receipt_number?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          gender: string | null
+          id: string
+          last_name: string | null
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          gender?: string | null
+          id: string
+          last_name?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      staff: {
+        Row: {
+          created_at: string | null
+          department: string
+          email: string
+          hire_date: string | null
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department: string
+          email: string
+          hire_date?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          role: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string
+          email?: string
+          hire_date?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

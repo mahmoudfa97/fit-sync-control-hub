@@ -19,12 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { membershipTypes } from "./MembershipTypes";
-import { Member } from "@/store/slices/membersSlice";
+import { type Member } from "@/store/slices/membersSlice";
 
 interface NewMemberForm {
   name: string;
+  last_name: string;
   email: string;
   phone: string;
+  age: string;
+  gender: "male" | "female" | "";
   membershipType: string;
   status: Member['status'];
   paymentStatus: Member['paymentStatus'];
@@ -36,6 +39,7 @@ interface AddMemberDialogProps {
   newMember: NewMemberForm;
   setNewMember: React.Dispatch<React.SetStateAction<NewMemberForm>>;
   onAddMember: () => void;
+  isSubmitting?: boolean;
 }
 
 export const AddMemberDialog = ({
@@ -44,28 +48,40 @@ export const AddMemberDialog = ({
   newMember,
   setNewMember,
   onAddMember,
+  isSubmitting = false,
 }: AddMemberDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>إضافة عضو جديد</DialogTitle>
+          <DialogTitle>הוספת חבר חדש</DialogTitle>
           <DialogDescription>
-            أدخل معلومات العضو الجديد أدناه.
+            הזן את פרטי החבר החדש למטה.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">الاسم</Label>
-            <Input
-              id="name"
-              placeholder="اسم العضو"
-              value={newMember.name}
-              onChange={(e) => setNewMember({...newMember, name: e.target.value})}
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="name">שם פרטי</Label>
+              <Input
+                id="name"
+                placeholder="שם פרטי"
+                value={newMember.name}
+                onChange={(e) => setNewMember({...newMember, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="last_name">שם משפחה</Label>
+              <Input
+                id="last_name"
+                placeholder="שם משפחה"
+                value={newMember.last_name}
+                onChange={(e) => setNewMember({...newMember, last_name: e.target.value})}
+              />
+            </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">البريد الإلكتروني</Label>
+            <Label htmlFor="email">אימייל</Label>
             <Input
               id="email"
               type="email"
@@ -75,7 +91,7 @@ export const AddMemberDialog = ({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="phone">رقم الهاتف</Label>
+            <Label htmlFor="phone">מספר טלפון</Label>
             <Input
               id="phone"
               placeholder="05xxxxxxxx"
@@ -83,14 +99,43 @@ export const AddMemberDialog = ({
               onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
             />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="age">גיל</Label>
+              <Input
+                id="age"
+                type="number"
+                placeholder="גיל"
+                value={newMember.age}
+                onChange={(e) => setNewMember({...newMember, age: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="gender">מגדר</Label>
+              <Select
+                value={newMember.gender}
+                onValueChange={(value: "male" | "female" | "") => 
+                  setNewMember({...newMember, gender: value})
+                }
+              >
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="בחר מגדר" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">זכר</SelectItem>
+                  <SelectItem value="female">נקבה</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="grid gap-2">
-            <Label htmlFor="membershipType">نوع العضوية</Label>
+            <Label htmlFor="membershipType">סוג המנוי</Label>
             <Select
               value={newMember.membershipType}
               onValueChange={(value) => setNewMember({...newMember, membershipType: value})}
             >
               <SelectTrigger id="membershipType">
-                <SelectValue placeholder="اختر نوع العضوية" />
+                <SelectValue placeholder="בחר סוג מנוי" />
               </SelectTrigger>
               <SelectContent>
                 {membershipTypes.map((type) => (
@@ -102,7 +147,7 @@ export const AddMemberDialog = ({
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="status">الحالة</Label>
+            <Label htmlFor="status">סטטוס</Label>
             <Select
               value={newMember.status}
               onValueChange={(value: Member['status']) => 
@@ -110,18 +155,18 @@ export const AddMemberDialog = ({
               }
             >
               <SelectTrigger id="status">
-                <SelectValue placeholder="اختر الحالة" />
+                <SelectValue placeholder="בחר סטטוס" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">نشط</SelectItem>
-                <SelectItem value="inactive">غير نشط</SelectItem>
-                <SelectItem value="pending">معلق</SelectItem>
-                <SelectItem value="expired">منتهي</SelectItem>
+                <SelectItem value="active">פעיל</SelectItem>
+                <SelectItem value="inactive">לא פעיל</SelectItem>
+                <SelectItem value="pending">ממתין</SelectItem>
+                <SelectItem value="expired">פג תוקף</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="paymentStatus">حالة الدفع</Label>
+            <Label htmlFor="paymentStatus">סטטוס תשלום</Label>
             <Select
               value={newMember.paymentStatus}
               onValueChange={(value: Member['paymentStatus']) => 
@@ -129,26 +174,26 @@ export const AddMemberDialog = ({
               }
             >
               <SelectTrigger id="paymentStatus">
-                <SelectValue placeholder="اختر حالة الدفع" />
+                <SelectValue placeholder="בחר סטטוס תשלום" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="paid">مدفوع</SelectItem>
-                <SelectItem value="pending">معلق</SelectItem>
-                <SelectItem value="overdue">متأخر</SelectItem>
-                <SelectItem value="canceled">ملغى</SelectItem>
+                <SelectItem value="paid">שולם</SelectItem>
+                <SelectItem value="pending">ממתין</SelectItem>
+                <SelectItem value="overdue">באיחור</SelectItem>
+                <SelectItem value="canceled">בוטל</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            إلغاء
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            ביטול
           </Button>
-          <Button onClick={onAddMember}>
-            إضافة عضو
+          <Button onClick={onAddMember} disabled={isSubmitting}>
+            {isSubmitting ? 'מוסיף...' : 'הוסף חבר'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}

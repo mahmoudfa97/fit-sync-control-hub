@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,21 @@ import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { addCheckIn } from "@/store/slices/checkInsSlice";
 import { recordCheckIn } from "@/store/slices/membersSlice";
 import { t } from "@/utils/translations";
+import { supabase } from "@/integrations/supabase/client";
+
+interface CheckIn {
+  id: string;
+  memberId: string;
+  memberName: string;
+  checkInTime: string;
+  notes?: string;
+}
+
+interface Member {
+  id: string;
+  name: string;
+  last_name?: string;
+}
 
 export default function CheckIns() {
   const dispatch = useAppDispatch();
@@ -46,44 +61,142 @@ export default function CheckIns() {
     memberId: "",
     notes: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [supabaseCheckIns, setSupabaseCheckIns] = useState<CheckIn[]>([]);
+  const [supabaseMembers, setSupabaseMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const filteredCheckIns = checkIns.filter(
+  useEffect(() => {
+    fetchCheckIns();
+    fetchMembers();
+  }, []);
+
+  const fetchCheckIns = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('checkins')
+        .select(`
+          id,
+          check_in_time,
+          notes,
+          member_id,
+          profiles:member_id(id, name, last_name)
+        `)
+        .order('check_in_time', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Transform the data to match our interface
+      const transformedData: CheckIn[] = data.map(item => ({
+        id: item.id,
+        memberId: item.member_id,
+        memberName: item.profiles ? `${item.profiles.name} ${item.profiles.last_name || ''}` : 'Unknown',
+        checkInTime: item.check_in_time,
+        notes: item.notes || undefined
+      }));
+
+      setSupabaseCheckIns(transformedData);
+    } catch (error) {
+      console.error('Error fetching check-ins:', error);
+      toast.error(t("errorFetchingData"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, last_name')
+        .order('name');
+
+      if (error) {
+        throw error;
+      }
+
+      setSupabaseMembers(data);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      toast.error(t("errorFetchingMembers"));
+    }
+  };
+  
+  const filteredCheckIns = supabaseCheckIns.filter(
     (checkIn) =>
       checkIn.memberName.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleAddCheckIn = () => {
+  const handleAddCheckIn = async () => {
     if (!newCheckIn.memberId) {
       toast.error(t("memberRequired"));
       return;
     }
     
-    const member = members.find((m) => m.id === newCheckIn.memberId);
-    if (!member) {
-      toast.error(t("memberNotFound"));
-      return;
-    }
+    setIsSubmitting(true);
     
-    const now = new Date();
-    
-    dispatch(
-      addCheckIn({
-        id: `checkin-${Date.now()}`,
+    try {
+      const now = new Date();
+      
+      // Add check-in to Supabase
+      const { data, error } = await supabase
+        .from('checkins')
+        .insert({
+          member_id: newCheckIn.memberId,
+          check_in_time: now.toISOString(),
+          notes: newCheckIn.notes || null
+        })
+        .select('id');
+
+      if (error) {
+        throw error;
+      }
+
+      const checkInId = data[0].id;
+      
+      // Find the member to get the name
+      const member = supabaseMembers.find(m => m.id === newCheckIn.memberId);
+      const memberName = member ? `${member.name} ${member.last_name || ''}` : 'Unknown';
+      
+      // Add to local state
+      const newCheckInEntry: CheckIn = {
+        id: checkInId,
         memberId: newCheckIn.memberId,
-        memberName: member.name,
+        memberName: memberName,
         checkInTime: now.toISOString(),
-        notes: newCheckIn.notes,
-      })
-    );
-    
-    dispatch(recordCheckIn(newCheckIn.memberId));
-    
-    toast.success(t("checkInAdded"));
-    setNewCheckIn({
-      memberId: "",
-      notes: "",
-    });
-    setAddCheckInOpen(false);
+        notes: newCheckIn.notes || undefined
+      };
+      
+      setSupabaseCheckIns(prev => [newCheckInEntry, ...prev]);
+      
+      // Also update Redux for the UI components that depend on it
+      dispatch(
+        addCheckIn({
+          id: checkInId,
+          memberId: newCheckIn.memberId,
+          memberName: memberName,
+          checkInTime: now.toISOString(),
+          notes: newCheckIn.notes || undefined,
+        })
+      );
+      
+      dispatch(recordCheckIn(newCheckIn.memberId));
+      
+      toast.success(t("checkInAdded"));
+      setNewCheckIn({
+        memberId: "",
+        notes: "",
+      });
+      setAddCheckInOpen(false);
+    } catch (error) {
+      console.error('Error adding check-in:', error);
+      toast.error(t("errorAddingCheckIn"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const formatDate = (dateString: string) => {
@@ -136,34 +249,40 @@ export default function CheckIns() {
           <CardTitle>{t("checkInLog")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("memberName")}</TableHead>
-                <TableHead>{t("checkInDate")}</TableHead>
-                <TableHead>{t("checkInTime")}</TableHead>
-                <TableHead>{t("notes")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCheckIns.length > 0 ? (
-                filteredCheckIns.map((checkIn) => (
-                  <TableRow key={checkIn.id}>
-                    <TableCell className="font-medium">{checkIn.memberName}</TableCell>
-                    <TableCell>{formatDate(checkIn.checkInTime)}</TableCell>
-                    <TableCell>{formatTime(checkIn.checkInTime)}</TableCell>
-                    <TableCell>{checkIn.notes || "-"}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
+          {loading ? (
+            <div className="flex justify-center p-8">
+              <div className="animate-pulse text-muted-foreground">טוען...</div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    {t("noCheckIns")}
-                  </TableCell>
+                  <TableHead>{t("memberName")}</TableHead>
+                  <TableHead>{t("checkInDate")}</TableHead>
+                  <TableHead>{t("checkInTime")}</TableHead>
+                  <TableHead>{t("notes")}</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCheckIns.length > 0 ? (
+                  filteredCheckIns.map((checkIn) => (
+                    <TableRow key={checkIn.id}>
+                      <TableCell className="font-medium">{checkIn.memberName}</TableCell>
+                      <TableCell>{formatDate(checkIn.checkInTime)}</TableCell>
+                      <TableCell>{formatTime(checkIn.checkInTime)}</TableCell>
+                      <TableCell>{checkIn.notes || "-"}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      {t("noCheckIns")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -186,9 +305,9 @@ export default function CheckIns() {
                   <SelectValue placeholder={t("chooseMember")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {members.map((member) => (
+                  {supabaseMembers.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.name}
+                      {`${member.name} ${member.last_name || ''}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -205,10 +324,12 @@ export default function CheckIns() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddCheckInOpen(false)}>
+            <Button variant="outline" onClick={() => setAddCheckInOpen(false)} disabled={isSubmitting}>
               {t("cancel")}
             </Button>
-            <Button onClick={handleAddCheckIn}>{t("addCheckIn")}</Button>
+            <Button onClick={handleAddCheckIn} disabled={isSubmitting}>
+              {isSubmitting ? t("adding") : t("addCheckIn")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
