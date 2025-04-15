@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   LogOut,
-  FileText
+  FileText,
+  Group
 } from "lucide-react";
 import { t } from "@/utils/translations";
 
@@ -56,6 +56,7 @@ const navItems = [
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
   { icon: KeyRound, label: t("access_menu"), to: "/access" },
   { icon: Settings, label: t("settings_menu"), to: "/settings" },
+  { icon: Group, label: t("groupSubscriptions"), to: "/group-subscriptions" },
 ];
 
 export function Sidebar() {

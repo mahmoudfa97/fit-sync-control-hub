@@ -1,4 +1,3 @@
-
 const en = {
   dashboard_menu: "Dashboard",
   members_menu: "Members",
@@ -189,7 +188,6 @@ const en = {
   thursday: "Thursday",
   friday: "Friday",
   saturday: "Saturday",
-  // Fixed duplicate property - removed duplicate "paymentsTitle"
   paymentsDesc: "Manage and track member payments at your gym",
   searchPayments: "Search in payments...",
   filter: "Filter",
@@ -225,7 +223,6 @@ const en = {
   dayAgo: "1 day ago",
   daysAgo: "{{time}} days ago",
   for: "for",
-  // Settings translations
   settings: "Settings",
   settingsDesc: "Manage and customize your gym settings and preferences",
   saveSettings: "Save Settings",
@@ -276,7 +273,28 @@ const en = {
   smsApiSecret: "API Secret",
   smsConfigSuccess: "SMS configuration saved successfully",
   smsTestSuccess: "Test message sent successfully",
-  smsTestFail: "Failed to send test message"
+  smsTestFail: "Failed to send test message",
+  groupSubscriptions: "Group Subscriptions",
+  groupSubscriptionsDesc: "Manage and view available group subscription plans",
+  subscriptionName: "Subscription Name",
+  pricePerMonth: "Price per Month",
+  priceForPeriods: "Prices for Different Periods",
+  twoMonths: "Two Months",
+  threeMonths: "Three Months",
+  fourMonths: "Four Months",
+  sixMonths: "Six Months",
+  annualPrice: "Annual Price",
+  activeSubscriptions: "Active Subscriptions",
+  createSubscription: "Create Subscription",
+  editSubscription: "Edit Subscription",
+  deleteSubscription: "Delete Subscription",
+  schedule: "Schedule",
+  addTimeSlot: "Add Time Slot",
+  noScheduleItems: "No schedule items added. Click the button above to add times.",
+  deleteSubscriptionConfirmation: "Are you sure you want to delete the subscription",
+  subscriptionUpdated: "Subscription updated successfully",
+  subscriptionDeleted: "Subscription deleted successfully",
+  errorFetchingData: "Error fetching data",
 };
 
 export default en;
