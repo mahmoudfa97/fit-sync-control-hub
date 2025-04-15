@@ -181,6 +181,7 @@ export type Database = {
           price_six_months: number
           price_three_months: number
           price_two_months: number
+          schedule: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -194,6 +195,7 @@ export type Database = {
           price_six_months: number
           price_three_months: number
           price_two_months: number
+          schedule?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -207,6 +209,7 @@ export type Database = {
           price_six_months?: number
           price_three_months?: number
           price_two_months?: number
+          schedule?: Json | null
           updated_at?: string | null
         }
         Relationships: []

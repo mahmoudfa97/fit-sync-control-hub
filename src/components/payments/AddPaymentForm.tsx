@@ -21,19 +21,14 @@ interface AddPaymentFormProps {
   onAddPaymentMethod: () => void;
 }
 
-export default function AddPaymentForm({ 
-  members, 
-  paymentMethods, 
-  onPaymentAdded, 
-  onAddPaymentMethod 
-}: AddPaymentFormProps) {
+export default function AddPaymentForm({ members, paymentMethods, onPaymentAdded, onAddPaymentMethod }: AddPaymentFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<PaymentMethodFormValues>({
     resolver: zodResolver(paymentMethodSchema),
     defaultValues: {
-      paymentType: 'card',
+      paymentType: 'card' as const,
       isDefault: false,
     },
   });
@@ -50,7 +45,7 @@ export default function AddPaymentForm({
   const onSubmit = async (values: PaymentMethodFormValues) => {
     try {
       setIsSubmitting(true);
-      await PaymentService.addPaymentMethod(values);
+      await PaymentService.addPaymentMethod(values as any); // Type assertion needed due to PaymentService interface
       
       toast({
         title: "אמצעי תשלום נוסף בהצלחה",
@@ -58,7 +53,7 @@ export default function AddPaymentForm({
       });
       
       form.reset({
-        paymentType: 'card',
+        paymentType: 'card' as const,
         isDefault: false,
       });
       

@@ -1,7 +1,7 @@
 
 import { z } from "zod";
 
-export const cardPaymentMethodSchema = z.object({
+const cardPaymentMethodSchema = z.object({
   paymentType: z.literal('card'),
   provider: z.enum(['visa', 'mastercard', 'other'], {
     required_error: "יש לבחור ספק כרטיס אשראי",
@@ -12,7 +12,7 @@ export const cardPaymentMethodSchema = z.object({
   isDefault: z.boolean().default(false),
 });
 
-export const otherPaymentMethodSchema = z.object({
+const otherPaymentMethodSchema = z.object({
   paymentType: z.enum(['bank', 'other']),
   isDefault: z.boolean().default(false),
 });

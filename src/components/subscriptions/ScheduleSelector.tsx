@@ -49,7 +49,10 @@ export function ScheduleSelector({ form }: ScheduleSelectorProps) {
 
   const updateScheduleItem = (index: number, field: keyof ScheduleItem, value: any) => {
     const newSchedule = [...schedule];
-    newSchedule[index][field] = value;
+    newSchedule[index] = {
+      ...newSchedule[index],
+      [field]: typeof value === 'string' ? value : parseInt(value)
+    };
     setSchedule(newSchedule);
     form.setValue("schedule", newSchedule);
   };
@@ -91,7 +94,7 @@ export function ScheduleSelector({ form }: ScheduleSelectorProps) {
 
             <Select
               value={item.start.toString()}
-              onValueChange={(value) => updateScheduleItem(index, "start", parseInt(value))}
+              onValueChange={(value) => updateScheduleItem(index, "start", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t("startTime")} />
@@ -107,7 +110,7 @@ export function ScheduleSelector({ form }: ScheduleSelectorProps) {
 
             <Select
               value={item.end.toString()}
-              onValueChange={(value) => updateScheduleItem(index, "end", parseInt(value))}
+              onValueChange={(value) => updateScheduleItem(index, "end", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t("endTime")} />
@@ -141,3 +144,4 @@ export function ScheduleSelector({ form }: ScheduleSelectorProps) {
     </div>
   );
 }
+

@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { PaymentService } from "@/services/PaymentService";
 import { useToast } from "@/hooks/use-toast";
@@ -10,29 +9,7 @@ import { CardPaymentMethodForm } from "./CardPaymentMethodForm";
 import { PaymentMethodTypeSelector } from "./PaymentMethodTypeSelector";
 import { DefaultPaymentSwitch } from "./DefaultPaymentSwitch";
 import { FormSubmitButton } from "./FormSubmitButton";
-
-const cardPaymentMethodSchema = z.object({
-  paymentType: z.literal('card'),
-  provider: z.enum(['visa', 'mastercard', 'other'], {
-    required_error: "יש לבחור ספק כרטיס אשראי",
-  }),
-  lastFour: z.string().length(4, { message: "יש להזין 4 ספרות אחרונות" }),
-  cardHolderName: z.string().min(2, { message: "יש להזין שם בעל הכרטיס" }),
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/[0-9]{2}$/, { message: "פורמט לא תקין (MM/YY)" }),
-  isDefault: z.boolean().default(false),
-});
-
-const otherPaymentMethodSchema = z.object({
-  paymentType: z.enum(['bank', 'other']),
-  isDefault: z.boolean().default(false),
-});
-
-const paymentMethodSchema = z.discriminatedUnion('paymentType', [
-  cardPaymentMethodSchema,
-  otherPaymentMethodSchema,
-]);
-
-type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
+import { PaymentMethodFormValues, paymentMethodSchema } from "./schemas/paymentMethodSchemas";
 
 interface AddPaymentMethodFormProps {
   onSuccess?: () => void;
@@ -45,7 +22,7 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
   const form = useForm<PaymentMethodFormValues>({
     resolver: zodResolver(paymentMethodSchema),
     defaultValues: {
-      paymentType: 'card',
+      paymentType: 'card' as const,
       isDefault: false,
     },
   });
@@ -62,9 +39,7 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
   const onSubmit = async (values: PaymentMethodFormValues) => {
     try {
       setIsSubmitting(true);
-      
-      // Ensure paymentType is required by using the PaymentMethodFormValues from zod
-      await PaymentService.addPaymentMethod(values);
+      await PaymentService.addPaymentMethod(values as any); // Type assertion needed due to PaymentService interface
       
       toast({
         title: "אמצעי תשלום נוסף בהצלחה",
@@ -72,7 +47,7 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
       });
       
       form.reset({
-        paymentType: 'card',
+        paymentType: 'card' as const,
         isDefault: false,
       });
       
@@ -94,11 +69,8 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <PaymentMethodTypeSelector onTypeChange={handlePaymentTypeChange} />
-
         {paymentType === 'card' && <CardPaymentMethodForm />}
-
         <DefaultPaymentSwitch />
-
         <FormSubmitButton 
           isSubmitting={isSubmitting} 
           label="שמור אמצעי תשלום" 
