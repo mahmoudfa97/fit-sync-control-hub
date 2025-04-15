@@ -288,6 +288,13 @@ const en = {
   createSubscription: "Create Subscription",
   editSubscription: "Edit Subscription",
   deleteSubscription: "Delete Subscription",
+  schedule: "Schedule",
+  addTimeSlot: "Add Time Slot",
+  noScheduleItems: "No schedule items added. Click the button above to add times.",
+  deleteSubscriptionConfirmation: "Are you sure you want to delete the subscription",
+  subscriptionUpdated: "Subscription updated successfully",
+  subscriptionDeleted: "Subscription deleted successfully",
+  errorFetchingData: "Error fetching data",
 };
 
 export default en;

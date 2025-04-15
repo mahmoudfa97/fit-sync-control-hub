@@ -191,7 +191,6 @@ const he = {
   thursday: "חמישי",
   friday: "שישי",
   saturday: "שבת",
-  // Fixed duplicate property - removed duplicate "paymentsTitle"
   paymentsDesc: "ניהול ומעקב אחר תשלומי מנויים במכון",
   searchPayments: "חפש בתשלומים...",
   filter: "סינון",
@@ -227,7 +226,6 @@ const he = {
   dayAgo: "לפני יום",
   daysAgo: "לפני {{time}} ימים",
   for: "עבור",
-  // Settings translations
   settings: "הגדרות",
   settingsDesc: "נהל והתאם אישית את הגדרות ותפריטי המכון שלך",
   saveSettings: "שמור הגדרות",
@@ -257,7 +255,7 @@ const he = {
   expiryReminders: "תזכורות תפוגה",
   autoRenewals: "חידוש אוטומטי",
   sendRemindersBeforeExpiry: "שלח תזכורות לפני פקיעת תוקף המנוי",
-  renewMembershipsAutomatically: "חדש מנויים אוטומטית בעת פקיעתם",
+  renewMembershipsAutomatically: "חדש מנויים אוטומatically בעת פקיעתם",
   businessInfo: "מידע עסקי",
   taxNumber: "מספר עוסק מורשה",
   commercialRegister: "מספר רישום",
@@ -303,6 +301,13 @@ const he = {
   createSubscription: "צור מנוי",
   editSubscription: "ערוך מנוי",
   deleteSubscription: "מחק מנוי",
-}
+  schedule: "לוח זמנים",
+  addTimeSlot: "הוסף משבצת זמן",
+  noScheduleItems: "לא נוספו פריטי לוח זמנים. לחץ על הכפתור למעלה כדי להוסיף זמנים.",
+  deleteSubscriptionConfirmation: "האם אתה בטוח שברצונך למחוק את המנוי",
+  subscriptionUpdated: "המנוי עודכן בהצלחה",
+  subscriptionDeleted: "המנוי נמחק בהצלחה",
+  errorFetchingData: "שגיאה בטעינת נתונים",
+};
 
 export default he;

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,7 +11,7 @@ import { z } from "zod";
 import { t } from "@/utils/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ScheduleSelector } from "./ScheduleSelector";
+import { ScheduleSelector, ScheduleItem } from "./ScheduleSelector";
 
 const schema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
@@ -31,17 +31,32 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-interface AddGroupSubscriptionDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubscriptionAdded?: () => void;
+interface GroupSubscription {
+  id: string;
+  name: string;
+  price_per_month: number;
+  price_two_months: number;
+  price_three_months: number;
+  price_four_months: number;
+  price_six_months: number;
+  annual_price: number;
+  is_active: boolean;
+  schedule?: ScheduleItem[];
 }
 
-export function AddGroupSubscriptionDialog({ 
+interface EditGroupSubscriptionDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubscriptionUpdated?: () => void;
+  subscription: GroupSubscription | null;
+}
+
+export function EditGroupSubscriptionDialog({ 
   open, 
   onOpenChange,
-  onSubscriptionAdded 
-}: AddGroupSubscriptionDialogProps) {
+  onSubscriptionUpdated,
+  subscription
+}: EditGroupSubscriptionDialogProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -59,12 +74,30 @@ export function AddGroupSubscriptionDialog({
 
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (subscription && open) {
+      form.reset({
+        name: subscription.name,
+        door: "main",
+        price_per_month: subscription.price_per_month,
+        price_two_months: subscription.price_two_months,
+        price_three_months: subscription.price_three_months,
+        price_four_months: subscription.price_four_months,
+        price_six_months: subscription.price_six_months,
+        annual_price: subscription.annual_price,
+        schedule: subscription.schedule || [],
+      });
+    }
+  }, [subscription, open, form]);
+
   const onSubmit = async (values: FormValues) => {
+    if (!subscription) return;
+    
     try {
       setLoading(true);
       const { error } = await supabase
         .from('group_subscriptions')
-        .insert([{
+        .update({
           name: values.name,
           price_per_month: values.price_per_month,
           price_two_months: values.price_two_months,
@@ -72,15 +105,15 @@ export function AddGroupSubscriptionDialog({
           price_four_months: values.price_four_months,
           price_six_months: values.price_six_months,
           annual_price: values.annual_price,
-          is_active: true,
           schedule: values.schedule
-        }]);
+        })
+        .eq('id', subscription.id);
 
       if (error) throw error;
 
-      toast.success(t("subscriptionAdded"));
+      toast.success(t("subscriptionUpdated"));
       onOpenChange(false);
-      if (onSubscriptionAdded) onSubscriptionAdded();
+      if (onSubscriptionUpdated) onSubscriptionUpdated();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -92,7 +125,7 @@ export function AddGroupSubscriptionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{t("createSubscription")}</DialogTitle>
+          <DialogTitle>{t("editSubscription")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -245,7 +278,7 @@ export function AddGroupSubscriptionDialog({
                 {t("cancel")}
               </Button>
               <Button type="submit" disabled={loading}>
-                {t("add")}
+                {t("save")}
               </Button>
             </div>
           </form>
