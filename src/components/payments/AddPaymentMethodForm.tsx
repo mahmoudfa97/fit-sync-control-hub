@@ -63,10 +63,8 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
     try {
       setIsSubmitting(true);
       
-      // Make sure paymentType is required in the values we pass to the service
-      const paymentMethodData: z.infer<typeof paymentMethodSchema> = values;
-      
-      await PaymentService.addPaymentMethod(paymentMethodData);
+      // Ensure paymentType is required by using the PaymentMethodFormValues from zod
+      await PaymentService.addPaymentMethod(values);
       
       toast({
         title: "אמצעי תשלום נוסף בהצלחה",

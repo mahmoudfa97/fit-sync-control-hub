@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Payment } from "@/store/slices/paymentsSlice";
 
@@ -13,7 +14,7 @@ export interface PaymentMethod {
   createdAt: string;
 }
 
-type AddPaymentMethodInput = {
+export type AddPaymentMethodInput = {
   paymentType: 'card' | 'bank' | 'other';
   provider?: 'visa' | 'mastercard' | 'other';
   lastFour?: string;

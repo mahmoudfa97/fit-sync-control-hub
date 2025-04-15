@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Member } from "@/store/slices/members";
 
+// Use the same schema definitions for consistency
 const cardPaymentMethodSchema = z.object({
   paymentType: z.literal('card'),
   provider: z.enum(['visa', 'mastercard', 'other'], {
@@ -48,7 +50,7 @@ const paymentMethodSchema = z.discriminatedUnion('paymentType', [
 
 type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
 
-interface AddPaymentMethodFormProps {
+interface AddPaymentFormProps {
   onSuccess?: () => void;
   members: Member[];
   paymentMethods: PaymentMethod[];
@@ -56,7 +58,12 @@ interface AddPaymentMethodFormProps {
   onAddPaymentMethod: () => void;
 }
 
-export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodFormProps) {
+export default function AddPaymentForm({ 
+  members, 
+  paymentMethods, 
+  onPaymentAdded, 
+  onAddPaymentMethod 
+}: AddPaymentFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -74,6 +81,7 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
     try {
       setIsSubmitting(true);
       
+      // Ensure proper typing by using the zod schema's inferred type
       await PaymentService.addPaymentMethod(values);
       
       toast({
@@ -86,8 +94,8 @@ export default function AddPaymentMethodForm({ onSuccess }: AddPaymentMethodForm
         isDefault: false,
       });
       
-      if (onSuccess) {
-        onSuccess();
+      if (onPaymentAdded) {
+        onPaymentAdded();
       }
     } catch (error: any) {
       toast({

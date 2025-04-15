@@ -2,7 +2,6 @@
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFormContext } from "react-hook-form";
-import { z } from "zod";
 
 type PaymentMethodType = 'card' | 'bank' | 'other';
 
@@ -21,9 +20,11 @@ export function PaymentMethodTypeSelector({ onTypeChange }: PaymentMethodTypeSel
         <FormItem>
           <FormLabel>סוג אמצעי תשלום</FormLabel>
           <Select 
-            onValueChange={(value) => {
-              field.onChange(value);
-              onTypeChange(value as PaymentMethodType);
+            onValueChange={(value: string) => {
+              // Ensure we're using the correct type
+              const paymentType = value as PaymentMethodType;
+              field.onChange(paymentType);
+              onTypeChange(paymentType);
             }}
             defaultValue={field.value}
           >
