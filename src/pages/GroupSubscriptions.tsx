@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { t } from "@/utils/translations";
 import { Loader2, Plus, Edit, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { AddGroupSubscriptionDialog } from "@/components/subscriptions/AddGroupSubscriptionDialog";
 
 interface GroupSubscription {
   id: string;
@@ -24,6 +24,7 @@ interface GroupSubscription {
 export default function GroupSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<GroupSubscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -105,7 +106,7 @@ export default function GroupSubscriptions() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-end mb-4">
-            <Button>
+            <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               {t("createSubscription")}
             </Button>
@@ -113,6 +114,12 @@ export default function GroupSubscriptions() {
           {renderSubscriptionsTable()}
         </CardContent>
       </Card>
+
+      <AddGroupSubscriptionDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen}
+        onSubscriptionAdded={fetchSubscriptions}
+      />
     </DashboardShell>
   );
 }
