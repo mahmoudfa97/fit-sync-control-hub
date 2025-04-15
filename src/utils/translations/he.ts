@@ -1,4 +1,3 @@
-
 const he = {
   dashboard_menu: "לוח בקרה",
   members_menu: "מנויים",
@@ -289,7 +288,21 @@ const he = {
   smsApiSecret: "קוד סודי ל-API",
   smsConfigSuccess: "הגדרות ה-SMS נשמרו בהצלחה",
   smsTestSuccess: "הודעת בדיקה נשלחה בהצלחה",
-  smsTestFail: "שליחת הודעת הבדיקה נכשלה"
-};
+  smsTestFail: "שליחת הודעת הבדיקה נכשלה",
+  groupSubscriptions: "מנויי קבוצות",
+  groupSubscriptionsDesc: "נהל והצג תוכניות מנוי קבוצתיות זמינות",
+  subscriptionName: "שם המנוי",
+  pricePerMonth: "מחיר לחודש",
+  priceForPeriods: "מחירים לתקופות שונות",
+  twoMonths: "חודשיים",
+  threeMonths: "שלושה חודשים",
+  fourMonths: "ארבעה חודשים",
+  sixMonths: "שישה חודשים",
+  annualPrice: "מחיר שנתי",
+  activeSubscriptions: "מנויים פעילים",
+  createSubscription: "צור מנוי",
+  editSubscription: "ערוך מנוי",
+  deleteSubscription: "מחק מנוי",
+}
 
 export default he;

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import Classes from "./pages/Classes";
 import Staff from "./pages/Staff";
 import AccessControl from "./pages/AccessControl";
 import Settings from "./pages/Settings";
+import GroupSubscriptions from "./pages/GroupSubscriptions"; // New import
 
 const queryClient = new QueryClient();
 
@@ -61,6 +61,7 @@ const AppContent = () => {
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/access" element={<ProtectedRoute><AccessControl /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/group-subscriptions" element={<ProtectedRoute><GroupSubscriptions /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
