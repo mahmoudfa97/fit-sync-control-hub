@@ -2,7 +2,7 @@
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NumbersPrivacyToggle } from "@/components/NumbersPrivacyToggle";
-import { UserNav } from "@/components/layout/UserNav";
+// import { UserNav } from "@/components/layout/UserNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 
@@ -17,7 +17,7 @@ export function TopBar() {
           <NumbersPrivacyToggle />
           <ThemeToggle />
           <LanguageToggle />
-          {session && <UserNav />}
+          {/* {session && <UserNav />} */}
         </div>
       </div>
     </header>

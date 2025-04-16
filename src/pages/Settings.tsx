@@ -20,6 +20,7 @@ import {
 import { ChevronDown, Send, Loader2 } from "lucide-react"
 import { t } from "@/utils/translations"
 import { supabase } from "@/integrations/supabase/client"
+import { sendSms } from "@/services/SMS-Serivce"
 
 // Define types for settings
 interface WorkingHours {
@@ -661,14 +662,7 @@ export default function Settings() {
                         placeholder="Enter a test message"
                         className="flex-1"
                       />
-                      <Button onClick={sendTestMessage} type="button" disabled={sendingTest}>
-                        {sendingTest ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="mr-2 h-4 w-4" />
-                        )}
-                        {t("smsTestMessage")}
-                      </Button>
+                  
                     </div>
                   </div>
                 </div>
