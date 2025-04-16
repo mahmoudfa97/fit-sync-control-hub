@@ -4,7 +4,17 @@ import { Member, MembersState } from './types';
 
 export const membersReducers = {
   addMember: (state: MembersState, action: PayloadAction<Member>) => {
-    state.members.push(action.payload);
+    // Check if member with this ID already exists
+    const existingMemberIndex = state.members.findIndex(m => m.id === action.payload.id);
+    
+    if (existingMemberIndex !== -1) {
+      // If member exists, update it
+      state.members[existingMemberIndex] = action.payload;
+    } else {
+      // If new member, add it
+      state.members.push(action.payload);
+    }
+    
     state.filteredMembers = state.members.filter(member => 
       !state.filterStatus || member.status === state.filterStatus
     );
@@ -29,6 +39,7 @@ export const membersReducers = {
   
   filterMembers: (state: MembersState, action: PayloadAction<{ status: string | null, searchTerm: string }>) => {
     state.filterStatus = action.payload.status;
+    state.searchQuery = action.payload.searchTerm;
     
     state.filteredMembers = state.members.filter(member => {
       const matchesStatus = !action.payload.status || member.status === action.payload.status;

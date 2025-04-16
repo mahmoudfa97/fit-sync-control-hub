@@ -2,16 +2,18 @@
 import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { addMember, filterMembers, recordCheckIn, Member } from "@/store/slices/members/membersSlice";
+import { addMember, updateMember, filterMembers, recordCheckIn, Member } from "@/store/slices/members/membersSlice";
 import { useToast } from "@/hooks/use-toast";
 import { MembersHeader } from "@/components/members/MembersHeader";
 import { MemberList } from "@/components/members/MemberList";
 import { AddMemberDialog } from "@/components/members/AddMemberDialog";
 import { t } from "@/utils/translations";
 import { MemberService, MemberFormData } from "@/services/MemberService";
+import { useNavigate } from "react-router-dom";
 
 export default function Members() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { members, filteredMembers } = useAppSelector(state => state.members);
   const { toast } = useToast();
   
@@ -78,16 +80,29 @@ export default function Members() {
     setIsSubmitting(true);
     
     try {
-      // Use the MemberService to add a new member
-      const memberToAdd = await MemberService.addMember(newMember);
+      // Use the MemberService to add a new member or update existing
+      const memberResult = await MemberService.addMember(newMember);
       
-      // Update Redux store
-      dispatch(addMember(memberToAdd));
-      
-      toast({
-        title: "לקוח נוסף בהצלחה",
-        description: `${newMember.name} ${newMember.last_name || ''} נוסף לרשימת הלקוחות`,
-      });
+      if (memberResult.isExisting) {
+        // If member already exists, update their data in Redux
+        dispatch(updateMember({ ...memberResult, isExisting: undefined }));
+        
+        toast({
+          title: "מנוי חדש נוסף למשתמש קיים",
+          description: `מנוי חדש נוסף ל${memberResult.name}`,
+        });
+        
+        // Navigate to member profile
+        navigate(`/members/${memberResult.id}`);
+      } else {
+        // If new member, add to Redux
+        dispatch(addMember({ ...memberResult, isExisting: undefined }));
+        
+        toast({
+          title: "לקוח נוסף בהצלחה",
+          description: `${newMember.name} ${newMember.last_name || ''} נוסף לרשימת הלקוחות`,
+        });
+      }
       
       setNewMember({
         name: "",

@@ -112,8 +112,85 @@ export class MemberService {
     }
   }
 
+  static async findMemberByEmail(email: string) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          name,
+          last_name,
+          email,
+          phone,
+          age,
+          gender,
+          avatar_url,
+          created_at,
+          memberships(
+            id,
+            membership_type,
+            start_date,
+            end_date,
+            status,
+            payment_status
+          )
+        `)
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error finding member by email:', error);
+      throw error;
+    }
+  }
+
   static async addMember(memberData: MemberFormData) {
     try {
+      // Check if member with this email already exists
+      const existingMember = await this.findMemberByEmail(memberData.email);
+      
+      if (existingMember) {
+        // If member exists, create a new membership for them
+        const { error: membershipError } = await supabase
+          .from('memberships')
+          .insert({
+            member_id: existingMember.id,
+            membership_type: memberData.membershipType,
+            status: memberData.status,
+            payment_status: memberData.paymentStatus,
+            start_date: new Date().toISOString(),
+            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+          });
+
+        if (membershipError) throw membershipError;
+        
+        // Format data for Redux store using the existing member's info
+        const today = new Date();
+        const hebrewMonths = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+        
+        const initials = `${existingMember.name[0]}${existingMember.last_name ? existingMember.last_name[0] : ''}`;
+        
+        return {
+          id: existingMember.id,
+          name: `${existingMember.name} ${existingMember.last_name || ''}`,
+          email: existingMember.email,
+          phone: existingMember.phone || '',
+          membershipType: memberData.membershipType,
+          status: memberData.status,
+          joinDate: new Date(existingMember.created_at).toLocaleDateString('he-IL'),
+          lastCheckIn: "טרם נרשם",
+          paymentStatus: memberData.paymentStatus,
+          initials: initials,
+          gender: existingMember.gender as 'male' | 'female' | 'other' | undefined,
+          age: existingMember.age ? existingMember.age.toString() : undefined,
+          isExisting: true // Flag to indicate this is an existing member
+        } as Member & { isExisting: boolean };
+      }
+      
+      // If member doesn't exist, create a new one
       // Generate a UUID for the new member
       const memberId = crypto.randomUUID();
       
@@ -166,7 +243,8 @@ export class MemberService {
         initials: initials,
         gender: memberData.gender as 'male' | 'female' | 'other' | undefined,
         age: memberData.age || undefined,
-      } as Member;
+        isExisting: false // Flag to indicate this is a new member
+      } as Member & { isExisting: boolean };
     } catch (error) {
       console.error('Error adding member:', error);
       throw error;
