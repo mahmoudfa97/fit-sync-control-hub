@@ -216,24 +216,7 @@ export const AddMemberDialog = ({
                     />
                   </div>
                 </div>
-                <div className="grid gap-2 mt-2">
-                  <Label htmlFor="insurancePolicy">מספר פוליסה</Label>
-                  <Input
-                    id="insurancePolicy"
-                    placeholder="מספר פוליסה"
-                    value={newMember.insurancePolicy || ''}
-                    onChange={(e) => setNewMember({...newMember, insurancePolicy: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2 mt-2">
-                  <Label htmlFor="insuranceProvider">חברת ביטוח</Label>
-                  <Input
-                    id="insuranceProvider"
-                    placeholder="חברת ביטוח"
-                    value={newMember.insuranceProvider || ''}
-                    onChange={(e) => setNewMember({...newMember, insuranceProvider: e.target.value})}
-                  />
-                </div>
+
               </>
             )}
           </div>
