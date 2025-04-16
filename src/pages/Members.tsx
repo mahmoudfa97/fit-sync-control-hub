@@ -30,6 +30,9 @@ export default function Members() {
     membershipType: "רגיל",
     status: "active" as Member['status'],
     paymentStatus: "paid" as Member['paymentStatus'],
+    hasInsurance: false,
+    insurancePolicy: "",
+    insuranceProvider: "",
   });
   
   useEffect(() => {
@@ -114,6 +117,9 @@ export default function Members() {
         membershipType: "רגיל",
         status: "active" as Member['status'],
         paymentStatus: "paid" as Member['paymentStatus'],
+        hasInsurance: false,
+        insurancePolicy: "",
+        insuranceProvider: "",
       });
       
       setAddMemberOpen(false);

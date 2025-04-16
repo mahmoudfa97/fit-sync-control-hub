@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { membershipTypes } from "./MembershipTypes";
 import { type Member } from "@/store/slices/membersSlice";
 import { MemberFormData } from "@/services/MemberService";
@@ -39,6 +40,12 @@ export const AddMemberDialog = ({
   onAddMember,
   isSubmitting = false,
 }: AddMemberDialogProps) => {
+  // Calculate insurance end date as today + 1 year
+  const today = new Date();
+  const insuranceEndDate = new Date(today);
+  insuranceEndDate.setFullYear(insuranceEndDate.getFullYear() + 1);
+  const formattedEndDate = insuranceEndDate.toISOString().split('T')[0];
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -172,6 +179,63 @@ export const AddMemberDialog = ({
                 <SelectItem value="canceled">בוטל</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          {/* Insurance Section */}
+          <div className="border p-3 rounded-md mt-2">
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="hasInsurance" className="font-medium">ביטוח</Label>
+              <Switch 
+                id="hasInsurance" 
+                checked={newMember.hasInsurance}
+                onCheckedChange={(checked) => 
+                  setNewMember({...newMember, hasInsurance: checked})
+                }
+              />
+            </div>
+            
+            {newMember.hasInsurance && (
+              <>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <Label htmlFor="insuranceStartDate">תאריך התחלה</Label>
+                    <Input
+                      id="insuranceStartDate"
+                      type="date"
+                      value={today.toISOString().split('T')[0]}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insuranceEndDate">תאריך סיום</Label>
+                    <Input
+                      id="insuranceEndDate"
+                      type="date"
+                      value={formattedEndDate}
+                      disabled
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 mt-2">
+                  <Label htmlFor="insurancePolicy">מספר פוליסה</Label>
+                  <Input
+                    id="insurancePolicy"
+                    placeholder="מספר פוליסה"
+                    value={newMember.insurancePolicy || ''}
+                    onChange={(e) => setNewMember({...newMember, insurancePolicy: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2 mt-2">
+                  <Label htmlFor="insuranceProvider">חברת ביטוח</Label>
+                  <Input
+                    id="insuranceProvider"
+                    placeholder="חברת ביטוח"
+                    value={newMember.insuranceProvider || ''}
+                    onChange={(e) => setNewMember({...newMember, insuranceProvider: e.target.value})}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
         <DialogFooter>

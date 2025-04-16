@@ -17,6 +17,11 @@ export interface Member {
   emergencyContact?: string;
   birthDate?: string;
   gender?: 'male' | 'female' | 'other';
+  // Insurance fields
+  hasInsurance?: boolean;
+  insuranceEndDate?: string;
+  insurancePolicy?: string;
+  insuranceProvider?: string;
 }
 
 export interface MembersState {
