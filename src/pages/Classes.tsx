@@ -177,7 +177,7 @@ export default function Classes() {
                 <TableHead className="text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="text-left">
               {filteredClasses.length > 0 ? (
                 filteredClasses.map((gymClass) => (
                   <TableRow key={gymClass.id}>

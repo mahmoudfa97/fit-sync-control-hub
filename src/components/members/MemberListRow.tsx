@@ -28,9 +28,9 @@ interface MemberListRowProps {
 
 export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
   return (
-    <TableRow key={member.id} dir="ltr" className="overflow-auto">
+    <TableRow key={member.id} className="overflow-auto">
       <TableCell className="font-medium">
-        <div className="flex items-center gap-3">
+        <div className="flex  gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage src={member.avatar} alt={member.name} />
             <AvatarFallback>{member.initials}</AvatarFallback>

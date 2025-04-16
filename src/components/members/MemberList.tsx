@@ -20,6 +20,7 @@ import { ChevronDown, Download } from "lucide-react";
 import { MemberListRow } from "./MemberListRow";
 import { Member } from "@/store/slices/membersSlice";
 import {t} from "@/utils/translations";
+import { SmsNotification } from "../notifacations/sms/sms-notifaction";
 interface MemberListProps {
   members: Member[];
   onFilterChange: (status: string | null) => void;
@@ -29,6 +30,7 @@ interface MemberListProps {
 export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListProps) => {
   return (
     <Card>
+       <SmsNotification />
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>כל החברים</CardTitle>
         <div className="flex items-center gap-2">
@@ -58,7 +60,7 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
           </Button>
         </div>
       </CardHeader>
-      <CardContent dir="ltr" className="overflow-auto">
+      <CardContent className="overflow-auto ">
         <Table>
           <TableHeader>
             <TableRow>
@@ -70,7 +72,7 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
               <TableHead className="text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody >
             {members.length > 0 ? (
               members.map((member) => (
                 <MemberListRow 
@@ -89,6 +91,7 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
           </TableBody>
         </Table>
       </CardContent>
+     
     </Card>
   );
 };
