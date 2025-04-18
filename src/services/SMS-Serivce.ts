@@ -1,6 +1,8 @@
-interface SendWhatsAppParams {
+interface SendWhatsAppTemplateParams {
   to: string
-  message: string
+  templateName: string
+  language?: string
+  components?: any[]
 }
 
 interface WhatsAppResponse {
@@ -10,9 +12,14 @@ interface WhatsAppResponse {
 }
 
 /**
- * Sends a WhatsApp message using the configured provider
+ * Sends a WhatsApp template message using the WhatsApp Cloud API
  */
-export async function sendWhatsApp({ to, message }: SendWhatsAppParams): Promise<WhatsAppResponse> {
+export async function sendWhatsAppTemplate({
+  to,
+  templateName,
+  language = "en_US",
+  components,
+}: SendWhatsAppTemplateParams): Promise<WhatsAppResponse> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -26,7 +33,9 @@ export async function sendWhatsApp({ to, message }: SendWhatsAppParams): Promise
       },
       body: JSON.stringify({
         to,
-        message,
+        templateName,
+        language,
+        components,
       }),
     })
 
@@ -54,7 +63,7 @@ export async function sendWhatsApp({ to, message }: SendWhatsAppParams): Promise
 
     return data
   } catch (error: any) {
-    console.error("Error in sendWhatsApp:", error)
+    console.error("Error in sendWhatsAppTemplate:", error)
     return {
       success: false,
       message: error.message || "Failed to send WhatsApp message",

@@ -20,7 +20,7 @@ import { ChevronDown, Download } from "lucide-react";
 import { MemberListRow } from "./MemberListRow";
 import { Member } from "@/store/slices/membersSlice";
 import {t} from "@/utils/translations";
-import { SmsNotification } from "../notifacations/sms/sms-notifaction";
+import { WhatsAppTemplateForm } from "../notifacations/sms/sms-notifaction";
 interface MemberListProps {
   members: Member[];
   onFilterChange: (status: string | null) => void;
@@ -30,7 +30,7 @@ interface MemberListProps {
 export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListProps) => {
   return (
     <Card>
-       <SmsNotification />
+       <WhatsAppTemplateForm />
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>כל החברים</CardTitle>
         <div className="flex items-center gap-2">
