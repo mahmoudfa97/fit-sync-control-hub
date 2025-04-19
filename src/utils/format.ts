@@ -1,52 +1,64 @@
+import { useDashboardPrivacy } from "@/hooks/useDashboardPrivacy"
+
 /**
  * Format a number as currency
- * @param value Number to format
- * @param decimals Number of decimal places
- * @returns Formatted currency string without currency symbol
+ * @param amount The amount to format
+ * @returns Formatted currency string
  */
-export function formatCurrency(value: number, decimals = 2): string {
-  return value.toLocaleString("he-IL", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+export const formatCurrency = (amount: number | string): string => {
+  if (amount === null || amount === undefined) return "0"
+
+  const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
+
+  return numAmount.toLocaleString("he-IL", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })
 }
 
 /**
- * Format a date to a readable string
- * @param date Date to format
+ * Format a date for display
+ * @param date The date to format
  * @returns Formatted date string
  */
-export function formatDate(date: string | Date): string {
+export const formatDate = (date: string | Date): string => {
   if (!date) return ""
-  const d = typeof date === "string" ? new Date(date) : date
-  return d.toLocaleDateString("he-IL")
+
+  const dateObj = typeof date === "string" ? new Date(date) : date
+
+  return dateObj.toLocaleDateString("he-IL", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
 }
 
 /**
- * Format a date and time to a readable string
- * @param date Date to format
- * @returns Formatted date and time string
+ * Hook to use formatters with privacy settings
  */
-export function formatDateTime(date: string | Date): string {
-  if (!date) return ""
-  const d = typeof date === "string" ? new Date(date) : date
-  return d.toLocaleString("he-IL")
-}
+export function useFormatters() {
+  const { hideNumbers } = useDashboardPrivacy()
 
-/**
- * Format a relative time (today, yesterday, or date)
- * @param dateStr Date string to format
- * @returns Formatted relative time string
- */
-export function formatRelativeTime(dateStr: string): string {
-  if (!dateStr) return ""
+  return {
+    formatCurrency: (amount: number | string, symbol = "₪"): string => {
+      if (hideNumbers) {
+        return `${symbol}${"*".repeat(5)}`
+      }
+      return `${symbol}${formatCurrency(amount)}`
+    },
 
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    formatDate: (date: string | Date): string => {
+      if (hideNumbers) {
+        return "**/**/****"
+      }
+      return formatDate(date)
+    },
 
-  if (diffDays === 0) return "היום"
-  if (diffDays === 1) return "אתמול"
-
-  return date.toLocaleDateString("he-IL")
+    formatNumber: (num: number | string): string => {
+      if (hideNumbers) {
+        return "*".repeat(String(num).length)
+      }
+      return String(num)
+    },
+  }
 }

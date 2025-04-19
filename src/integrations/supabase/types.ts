@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   public: {
@@ -168,6 +162,177 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      // New table for check-ins linked to custom_members
+      custom_checkins: {
+        Row: {
+          id: string
+          member_id: string
+          check_in_time: string
+          notes: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          check_in_time?: string
+          notes?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          check_in_time?: string
+          notes?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "custom_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // New table for member insurance
+      custom_member_insurance: {
+        Row: {
+          id: string
+          member_id: string
+          has_insurance: boolean
+          insurance_provider: string | null
+          insurance_policy: string | null
+          start_date: string
+          end_date: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          has_insurance?: boolean
+          insurance_provider?: string | null
+          insurance_policy?: string | null
+          start_date: string
+          end_date: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          has_insurance?: boolean
+          insurance_provider?: string | null
+          insurance_policy?: string | null
+          start_date?: string
+          end_date?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_member_insurance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "custom_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // New table for members without auth requirement
+      custom_members: {
+        Row: {
+          id: string
+          name: string
+          last_name: string | null
+          email: string | null
+          phone: string | null
+          age: number | null
+          gender: string | null
+          created_at: string | null
+          updated_at: string | null
+          created_by: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          last_name?: string | null
+          email?: string | null
+          phone?: string | null
+          age?: number | null
+          gender?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          created_by: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          last_name?: string | null
+          email?: string | null
+          phone?: string | null
+          age?: number | null
+          gender?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          created_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_members_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // New table for memberships linked to custom_members
+      custom_memberships: {
+        Row: {
+          id: string
+          member_id: string
+          membership_type: string
+          start_date: string
+          end_date: string | null
+          status: string
+          payment_status: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          membership_type: string
+          start_date?: string
+          end_date?: string | null
+          status?: string
+          payment_status?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          membership_type?: string
+          start_date?: string
+          end_date?: string | null
+          status?: string
+          payment_status?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_memberships_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "custom_members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_subscriptions: {
         Row: {
@@ -465,7 +630,7 @@ export type Database = {
           role: string
           status: string
           updated_at: string | null
-          user_id: string | null
+          member_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -478,7 +643,7 @@ export type Database = {
           role: string
           status?: string
           updated_at?: string | null
-          user_id?: string | null
+          member_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -491,9 +656,17 @@ export type Database = {
           role?: string
           status?: string
           updated_at?: string | null
-          user_id?: string | null
+          member_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "staff_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "custom_members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -596,10 +769,8 @@ export type Tables<
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -607,9 +778,7 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+  DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database
   }
@@ -630,9 +799,7 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+  DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"] | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database
   }
@@ -653,9 +820,7 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+  DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"] | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof Database
   }
@@ -668,9 +833,7 @@ export type Enums<
     : never
 
 export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+  PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"] | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
   }

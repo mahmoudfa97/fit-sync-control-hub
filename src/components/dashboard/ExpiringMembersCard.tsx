@@ -43,34 +43,35 @@ export function ExpiringMembersCard() {
         const todayStr = today.toISOString().split("T")[0]
         const futureStr = sevenDaysFromNow.toISOString().split("T")[0]
 
-        // Fetch members with memberships expiring in the next 7 days
+        // Fetch members with memberships expiring in the next 7 days using custom tables
         const { data, error } = await supabase
-          .from("profiles")
+          .from("custom_memberships")
           .select(`
             id,
-            name,
-            last_name,
-            avatar_url,
-            membership:memberships(id, end_date, membership_type)
+            membership_type,
+            end_date,
+            custom_members!inner(id, name, last_name)
           `)
-          .eq("membership.status", "active")
-          .gte("membership.end_date", todayStr)
-          .lte("membership.end_date", futureStr)
-          .order("membership(end_date)")
+          .eq("status", "active")
+          .gte("end_date", todayStr)
+          .lte("end_date", futureStr)
+          .order("end_date")
           .limit(5)
 
         if (error) throw error
 
-        // Filter out profiles without memberships and format data
-        const formattedData = data
-          .filter((profile) => profile.membership && profile.membership.length > 0)
-          .map((profile) => ({
-            id: profile.id,
-            name: profile.name,
-            last_name: profile.last_name,
-            avatar_url: profile.avatar_url,
-            membership: profile.membership[0],
-          }))
+        // Transform the data to match our expected format
+        const formattedData = data.map((membership) => ({
+          id: membership.custom_members.id,
+          name: membership.custom_members.name,
+          last_name: membership.custom_members.last_name,
+          avatar_url: null, // Custom members don't have avatar_url, we'll use initials
+          membership: {
+            id: membership.id,
+            end_date: membership.end_date,
+            membership_type: membership.membership_type,
+          },
+        }))
 
         setExpiringMembers(formattedData)
       } catch (error) {
@@ -91,7 +92,7 @@ export function ExpiringMembersCard() {
   }
 
   return (
-    <Card className="col-span-1 lg:col-span-1">
+    <Card className="col-span-1 lg:col-span-3">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>

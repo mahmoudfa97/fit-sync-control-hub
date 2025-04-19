@@ -28,8 +28,9 @@ import {
 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
-import { CreateMembershipModal } from "../components/members/create-membership-modal"
+import { AddSubscriptionDialog } from "../components/members/AddSubscriptionDialog"
 import type { Tables } from "@/integrations/supabase/types"
+import { MemberProfileActions } from "@/components/members/MemberProfileActions"
 
 // Use the types from your constants file
 type Profile = Tables<"profiles">
@@ -67,7 +68,7 @@ export default function MemberProfile() {
 
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
+          .from("custom_members")
           .select("*")
           .eq("id", memberId)
           .single()
@@ -802,11 +803,12 @@ export default function MemberProfile() {
 
       {/* Create Membership Modal */}
       {isCreateMembershipOpen && memberId && (
-        <CreateMembershipModal
-          isOpen={isCreateMembershipOpen}
-          onClose={() => setIsCreateMembershipOpen(false)}
-          profileId={memberId}
-          onSuccess={fetchMemberships}
+        <AddSubscriptionDialog
+          open={isCreateMembershipOpen}
+          onOpenChange={() => setIsCreateMembershipOpen(false)}
+          memberId={memberId}
+          memberName={profile?.name}
+          onSubscriptionAdded={fetchMemberships}
         />
       )}
     </DashboardShell>

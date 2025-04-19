@@ -21,6 +21,7 @@ import Staff from "./pages/Staff";
 import AccessControl from "./pages/AccessControl";
 import Settings from "./pages/Settings";
 import GroupSubscriptions from "./pages/GroupSubscriptions"; // New import
+import MessagesCenter from "./pages/MessagesCenter";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const AppContent = () => {
           <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/access" element={<ProtectedRoute><AccessControl /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><MessagesCenter /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/group-subscriptions" element={<ProtectedRoute><GroupSubscriptions /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />

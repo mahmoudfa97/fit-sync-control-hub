@@ -16,10 +16,12 @@ import { ExpiringMembersCard } from "@/components/dashboard/ExpiringMembersCard"
 import { RecentlyAddedMembersCard } from "@/components/dashboard/RecentlyAddedMembersCard"
 import { t } from "@/utils/translations"
 import { supabase } from "@/integrations/supabase/client"
-import { formatCurrency } from "@/utils/format"
+import { useDashboardPrivacy } from "@/hooks/useDashboardPrivacy"
+import { formatPrivateValue } from "@/utils/formatters"
 
 export default function Dashboard() {
   // State for dashboard data
+  const { hideNumbers } = useDashboardPrivacy();
   const [loading, setLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState({
     activeMembers: {
@@ -316,6 +318,7 @@ export default function Dashboard() {
           chartType="area"
           chartData={dashboardData.activeMembers.chartData}
           chartColor="#3b82f6"
+          valueIsRaw={true}
         />
         <StatCard
           title={t("todayCheckIns")}
@@ -325,10 +328,11 @@ export default function Dashboard() {
             value: loading ? 0 : Math.round(dashboardData.todayCheckIns.trend * 10) / 10,
             positive: dashboardData.todayCheckIns.trend >= 0,
           }}
+          valueIsRaw={true}
         />
         <StatCard
           title={t("monthlyRevenue")}
-          value={loading ? "..." : `${formatCurrency(dashboardData.monthlyRevenue.amount)} ${t("riyal")}`}
+          value={loading ? "..." : formatPrivateValue(dashboardData.monthlyRevenue.amount, hideNumbers)}
           icon={CreditCard}
           trend={{
             value: loading ? 0 : Math.round(dashboardData.monthlyRevenue.trend * 10) / 10,
@@ -343,13 +347,14 @@ export default function Dashboard() {
             value: loading ? 0 : Math.round(dashboardData.newSubscriptions.trend * 10) / 10,
             positive: dashboardData.newSubscriptions.trend >= 0,
           }}
+          valueIsRaw={true}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCardWithChart
           title={t("totalDebts")}
-          value={loading ? "..." : `-₪${formatCurrency(dashboardData.totalDebts.amount)}`}
+          value={loading ? "..." : `-${formatPrivateValue(dashboardData.totalDebts.amount, hideNumbers)}`}
           icon={AlertTriangle}
           trend={{
             value: loading ? 0 : Math.round(dashboardData.totalDebts.trend * 10) / 10,
@@ -361,7 +366,7 @@ export default function Dashboard() {
         />
         <StatCardWithChart
           title={t("totalReceipts")}
-          value={loading ? "..." : `₪${formatCurrency(dashboardData.totalReceipts.amount)}`}
+          value={loading ? "..." : formatPrivateValue(dashboardData.totalReceipts.amount, hideNumbers)}
           icon={Receipt}
           trend={{
             value: loading ? 0 : Math.round(dashboardData.totalReceipts.trend * 10) / 10,
@@ -373,7 +378,7 @@ export default function Dashboard() {
         />
         <StatCardWithChart
           title={t("totalInvoices")}
-          value={loading ? "..." : `₪${formatCurrency(dashboardData.totalInvoices.amount)}`}
+          value={loading ? "..." : formatPrivateValue(dashboardData.totalInvoices.amount, hideNumbers)}
           icon={FileText}
           trend={{
             value: loading ? 0 : Math.round(dashboardData.totalInvoices.trend * 10) / 10,
@@ -385,7 +390,7 @@ export default function Dashboard() {
         />
         <StatCard
           title={t("monthlyComparison")}
-          value={loading ? "..." : `₪${formatCurrency(dashboardData.monthlyComparison.amount)}`}
+          value={loading ? "..." : formatPrivateValue(dashboardData.monthlyComparison.amount, hideNumbers)}
           icon={TrendingUp}
           trend={{
             value: loading ? 0 : Math.round(dashboardData.monthlyComparison.trend * 10) / 10,
@@ -395,9 +400,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <CheckInsHourlyForecast />
         <ExpiringMembersCard />
         <RecentlyAddedMembersCard />
+        <CheckInsHourlyForecast />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
@@ -417,3 +422,4 @@ export default function Dashboard() {
     </DashboardShell>
   )
 }
+

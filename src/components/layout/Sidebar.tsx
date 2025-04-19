@@ -10,6 +10,7 @@ import {
   Dumbbell, 
   UserRound, 
   KeyRound, 
+  MessagesSquareIcon,
   Settings, 
   ChevronLeft, 
   ChevronRight, 
@@ -54,9 +55,9 @@ const navItems = [
   { icon: FileText, label: t("invoices_menu"), to: "/invoices" },
   { icon: Dumbbell, label: t("classes_menu"), to: "/classes" },
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
-  { icon: KeyRound, label: t("access_menu"), to: "/access" },
-  { icon: Settings, label: t("settings_menu"), to: "/settings" },
+  { icon: MessagesSquareIcon, label: t("messages_center"), to: "/messages" },
   { icon: Group, label: t("groupSubscriptions"), to: "/group-subscriptions" },
+  { icon: Settings, label: t("settings_menu"), to: "/settings" },
 ];
 
 export function Sidebar() {

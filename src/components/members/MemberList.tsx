@@ -30,7 +30,6 @@ interface MemberListProps {
 export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListProps) => {
   return (
     <Card>
-       <WhatsAppTemplateForm />
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>כל החברים</CardTitle>
         <div className="flex items-center gap-2">
@@ -42,21 +41,23 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onFilterChange(null)}>
-                جميع الأعضاء
+               
+                {t("allMembers")} 
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onFilterChange("active")}>
               {t("activeMembers")}     
                        </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onFilterChange("inactive")}>
-              {t("inActiveMembers")}              </DropdownMenuItem>
+              {t("inActiveMembers")}   
+                         </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onFilterChange("expired")}>
-                العضويات المنتهية
-              </DropdownMenuItem>
+              {t("expiredMembers")} 
+                            </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="icon">
             <Download className="h-4 w-4" />
-            <span className="sr-only">تنزيل CSV</span>
+            <span className="sr-only"> {t("downloadCSV")} </span>
           </Button>
         </div>
       </CardHeader>
@@ -66,6 +67,7 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
             <TableRow>
               <TableHead className="w-[250px]">{t("member")}</TableHead>
               <TableHead>{t("membershipType")}</TableHead>
+              <TableHead>{t("age")}</TableHead>
               <TableHead>{t("status")}</TableHead>
               <TableHead>{t("lastCheckIn")}</TableHead>
               <TableHead>{t("paymentStatus")}</TableHead>
@@ -83,9 +85,9 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  لم يتم العثور على أعضاء.
-                </TableCell>
+                <TableCell colSpan={6} className="h-24">
+                {t("noMembersFound")} 
+                                </TableCell>
               </TableRow>
             )}
           </TableBody>

@@ -88,7 +88,8 @@ export default function Members() {
       
       if (memberResult.isExisting) {
         // If member already exists, update their data in Redux
-        dispatch(updateMember({ ...memberResult, isExisting: undefined }));
+        const { isExisting, ...memberData } = memberResult;
+        dispatch(updateMember(memberData));
         
         toast({
           title: "מנוי חדש נוסף למשתמש קיים",
@@ -99,7 +100,8 @@ export default function Members() {
         navigate(`/members/${memberResult.id}`);
       } else {
         // If new member, add to Redux
-        dispatch(addMember({ ...memberResult, isExisting: undefined }));
+        const { isExisting, ...memberData } = memberResult;
+        dispatch(addMember(memberData));
         
         toast({
           title: "לקוח נוסף בהצלחה",

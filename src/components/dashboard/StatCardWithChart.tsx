@@ -3,6 +3,7 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Area, AreaChart, Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { usePrivateFormatter } from "@/utils/formatters";
 
 const statCardVariants = cva(
   "stat-card flex flex-col",
@@ -39,6 +40,7 @@ interface StatCardProps extends VariantProps<typeof statCardVariants> {
     positive?: boolean;
   };
   className?: string;
+  valueIsRaw?: boolean
 }
 
 export function StatCardWithChart({
@@ -52,6 +54,7 @@ export function StatCardWithChart({
   secondaryColor = "#60a5fa",
   variant,
   className,
+  valueIsRaw,
 }: StatCardProps) {
   const renderChart = () => {
     switch(chartType) {
@@ -105,7 +108,9 @@ export function StatCardWithChart({
         return null;
     }
   };
+  const { formatValue } = usePrivateFormatter()
 
+  const displayValue = valueIsRaw ? formatValue(value) : value
   return (
     <div className={cn(statCardVariants({ variant }), className)}>
       <div className="flex justify-between items-start mb-2">
@@ -119,7 +124,7 @@ export function StatCardWithChart({
       </div>
       <div className="flex items-baseline justify-between">
         <div className="flex flex-col">
-          <h3 className="text-2xl font-bold">{value}</h3>
+          <h3 className="text-2xl font-bold">{displayValue}</h3>
           {trend && (
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(

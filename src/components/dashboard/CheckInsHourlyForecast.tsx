@@ -108,7 +108,7 @@ export function CheckInsHourlyForecast() {
   }
 
   return (
-    <Card className="col-span-1 lg:col-span-3">
+    <Card className="col-span-1 lg:col-span-5">
       <CardHeader className="pb-2">
         <CardTitle>{t("checkInsHourlyForecast")}</CardTitle>
         <CardDescription>{t("checkInsHourlyForecastDescription")}</CardDescription>

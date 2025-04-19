@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { supabase } from "@/integrations/supabase/client"
-import { formatRelativeTime } from "@/utils/format"
 import { t } from "@/utils/translations"
 import { Link } from "react-router-dom"
 import { Activity } from "lucide-react"
@@ -196,7 +195,7 @@ export function RecentActivityCard() {
                       <div className="text-xs text-muted-foreground truncate">{activity.details}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">{formatRelativeTime(activity.timestamp)}</div>
+                      <div className="text-sm font-medium">{activity.timestamp}</div>
                     </div>
                   </div>
                   <Separator className="mt-4" />

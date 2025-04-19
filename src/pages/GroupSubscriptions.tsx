@@ -51,7 +51,12 @@ export default function GroupSubscriptions() {
         .select('*');
 
       if (error) throw error;
-      setSubscriptions(data || []);
+      setSubscriptions(
+        (data || []).map((item) => ({
+          ...item,
+          schedule: typeof item.schedule === "string" ? JSON.parse(item.schedule) : undefined,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       toast.error(t("errorFetchingData"));

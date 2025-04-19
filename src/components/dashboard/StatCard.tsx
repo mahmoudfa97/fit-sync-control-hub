@@ -2,6 +2,7 @@
 import { LucideIcon } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { usePrivateFormatter } from "@/utils/formatters";
 
 const statCardVariants = cva(
   "stat-card flex flex-col",
@@ -32,6 +33,7 @@ interface StatCardProps extends VariantProps<typeof statCardVariants> {
     positive?: boolean;
   };
   className?: string;
+  valueIsRaw?: boolean
 }
 
 export function StatCard({
@@ -41,7 +43,11 @@ export function StatCard({
   trend,
   variant,
   className,
+  valueIsRaw= false,
 }: StatCardProps) {
+  const { formatValue } = usePrivateFormatter()
+
+  const displayValue = valueIsRaw ? formatValue(value) : value
   return (
     <div className={cn(statCardVariants({ variant }), className)}>
       <div className="flex justify-between items-start mb-4">
@@ -55,7 +61,7 @@ export function StatCard({
       </div>
       <div className="flex items-baseline justify-between">
         <div className="flex flex-col">
-          <h3 className="text-2xl font-bold">{value}</h3>
+          <h3 className="text-2xl font-bold">{displayValue}</h3>
           {trend && (
             <div className="flex items-center gap-1 mt-1">
               <span className={cn(

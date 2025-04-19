@@ -20,7 +20,6 @@ import {
 import { ChevronDown, Send, Loader2 } from "lucide-react"
 import { t } from "@/utils/translations"
 import { supabase } from "@/integrations/supabase/client"
-import { sendSms } from "@/services/SMS-Serivce"
 
 // Define types for settings
 interface WorkingHours {
@@ -151,7 +150,7 @@ export default function Settings() {
             phone: data.phone || "",
             language: data.language || "he",
             address: data.address || "",
-            workingHours: data.working_hours || defaultSettings.workingHours,
+            workingHours: data.working_hours  || defaultSettings.workingHours,
             notifications: data.notifications || defaultSettings.notifications,
             memberReminders: data.member_reminders || true,
             autoRenewals: data.auto_renewals || false,
@@ -164,7 +163,7 @@ export default function Settings() {
             created_at: data.created_at,
             updated_at: data.updated_at,
           }
-          setSettings(formattedData)
+          setSettings({...formattedData})
         }
       } catch (error) {
         console.error("Error in fetchSettings:", error)
@@ -186,15 +185,22 @@ export default function Settings() {
   }
 
   // Handle nested changes
-  const handleNestedChange = (parent: string, field: string, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent as keyof Settings],
-        [field]: value,
-      },
-    }))
-  }
+  const handleNestedChange = <
+  Parent extends keyof Settings,
+  Field extends keyof Settings[Parent]
+>(
+  parent: Parent,
+  field: Field,
+  value: Settings[Parent][Field]
+) => {
+  setSettings((prev) => ({
+    ...prev,
+    [parent]: {
+      ...(typeof prev[parent] === "object" && prev[parent] !== null ? prev[parent] : {}),
+      [field]: value,
+    },
+  }));
+};
 
   // Save settings to Supabase
   const saveSettings = async () => {

@@ -167,7 +167,7 @@ export default function Classes() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("className")}</TableHead>
+                <TableHead>{t("memberName")}</TableHead>
                 <TableHead>{t("trainer")}</TableHead>
                 <TableHead>{t("day")}</TableHead>
                 <TableHead>{t("time")}</TableHead>

@@ -111,7 +111,7 @@ export function RecentlyAddedMembersCard() {
   }
 
   return (
-    <Card className="col-span-1 lg:col-span-1">
+    <Card className="col-span-1 lg:col-span-2">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>

@@ -14,38 +14,7 @@ interface CheckInsState {
 }
 
 const initialState: CheckInsState = {
-  checkIns: [
-    {
-      id: "checkin-1",
-      memberId: "1",
-      memberName: "فراس علي شعبان",
-      checkInTime: "2024-04-09T08:45:00.000Z",
-    },
-    {
-      id: "checkin-2",
-      memberId: "2",
-      memberName: "יוסי לוי",
-      checkInTime: "2024-04-09T07:30:00.000Z",
-    },
-    {
-      id: "checkin-3",
-      memberId: "3",
-      memberName: "מיכל גולדברג",
-      checkInTime: "2024-04-08T18:15:00.000Z",
-    },
-    {
-      id: "checkin-4",
-      memberId: "5",
-      memberName: "רונית אברהם",
-      checkInTime: "2024-04-09T10:20:00.000Z",
-    },
-    {
-      id: "checkin-5",
-      memberId: "6",
-      memberName: "משה יעקובי",
-      checkInTime: "2024-04-08T20:00:00.000Z",
-    },
-  ],
+  checkIns: [],
 };
 
 export const checkInsSlice = createSlice({
