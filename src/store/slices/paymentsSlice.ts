@@ -7,14 +7,14 @@ export interface Payment {
   memberInitials: string;
   amount: number;
   currency: string;
-  paymentMethod: 'card' | 'cash' | 'bank' | 'other';
+  paymentMethod: 'card' | 'cash' | 'bank' | 'hyp';
   paymentDate: string;
   status: 'paid' | 'pending' | 'overdue' | 'canceled';
   description: string;
   receiptNumber: string;
   // Old fields kept for backward compatibility
   date?: string;
-  type?: 'membership' | 'class' | 'product' | 'other';
+  type?: 'membership' | 'class' | 'product' | 'hyp';
   method?: 'credit' | 'cash' | 'bank' | 'other';
   invoiceNumber?: string;
   notes?: string;

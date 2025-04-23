@@ -20,7 +20,7 @@ export interface ScheduleItem {
 }
 
 export interface PaymentDetails {
-  paymentMethod: "cash" | "card" | "bank" | "check" | "hyp"
+  paymentMethod: "hyp" | "cash" | "card" | "bank" | "check"
   amount: number
   cardDetails?: {
     cardNumber: string
@@ -43,6 +43,17 @@ export interface PaymentDetails {
     transactionId?: string
     referenceId?: string
   }
+  installmentAmount?: number
+  installments?: number
+  description?: string
+  receiptNumber?: string
+  receiptDate?: string
+  receiptEmail?: string
+
+  receiptAddress?: string
+  receiptName?: string
+  receiptCity?: string
+  sendReceipt?: boolean
 }
 
 export interface SubscriptionData {

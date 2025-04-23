@@ -125,13 +125,13 @@ export function componentTaggerCustom(): Plugin {
 
               if (shouldTagElement(elementName)) {
                 const attrString = ` 
-                  data-my-id="${componentId}" 
-                  data-my-name="${elementName}" 
-                  data-my-path="${relativePath}" 
-                  data-my-line="${line}" 
-                  data-my-file="${fileName}" 
-                  data-my-component="${elementName}" 
-                  data-my-content="${encodeURIComponent(JSON.stringify(content))}"`;
+                  data-mwf-id="${componentId}" 
+                  data-mwf-name="${elementName}" 
+                  data-mwf-path="${relativePath}" 
+                  data-mwf-line="${line}" 
+                  data-mwf-file="${fileName}" 
+                  data-mwf-component="${elementName}" 
+                  data-mwf-content="${encodeURIComponent(JSON.stringify(content))}"`;
 
                 magicString.appendLeft(jsxNode.name.end ?? 0, attrString);
               }

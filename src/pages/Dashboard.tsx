@@ -399,7 +399,10 @@ export default function Dashboard() {
           }}
         />
       </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+        
+        <CheckInsHourlyForecast />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <ExpiringMembersCard />
         <RecentActivityCard />
@@ -407,10 +410,7 @@ export default function Dashboard() {
         <RecentlyAddedMembersCard />
         <CheckInsChart />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        
-        <CheckInsHourlyForecast />
-      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <SixMonthsProfit />
         <ActiveMembersByGroup />

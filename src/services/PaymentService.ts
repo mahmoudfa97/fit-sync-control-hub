@@ -46,7 +46,37 @@ export class PaymentService {
       createdAt: item.created_at
     })) as PaymentMethod[];
   }
-
+static async createPayment(paymentData) {
+    const { data, error } = await supabase.functions.invoke('process-payment', {
+      body: {
+        amount: paymentData.amount,
+        customerId: paymentData.memberId,
+        customerName: paymentData.memberName,
+        customerEmail: paymentData.memberEmail,
+        customerPhone: paymentData.memberPhone,
+        description: paymentData.description,
+        metadata: {
+          subscriptionId: paymentData.subscriptionId,
+          membershipType: paymentData.membershipType,
+          durationMonths: paymentData.durationMonths
+        }
+      }
+    });
+  
+    if (error) throw error;
+    return data;
+  };
+  
+  // Verify a payment
+  static async verifyPayment  (paymentId) {
+    const { data, error } = await supabase.functions.invoke('verify-payment', {
+      body: { paymentId }
+    });
+  
+    if (error) throw error;
+    return data;
+  };
+  
   static async addPaymentMethod(paymentMethod: AddPaymentMethodInput) {
     const { data: user } = await supabase.auth.getUser();
     
