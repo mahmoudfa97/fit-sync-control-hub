@@ -35,7 +35,7 @@ export function CheckInsHourlyForecast() {
 
         // Fetch today's check-ins
         const { data: todayData, error: todayError } = await supabase
-          .from("checkins")
+          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
           .select("check_in_time")
           .gte("check_in_time", `${today}T00:00:00`)
           .lte("check_in_time", `${today}T23:59:59`)
@@ -44,7 +44,7 @@ export function CheckInsHourlyForecast() {
 
         // Fetch yesterday's check-ins
         const { data: yesterdayData, error: yesterdayError } = await supabase
-          .from("checkins")
+          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
           .select("check_in_time")
           .gte("check_in_time", `${yesterdayStr}T00:00:00`)
           .lte("check_in_time", `${yesterdayStr}T23:59:59`)
@@ -53,7 +53,7 @@ export function CheckInsHourlyForecast() {
 
         // Fetch this week's check-ins
         const { data: weekData, error: weekError } = await supabase
-          .from("checkins")
+          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
           .select("check_in_time")
           .gte("check_in_time", `${weekStartStr}T00:00:00`)
           .lte("check_in_time", `${today}T23:59:59`)

@@ -20,7 +20,7 @@ export interface ScheduleItem {
 }
 
 export interface PaymentDetails {
-  paymentMethod: "cash" | "card" | "bank" | "check"
+  paymentMethod: "cash" | "card" | "bank" | "check" | "hyp"
   amount: number
   cardDetails?: {
     cardNumber: string
@@ -37,6 +37,11 @@ export interface PaymentDetails {
     checkNumber: string
     checkDate: string
     bankName: string
+  }
+  hypDetails?: {
+    paymentId: string
+    transactionId?: string
+    referenceId?: string
   }
 }
 
@@ -88,6 +93,41 @@ export class SubscriptionService {
       const endDate = new Date(startDate)
       endDate.setMonth(startDate.getMonth() + subscriptionData.durationMonths)
 
+      // Create payment data for the database
+      const paymentData: any = {
+        member_id: memberId,
+        amount: subscriptionData.paymentDetails.amount,
+        payment_method: subscriptionData.paymentDetails.paymentMethod,
+        payment_date: new Date().toISOString(),
+        description: `מנוי ${subscriptionData.membershipType} ל-${subscriptionData.durationMonths} חודשים`,
+        status: subscriptionData.paymentStatus === "paid" ? "paid" : "pending",
+      }
+
+      // Add payment details with special handling for HYP
+      if (subscriptionData.paymentDetails.paymentMethod === "hyp") {
+        const hypDetails = subscriptionData.paymentDetails.hypDetails
+
+        if (!hypDetails || !hypDetails.paymentId) {
+          throw new Error("HYP payment details missing")
+        }
+
+        // For HYP payments, use more detailed metadata for better reporting
+        paymentData.payment_details = {
+          payment_method: "hyp",
+          hyp_payment_id: hypDetails.paymentId,
+          transactionId: hypDetails.transactionId,
+          referenceId: hypDetails.referenceId,
+          subscriptionData: {
+            membershipType: subscriptionData.membershipType,
+            subscriptionId: subscriptionData.subscriptionId,
+            durationMonths: subscriptionData.durationMonths,
+          },
+        }
+      } else {
+        // For other payment methods, store all details
+        paymentData.payment_details = subscriptionData.paymentDetails
+      }
+
       // Add membership to custom_memberships
       const { data: membershipData, error: membershipError } = await supabase
         .from("custom_memberships")
@@ -105,17 +145,9 @@ export class SubscriptionService {
       if (membershipError) throw membershipError
 
       // Add payment record
-      const { data: paymentData, error: paymentError } = await supabase
+      const { data: paymentResult, error: paymentError } = await supabase
         .from("payments")
-        .insert({
-          member_id: memberId,
-          amount: subscriptionData.paymentDetails.amount,
-          payment_method: subscriptionData.paymentDetails.paymentMethod,
-          payment_date: new Date().toISOString(),
-          description: `מנוי ${subscriptionData.membershipType} ל-${subscriptionData.durationMonths} חודשים`,
-          status: subscriptionData.paymentStatus === "paid" ? "completed" : "pending",
-          payment_details: subscriptionData.paymentDetails,
-        })
+        .insert(paymentData)
         .select()
         .single()
 
@@ -123,7 +155,7 @@ export class SubscriptionService {
 
       return {
         membership: membershipData,
-        payment: paymentData,
+        payment: paymentResult,
       }
     } catch (error) {
       console.error("Error adding subscription:", error)
@@ -185,7 +217,23 @@ export class SubscriptionService {
 
       if (error) throw error
 
-      return data
+      // Process and format payment data
+      return data.map((payment) => {
+        // Ensure payment_details is always an object
+        const paymentDetails = payment.payment_details || {}
+
+        // Check if this is a HYP payment
+        const isHypPayment = payment.payment_method === "hyp"
+
+        return {
+          ...payment,
+          formatted_date: new Date(payment.payment_date).toLocaleDateString("he-IL"),
+          is_hyp: isHypPayment,
+          hyp_payment_id: isHypPayment ? paymentDetails.hyp_payment_id : null,
+          transaction_id: isHypPayment ? paymentDetails.transactionId || paymentDetails.transaction_id : null,
+          reference_id: isHypPayment ? paymentDetails.referenceId || paymentDetails.reference_id : null,
+        }
+      })
     } catch (error) {
       console.error("Error fetching member payments:", error)
       throw error
@@ -207,5 +255,29 @@ export class SubscriptionService {
       console.error("Error fetching member check-ins:", error)
       throw error
     }
+  }
+
+  // New method to get payment details by payment method
+  static async getPaymentsByMethod(method: string, limit = 50) {
+    try {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("payment_method", method)
+        .order("payment_date", { ascending: false })
+        .limit(limit)
+
+      if (error) throw error
+
+      return data
+    } catch (error) {
+      console.error(`Error fetching ${method} payments:`, error)
+      throw error
+    }
+  }
+
+  // New method to get all HYP payments
+  static async getHypPayments(limit = 50) {
+    return this.getPaymentsByMethod("hyp", limit)
   }
 }

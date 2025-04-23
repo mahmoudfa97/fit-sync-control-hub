@@ -38,6 +38,7 @@ import {
   searchStaff,
 } from "@/store/slices/staffSlice"
 import { StaffService } from "@/services/StaffService"
+import { useTranslation } from "react-i18next"
 
 const statusStyles = {
   active: "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500",
@@ -45,39 +46,41 @@ const statusStyles = {
   on_leave: "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500",
 }
 
-const statusLabels = {
-  active: "نشط",
-  inactive: "غير نشط",
-  on_leave: "في إجازة",
-}
-
-const departments = [
-  { value: "التدريب", label: "التدريب" },
-  { value: "الإدارة", label: "الإدارة" },
-  { value: "الاستقبال", label: "الاستقبال" },
-  { value: "التغذية", label: "التغذية" },
-  { value: "الصيانة", label: "الصيانة" },
-]
-
-const roles = [
-  { value: "مدرب شخصي", label: "مدرب شخصي", dept: "التدريب" },
-  { value: "مدرب يوغا", label: "مدرب يوغا", dept: "التدريب" },
-  { value: "مدرب زومبا", label: "مدرب زومبا", dept: "التدريب" },
-  { value: "مدير النادي", label: "مدير النادي", dept: "الإدارة" },
-  { value: "مدير العمليات", label: "مدير العمليات", dept: "الإدارة" },
-  { value: "موظف استقبال", label: "موظف استقبال", dept: "الاستقبال" },
-  { value: "مستشار تغذية", label: "مستشار تغذية", dept: "التغذية" },
-  { value: "مسؤول النظافة", label: "مسؤول النظافة", dept: "الصيانة" },
-]
-
 interface AvailableMember {
   id: string
   name: string
   email: string
-  phone: string
+  phone?: string
 }
 
-export default function Staff() {
+const Staff = () => {
+  const { t } = useTranslation()
+
+  const statusLabels = {
+    active: t("active"),
+    inactive: t("inactive"),
+    on_leave: t("on_leave"),
+  }
+
+  const departments = [
+    { value: "אימון", label: t("training") },
+    { value: "ניהול", label: t("management") },
+    { value: "קבלה", label: t("reception") },
+    { value: "תזונה", label: t("nutrition") },
+    { value: "תחזוקה", label: t("maintenance") },
+  ]
+
+  const roles = [
+    { value: "מאמן אישי", label: t("personalTrainer"), dept: "אימון" },
+    { value: "מדריך יוגה", label: t("yogaInstructor"), dept: "אימון" },
+    { value: "מדריך זומבה", label: t("zumbaInstructor"), dept: "אימון" },
+    { value: "מנהל מועדון", label: t("gymManager"), dept: "ניהול" },
+    { value: "מנהל תפעול", label: t("operationsManager"), dept: "ניהול" },
+    { value: "פקיד קבלה", label: t("receptionClerk"), dept: "קבלה" },
+    { value: "יועץ תזונה", label: t("nutritionConsultant"), dept: "תזונה" },
+    { value: "איש תחזוקה", label: t("maintenanceStaff"), dept: "תחזוקה" },
+  ]
+
   const dispatch = useAppDispatch()
   const { staff, filteredStaff, loading } = useAppSelector((state) => state.staff)
   const { toast } = useToast()
@@ -116,8 +119,8 @@ export default function Staff() {
     } catch (error) {
       console.error("Error fetching available members:", error)
       toast({
-        title: "خطأ في جلب الأعضاء",
-        description: "لم نتمكن من جلب قائمة الأعضاء المتاحين",
+        title: t("errorFetchingMembers"),
+        description: t("unableToFetchMembersList"),
         variant: "destructive",
       })
     } finally {
@@ -144,8 +147,8 @@ export default function Staff() {
   const handleAddStaff = async () => {
     if (!newStaff.member_id || !newStaff.role || !newStaff.department) {
       toast({
-        title: "خطأ في البيانات",
-        description: "يرجى إدخال جميع البيانات المطلوبة",
+        title: t("dataError"),
+        description: t("pleaseEnterAllRequiredData"),
         variant: "destructive",
       })
       return
@@ -157,8 +160,8 @@ export default function Staff() {
       await dispatch(addStaffMember(newStaff)).unwrap()
 
       toast({
-        title: "تم إضافة الموظف بنجاح",
-        description: "تمت ترقية العضو إلى موظف",
+        title: t("staffAddedSuccessfully"),
+        description: t("memberPromotedToStaff"),
       })
 
       setNewStaff({
@@ -173,8 +176,8 @@ export default function Staff() {
     } catch (error) {
       console.error("Error adding staff:", error)
       toast({
-        title: "خطأ في إضافة الموظف",
-        description: "لم نتمكن من إضافة الموظف. يرجى المحاولة مرة أخرى.",
+        title: t("errorAddingStaff"),
+        description: t("unableToAddStaff"),
         variant: "destructive",
       })
     } finally {
@@ -187,33 +190,33 @@ export default function Staff() {
       await dispatch(updateStaffStatus({ id, status })).unwrap()
 
       toast({
-        title: "تم تحديث الحالة",
-        description: `تم تحديث حالة الموظف إلى ${statusLabels[status]}`,
+        title: t("statusUpdated"),
+        description: t("staffStatusUpdatedTo", { status: statusLabels[status] }),
       })
     } catch (error) {
       console.error("Error updating status:", error)
       toast({
-        title: "خطأ في تحديث الحالة",
-        description: "لم نتمكن من تحديث حالة الموظف. يرجى المحاولة مرة أخرى.",
+        title: t("errorUpdatingStatus"),
+        description: t("unableToUpdateStaffStatus"),
         variant: "destructive",
       })
     }
   }
 
   const handleRemoveStaff = async (id: string, name: string) => {
-    if (confirm(`هل أنت متأكد من حذف الموظف ${name}؟`)) {
+    if (confirm(t("confirmDeleteStaff", { name }))) {
       try {
         await dispatch(removeStaff(id)).unwrap()
 
         toast({
-          title: "تم حذف الموظف",
-          description: `تم حذف ${name} من قائمة الموظفين`,
+          title: t("staffDeleted"),
+          description: t("staffRemovedFromList", { name }),
         })
       } catch (error) {
         console.error("Error removing staff:", error)
         toast({
-          title: "خطأ في حذف الموظف",
-          description: "لم نتمكن من حذف الموظف. يرجى المحاولة مرة أخرى.",
+          title: t("errorDeletingStaff"),
+          description: t("unableToDeleteStaff"),
           variant: "destructive",
         })
       }
@@ -237,15 +240,15 @@ export default function Staff() {
     <DashboardShell>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">الموظفين</h1>
-          <p className="text-muted-foreground">إدارة ومتابعة فريق العمل في صالتك الرياضية.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("staff")}</h1>
+          <p className="text-muted-foreground">{t("staffManagementDescription")}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full md:w-auto">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="البحث في الموظفين..."
+              placeholder={t("searchStaff")}
               className="pl-8 w-full md:w-[300px]"
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
@@ -255,12 +258,14 @@ export default function Staff() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
-                <span className="sr-only">فلترة</span>
+                <span className="sr-only">{t("filter")}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => handleFilterByDepartment(null)}>جميع الأقسام</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleFilterByDepartment(null)}>
+                  {t("allDepartments")}
+                </DropdownMenuItem>
                 {departments.map((dept) => (
                   <DropdownMenuItem key={dept.value} onClick={() => handleFilterByDepartment(dept.value)}>
                     {dept.label}
@@ -271,18 +276,18 @@ export default function Staff() {
           </DropdownMenu>
           <Button onClick={() => setAddStaffOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
-            إضافة موظف
+            {t("addStaff")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>دليل الموظفين</CardTitle>
+          <CardTitle>{t("staffDirectory")}</CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon">
               <Download className="h-4 w-4" />
-              <span className="sr-only">تنزيل CSV</span>
+              <span className="sr-only">{t("downloadCSV")}</span>
             </Button>
           </div>
         </CardHeader>
@@ -290,19 +295,19 @@ export default function Staff() {
           {loading === "pending" ? (
             <div className="flex justify-center items-center h-40">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="sr-only">جاري التحميل...</span>
+              <span className="sr-only">{t("loading")}</span>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[250px]">الموظف</TableHead>
-                  <TableHead>القسم</TableHead>
-                  <TableHead>المسمى الوظيفي</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>تاريخ التوظيف</TableHead>
-                  <TableHead>جدول العمل</TableHead>
-                  <TableHead className="text-right">الإجراءات</TableHead>
+                  <TableHead className="w-[250px]">{t("employee")}</TableHead>
+                  <TableHead>{t("department")}</TableHead>
+                  <TableHead>{t("jobTitle")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead>{t("hireDate")}</TableHead>
+                  <TableHead>{t("workSchedule")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -352,19 +357,19 @@ export default function Staff() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleUpdateStatus(staff.id, "active")}>
-                                تعيين كنشط
+                                {t("setAsActive")}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleUpdateStatus(staff.id, "inactive")}>
-                                تعيين كغير نشط
+                                {t("setAsInactive")}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleUpdateStatus(staff.id, "on_leave")}>
-                                تعيين في إجازة
+                                {t("setAsOnLeave")}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleRemoveStaff(staff.id, staff.name)}
                                 className="text-destructive focus:text-destructive"
                               >
-                                حذف الموظف
+                                {t("deleteStaff")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -375,7 +380,7 @@ export default function Staff() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center">
-                      لم يتم العثور على موظفين.
+                      {t("noStaffFound")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -389,24 +394,24 @@ export default function Staff() {
       <Dialog open={addStaffOpen} onOpenChange={setAddStaffOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>إضافة موظف جديد</DialogTitle>
-            <DialogDescription>اختر عضو لترقيته إلى موظف وأدخل معلومات الوظيفة.</DialogDescription>
+            <DialogTitle>{t("addNewStaff")}</DialogTitle>
+            <DialogDescription>{t("selectMemberToPromote")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="member">اختر العضو</Label>
+              <Label htmlFor="member">{t("selectMember")}</Label>
               <Select
                 value={newStaff.member_id}
                 onValueChange={(value) => setNewStaff({ ...newStaff, member_id: value })}
               >
                 <SelectTrigger id="member">
-                  <SelectValue placeholder="اختر عضو" />
+                  <SelectValue placeholder={t("selectMember")} />
                 </SelectTrigger>
                 <SelectContent>
                   {loadingMembers ? (
                     <div className="flex items-center justify-center p-2">
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      <span>جاري التحميل...</span>
+                      <span>{t("loading")}</span>
                     </div>
                   ) : availableMembers.length > 0 ? (
                     availableMembers.map((member) => (
@@ -415,7 +420,7 @@ export default function Staff() {
                       </SelectItem>
                     ))
                   ) : (
-                    <div className="p-2 text-center text-muted-foreground">لا يوجد أعضاء متاحين للترقية</div>
+                    <div className="p-2 text-center text-muted-foreground">{t("noMembersAvailableForPromotion")}</div>
                   )}
                 </SelectContent>
               </Select>
@@ -423,20 +428,20 @@ export default function Staff() {
 
             {selectedMember && (
               <div className="grid gap-2">
-                <Label>معلومات العضو</Label>
+                <Label>{t("memberInfo")}</Label>
                 <div className="rounded-md border p-3 text-sm">
                   <div>
-                    <strong>البريد الإلكتروني:</strong> {selectedMember.email}
+                    <strong>{t("email")}:</strong> {selectedMember.email}
                   </div>
                   <div>
-                    <strong>رقم الهاتف:</strong> {selectedMember.phone || "غير متوفر"}
+                    <strong>{t("phone")}:</strong> {selectedMember.phone || t("notAvailable")}
                   </div>
                 </div>
               </div>
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="phone">رقم الهاتف</Label>
+              <Label htmlFor="phone">{t("phone")}</Label>
               <Input
                 id="phone"
                 placeholder="05xxxxxxxx"
@@ -446,13 +451,13 @@ export default function Staff() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="department">القسم</Label>
+              <Label htmlFor="department">{t("department")}</Label>
               <Select
                 value={newStaff.department}
                 onValueChange={(value) => setNewStaff({ ...newStaff, department: value, role: "" })}
               >
                 <SelectTrigger id="department">
-                  <SelectValue placeholder="اختر القسم" />
+                  <SelectValue placeholder={t("selectDepartment")} />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((dept) => (
@@ -465,14 +470,14 @@ export default function Staff() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="role">المسمى الوظيفي</Label>
+              <Label htmlFor="role">{t("jobTitle")}</Label>
               <Select
                 value={newStaff.role}
                 onValueChange={(value) => setNewStaff({ ...newStaff, role: value })}
                 disabled={!newStaff.department}
               >
                 <SelectTrigger id="role">
-                  <SelectValue placeholder="اختر المسمى الوظيفي" />
+                  <SelectValue placeholder={t("selectJobTitle")} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredRoles.map((role) => (
@@ -485,7 +490,7 @@ export default function Staff() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="status">الحالة</Label>
+              <Label htmlFor="status">{t("status")}</Label>
               <Select
                 value={newStaff.status}
                 onValueChange={(value: "active" | "inactive" | "on_leave") =>
@@ -493,22 +498,22 @@ export default function Staff() {
                 }
               >
                 <SelectTrigger id="status">
-                  <SelectValue placeholder="اختر الحالة" />
+                  <SelectValue placeholder={t("selectStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">نشط</SelectItem>
-                  <SelectItem value="inactive">غير نشط</SelectItem>
-                  <SelectItem value="on_leave">في إجازة</SelectItem>
+                  <SelectItem value="active">{t("active")}</SelectItem>
+                  <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                  <SelectItem value="on_leave">{t("on_leave")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddStaffOpen(false)} disabled={isSubmitting}>
-              إلغاء
+              {t("cancel")}
             </Button>
             <Button onClick={handleAddStaff} disabled={isSubmitting || !newStaff.member_id}>
-              {isSubmitting ? "جاري الإضافة..." : "إضافة موظف"}
+              {isSubmitting ? t("adding") : t("addStaff")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -516,3 +521,5 @@ export default function Staff() {
     </DashboardShell>
   )
 }
+
+export default Staff

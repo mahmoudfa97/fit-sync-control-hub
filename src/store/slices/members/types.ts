@@ -15,7 +15,7 @@ export interface Member {
   lastCheckIn?: string;
   address?: string;
   emergencyContact?: string;
-  age?: string;
+  dateOfBirth?: string;
   gender?: 'male' | 'female' | 'other';
   // Insurance fields
   hasInsurance?: boolean;

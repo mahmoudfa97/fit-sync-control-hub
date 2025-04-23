@@ -47,7 +47,7 @@ export function CheckInsChart() {
 
         // Fetch check-in data
         const { data, error } = await supabase
-          .from("checkins")
+          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
           .select("check_in_time")
           .gte("check_in_time", yearStart.toISOString())
           .order("check_in_time")
@@ -137,7 +137,7 @@ export function CheckInsChart() {
   }
 
   return (
-    <Card className="col-span-1 lg:col-span-3">
+    <Card className="col-span-1 lg:col-span-5">
       <CardHeader className="pb-2">
         <CardTitle>{t("checkInsOverTime")}</CardTitle>
         <CardDescription>{t("checkInsOverTimeDescription")}</CardDescription>

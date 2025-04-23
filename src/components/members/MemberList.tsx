@@ -67,7 +67,7 @@ export const MemberList = ({ members, onFilterChange, onCheckIn }: MemberListPro
             <TableRow>
               <TableHead className="w-[250px]">{t("member")}</TableHead>
               <TableHead>{t("membershipType")}</TableHead>
-              <TableHead>{t("age")}</TableHead>
+              <TableHead>{t("dateOfBirth")}</TableHead>
               <TableHead>{t("status")}</TableHead>
               <TableHead>{t("lastCheckIn")}</TableHead>
               <TableHead>{t("paymentStatus")}</TableHead>

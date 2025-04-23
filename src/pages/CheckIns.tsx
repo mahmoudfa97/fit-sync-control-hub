@@ -175,7 +175,7 @@ export default function CheckIns() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="text-right">
                   <TableHead>{t("memberName")}</TableHead>
                   <TableHead>{t("checkInDate")}</TableHead>
                   <TableHead>{t("checkInTime")}</TableHead>

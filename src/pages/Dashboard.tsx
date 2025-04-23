@@ -18,6 +18,7 @@ import { t } from "@/utils/translations"
 import { supabase } from "@/integrations/supabase/client"
 import { useDashboardPrivacy } from "@/hooks/useDashboardPrivacy"
 import { formatPrivateValue } from "@/utils/formatters"
+import { ExpiredMembersCard } from "@/components/dashboard/ExpiredMembersCard"
 
 export default function Dashboard() {
   // State for dashboard data
@@ -76,7 +77,7 @@ export default function Dashboard() {
 
         // 1. Active Members Count
         const { data: activeMembers, error: activeMembersError } = await supabase
-          .from("memberships")
+          .from("custom_memberships")
           .select("id, member_id", { count: "exact" })
           .eq("status", "active")
           .gte("end_date", today)
@@ -85,7 +86,7 @@ export default function Dashboard() {
 
         // 2. Active Members Trend (last 6 months)
         const { data: activeMembersTrend, error: activeMembersTrendError } = await supabase
-          .from("memberships")
+          .from("custom_memberships")
           .select("created_at")
           .eq("status", "active")
           .gte("created_at", sixMonthsAgo)
@@ -98,7 +99,7 @@ export default function Dashboard() {
 
         // 3. Today's Check-ins
         const { data: todayCheckIns, error: todayCheckInsError } = await supabase
-          .from("checkins")
+          .from("custom_checkins")
           .select("id", { count: "exact" })
           .gte("check_in_time", `${today}T00:00:00`)
           .lte("check_in_time", `${today}T23:59:59`)
@@ -111,7 +112,7 @@ export default function Dashboard() {
         const yesterdayStr = yesterday.toISOString().split("T")[0]
 
         const { data: yesterdayCheckIns, error: yesterdayCheckInsError } = await supabase
-          .from("checkins")
+          .from("custom_checkins")
           .select("id", { count: "exact" })
           .gte("check_in_time", `${yesterdayStr}T00:00:00`)
           .lte("check_in_time", `${yesterdayStr}T23:59:59`)
@@ -147,7 +148,7 @@ export default function Dashboard() {
 
         // 7. New Subscriptions This Month
         const { data: newSubscriptions, error: newSubscriptionsError } = await supabase
-          .from("memberships")
+          .from("custom_members")
           .select("id", { count: "exact" })
           .gte("created_at", firstDayOfMonth)
 
@@ -155,7 +156,7 @@ export default function Dashboard() {
 
         // 8. New Subscriptions Last Month (for trend)
         const { data: lastMonthSubscriptions, error: lastMonthSubscriptionsError } = await supabase
-          .from("memberships")
+          .from("custom_members")
           .select("id", { count: "exact" })
           .gte("created_at", lastMonth)
           .lt("created_at", firstDayOfMonth)
@@ -401,10 +402,15 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <ExpiringMembersCard />
+        <RecentActivityCard />
+        <ExpiredMembersCard />
         <RecentlyAddedMembersCard />
+        <CheckInsChart />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+        
         <CheckInsHourlyForecast />
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <SixMonthsProfit />
         <ActiveMembersByGroup />
@@ -415,10 +421,7 @@ export default function Dashboard() {
         <MembershipExpiryCard />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <CheckInsChart />
-        <RecentActivityCard />
-      </div>
+      
     </DashboardShell>
   )
 }

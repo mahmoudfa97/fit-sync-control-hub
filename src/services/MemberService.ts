@@ -6,7 +6,7 @@ export interface MemberFormData {
   last_name: string
   email: string
   phone: string
-  age: string
+  dateOfBirth: string
   gender: "male" | "female" | ""
   membershipType: string
   status: Member["status"]
@@ -16,6 +16,22 @@ export interface MemberFormData {
   insuranceEndDate?: string
   insurancePolicy?: string
   insuranceProvider?: string
+}
+
+export interface ExpiringMember {
+  id: string
+  name: string
+  last_name: string | null
+  email: string | null
+  phone: string | null
+  avatar_url: string | null
+  membership: {
+    id: string
+    membership_type: string
+    end_date: string
+    status: string
+    payment_status: string
+  }
 }
 
 export class MemberService {
@@ -30,7 +46,7 @@ export class MemberService {
           last_name,
           email,
           phone,
-          age,
+          dateOfBirth,
           gender,
           created_at,
           updated_at,
@@ -123,7 +139,7 @@ export class MemberService {
           paymentStatus: (membership?.payment_status as Member["paymentStatus"]) || "paid",
           lastCheckIn: lastCheckInStr,
           gender: member.gender as "male" | "female" | "other" | undefined,
-          age: member.age ? member.age.toString() : undefined,
+          dateOfBirth: member.dateOfBirth ? member.dateOfBirth.toString() : undefined,
           hasInsurance: insurance?.has_insurance || false,
           insuranceStartDate: insurance?.start_date
             ? new Date(insurance.start_date).toISOString().split("T")[0]
@@ -149,7 +165,7 @@ export class MemberService {
           last_name,
           email,
           phone,
-          age,
+          dateOfBirth,
           gender,
           created_at,
           updated_at,
@@ -229,7 +245,7 @@ export class MemberService {
           paymentStatus: memberData.paymentStatus,
           initials: initials,
           gender: existingMember.gender as "male" | "female" | "other" | undefined,
-          age: existingMember.age ? existingMember.age.toString() : undefined,
+          dateOfBirth: existingMember.dateOfBirth ? existingMember.dateOfBirth.toString() : undefined,
           hasInsurance: memberData.hasInsurance,
           insuranceStartDate: memberData.insuranceStartDate,
           insuranceEndDate: memberData.insuranceEndDate,
@@ -258,7 +274,7 @@ export class MemberService {
           last_name: memberData.last_name,
           email: memberData.email,
           phone: memberData.phone,
-          age: memberData.age ? Number.parseInt(memberData.age) : null,
+          dateOfBirth: memberData.dateOfBirth ? Number.parseInt(memberData.dateOfBirth) : null,
           gender: memberData.gender || null,
           created_by: user.id,
         })
@@ -329,7 +345,7 @@ export class MemberService {
         paymentStatus: memberData.paymentStatus,
         initials: initials,
         gender: memberData.gender as "male" | "female" | "other" | undefined,
-        age: memberData.age || undefined,
+        dateOfBirth: memberData.dateOfBirth || undefined,
         hasInsurance: memberData.hasInsurance,
         insuranceStartDate: memberData.insuranceStartDate,
         insuranceEndDate: memberData.insuranceEndDate,
@@ -353,6 +369,241 @@ export class MemberService {
       return true
     } catch (error) {
       console.error("Error recording check-in:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Fetch members with expired memberships
+   * @returns Array of members with expired memberships
+   */
+  static async fetchExpiredMembers() {
+    try {
+      console.log("Fetching expired members...")
+
+      // Get current date
+      const today = new Date()
+      const todayStr = today.toISOString().split("T")[0]
+
+      // First, get memberships that have expired
+      const { data: expiredMemberships, error: membershipError } = await supabase
+        .from("custom_memberships")
+        .select(`
+          id,
+          membership_type,
+          end_date,
+          status,
+          payment_status,
+          member_id
+        `)
+        .lt("end_date", todayStr)
+        .eq("status", "active")
+        .order("end_date", { ascending: false })
+
+      if (membershipError) {
+        console.error("Error fetching expired memberships:", membershipError)
+        throw membershipError
+      }
+
+      console.log(`Found ${expiredMemberships?.length || 0} expired memberships`)
+
+      if (!expiredMemberships || expiredMemberships.length === 0) {
+        return []
+      }
+
+      // Get member details for each expired membership
+      const memberIds = expiredMemberships.map((membership) => membership.member_id)
+
+      const { data: membersData, error: membersError } = await supabase
+        .from("custom_members")
+        .select("id, name, last_name, email, phone")
+        .in("id", memberIds)
+
+      if (membersError) {
+        console.error("Error fetching expired members details:", membersError)
+        throw membersError
+      }
+
+      // Map memberships to members
+      const expiredMembers = expiredMemberships
+        .map((membership) => {
+          const member = membersData?.find((m) => m.id === membership.member_id)
+
+          if (!member) {
+            console.warn(`Member not found for membership: ${membership.id}`)
+            return null
+          }
+
+          return {
+            id: member.id,
+            name: member.name,
+            last_name: member.last_name,
+            email: member.email,
+            phone: member.phone,
+            avatar_url: null,
+            membership: {
+              id: membership.id,
+              membership_type: membership.membership_type,
+              end_date: membership.end_date,
+              status: membership.status,
+              payment_status: membership.payment_status,
+            },
+          }
+        })
+        .filter(Boolean) as ExpiringMember[]
+
+      return expiredMembers
+    } catch (error) {
+      console.error("Error in fetchExpiredMembers:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Fetch members with memberships expiring in the next 7 days
+   * @returns Array of members with soon-to-expire memberships
+   */
+  static async fetchExpiringMembers() {
+    try {
+      console.log("Fetching members with expiring memberships...")
+
+      // Get current date and date 7 days from now
+      const today = new Date()
+      const sevenDaysFromNow = new Date(today)
+      sevenDaysFromNow.setDate(today.getDate() + 7)
+
+      // Format dates for PostgreSQL (YYYY-MM-DD)
+      const todayStr = today.toISOString().split("T")[0]
+      const futureStr = sevenDaysFromNow.toISOString().split("T")[0]
+
+      console.log(`Date range: ${todayStr} to ${futureStr}`)
+
+      // Fetch memberships expiring in the next 7 days
+      const { data: expiringMemberships, error: membershipError } = await supabase
+        .from("custom_memberships")
+        .select(`
+          id,
+          membership_type,
+          end_date,
+          status,
+          payment_status,
+          member_id
+        `)
+        .gte("end_date", todayStr)
+        .lte("end_date", futureStr)
+        .eq("status", "active")
+        .order("end_date")
+
+      if (membershipError) {
+        console.error("Error fetching expiring memberships:", membershipError)
+        throw membershipError
+      }
+
+      console.log(`Found ${expiringMemberships?.length || 0} expiring memberships`)
+
+      if (!expiringMemberships || expiringMemberships.length === 0) {
+        return []
+      }
+
+      // Get member details for each expiring membership
+      const memberIds = expiringMemberships.map((membership) => membership.member_id)
+
+      const { data: membersData, error: membersError } = await supabase
+        .from("custom_members")
+        .select("id, name, last_name, email, phone")
+        .in("id", memberIds)
+
+      if (membersError) {
+        console.error("Error fetching expiring members details:", membersError)
+        throw membersError
+      }
+
+      // Map memberships to members
+      const expiringMembers = expiringMemberships
+        .map((membership) => {
+          const member = membersData?.find((m) => m.id === membership.member_id)
+
+          if (!member) {
+            console.warn(`Member not found for membership: ${membership.id}`)
+            return null
+          }
+
+          return {
+            id: member.id,
+            name: member.name,
+            last_name: member.last_name,
+            email: member.email,
+            phone: member.phone,
+            avatar_url: null,
+            membership: {
+              id: membership.id,
+              membership_type: membership.membership_type,
+              end_date: membership.end_date,
+              status: membership.status,
+              payment_status: membership.payment_status,
+            },
+          }
+        })
+        .filter(Boolean) as ExpiringMember[]
+
+      return expiringMembers
+    } catch (error) {
+      console.error("Error in fetchExpiringMembers:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Update membership status to expired
+   * @param membershipId The ID of the membership to update
+   * @returns The updated membership
+   */
+  static async updateMembershipToExpired(membershipId: string) {
+    try {
+      const { data, error } = await supabase
+        .from("custom_memberships")
+        .update({
+          status: "expired",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", membershipId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return data
+    } catch (error) {
+      console.error("Error updating membership to expired:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Automatically update all expired memberships
+   * @returns The number of memberships updated
+   */
+  static async autoUpdateExpiredMemberships() {
+    try {
+      // Get current date
+      const today = new Date()
+      const todayStr = today.toISOString().split("T")[0]
+
+      // Update all memberships that have expired
+      const { data, error } = await supabase
+        .from("custom_memberships")
+        .update({
+          status: "expired",
+          updated_at: new Date().toISOString(),
+        })
+        .lt("end_date", todayStr)
+        .eq("status", "active") as { data: { id: string }[] | null; error: any }
+
+      if (error) throw error
+
+      return { updated: data && Array.isArray(data) ? data.length : 0 }
+    } catch (error) {
+      console.error("Error auto-updating expired memberships:", error)
       throw error
     }
   }

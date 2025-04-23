@@ -22,6 +22,7 @@ import AccessControl from "./pages/AccessControl";
 import Settings from "./pages/Settings";
 import GroupSubscriptions from "./pages/GroupSubscriptions"; // New import
 import MessagesCenter from "./pages/MessagesCenter";
+import ReportsPage from "./pages/reports";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +58,8 @@ const AppContent = () => {
           <Route path="/members/:memberId" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
           <Route path="/checkins" element={<ProtectedRoute><CheckIns /></ProtectedRoute>} />
           <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-          <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+          <Route path="/invoices" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
           <Route path="/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/access" element={<ProtectedRoute><AccessControl /></ProtectedRoute>} />

@@ -16,25 +16,41 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Member } from "@/store/slices/membersSlice"
 import { useToast } from "@/hooks/use-toast"
-import { CreditCard, Banknote, Building, CheckSquare, Loader2 } from "lucide-react"
+import {
+  CreditCard,
+  Banknote,
+  Building,
+  CheckSquare,
+  Loader2,
+  CreditCardIcon,
+  ArrowUpRightIcon,
+  ShieldCheckIcon,
+} from "lucide-react"
 import { SubscriptionService, type GroupSubscription, type PaymentDetails } from "@/services/SubscriptionService"
+import HypPaymentModal from "@/components/payments/HypPaymentModal"
+import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface AddSubscriptionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   memberId: string
   memberName: string
+  memberEmail?: string // Added for payment processing
+  memberPhone?: string // Added for payment processing
   onSubscriptionAdded: () => void
 }
 
 type Duration = "1" | "2" | "3" | "4" | "6" | "12"
-type PaymentMethod = "cash" | "card" | "bank" | "check"
+type PaymentMethod = "cash" | "card" | "bank" | "check" | "hyp"
 
 export const AddSubscriptionDialog = ({
   open,
   onOpenChange,
   memberId,
   memberName,
+  memberEmail = "",
+  memberPhone = "",
   onSubscriptionAdded,
 }: AddSubscriptionDialogProps) => {
   const { toast } = useToast()
@@ -49,6 +65,9 @@ export const AddSubscriptionDialog = ({
   const [paymentStatus, setPaymentStatus] = useState<Member["paymentStatus"]>("paid")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
   const [amount, setAmount] = useState<number>(0)
+  const [sendReceipt, setSendReceipt] = useState(true)
+  const [installments, setInstallments] = useState(1)
+  const [showInstallments, setShowInstallments] = useState(false)
 
   // Payment method specific details
   const [cardNumber, setCardNumber] = useState("")
@@ -63,6 +82,10 @@ export const AddSubscriptionDialog = ({
   const [bankBranch, setBankBranch] = useState("")
 
   const [transferReference, setTransferReference] = useState("")
+
+  // HYP payment modal state
+  const [hypModalOpen, setHypModalOpen] = useState(false)
+  const [hypPaymentId, setHypPaymentId] = useState<string | null>(null)
 
   // Fetch group subscriptions when dialog opens
   useEffect(() => {
@@ -116,6 +139,14 @@ export const AddSubscriptionDialog = ({
     }
   }, [subscriptionId, groupSubscriptions])
 
+  // Control installments visibility based on payment method
+  useEffect(() => {
+    setShowInstallments(paymentMethod === "card" || paymentMethod === "hyp")
+    if (!showInstallments) {
+      setInstallments(1)
+    }
+  }, [paymentMethod])
+
   // Calculate end date
   const getEndDate = () => {
     const today = new Date()
@@ -131,6 +162,12 @@ export const AddSubscriptionDialog = ({
         description: "נא למלא את כל השדות הנדרשים",
         variant: "destructive",
       })
+      return
+    }
+
+    // If payment method is HYP, open the HYP payment modal
+    if (paymentMethod === "hyp") {
+      setHypModalOpen(true)
       return
     }
 
@@ -166,8 +203,23 @@ export const AddSubscriptionDialog = ({
             reference: transferReference,
           }
           break
+        case "hyp":
+          paymentDetails.hypDetails = {
+            paymentId: hypPaymentId || "",
+          }
+          break
         // Cash doesn't need extra details
       }
+
+      // Add installment details if applicable
+      if (showInstallments && installments > 1) {
+        paymentDetails.installments = installments
+        paymentDetails.installmentAmount = Math.ceil(amount / installments)
+      }
+
+      // Add receipt preferences
+      paymentDetails.sendReceipt = sendReceipt
+      paymentDetails.receiptEmail = memberEmail
 
       await SubscriptionService.addSubscription(memberId, {
         membershipType,
@@ -197,6 +249,25 @@ export const AddSubscriptionDialog = ({
     }
   }
 
+  // Handle successful HYP payment
+  const handleHypPaymentSuccess = async (paymentId: string) => {
+    setHypPaymentId(paymentId)
+    setPaymentStatus("paid")
+
+    // Close the HYP modal and submit the subscription
+    setHypModalOpen(false)
+
+    // Small delay to ensure the modal is closed before submitting
+    setTimeout(() => {
+      handleSubmit()
+    }, 500)
+  }
+
+  // Handle canceled HYP payment
+  const handleHypPaymentCancel = () => {
+    setHypModalOpen(false)
+  }
+
   // Calculate price per month
   const getPricePerMonth = () => {
     if (amount && duration) {
@@ -205,257 +276,394 @@ export const AddSubscriptionDialog = ({
     return 0
   }
 
+  // Calculate installment price
+  const getInstallmentPrice = () => {
+    if (amount && installments > 1) {
+      return Math.ceil(amount / installments)
+    }
+    return amount
+  }
+
+  // Get installment options
+  const getInstallmentOptions = () => {
+    const durationMonths = Number.parseInt(duration)
+    const maxInstallments = Math.min(durationMonths * 2, 12)
+    const options = []
+
+    for (let i = 1; i <= maxInstallments; i++) {
+      options.push(i)
+    }
+
+    return options
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>הוספת מנוי ל{memberName}</DialogTitle>
-          <DialogDescription>בחר את סוג המנוי ואת משך הזמן שלו</DialogDescription>
-        </DialogHeader>
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="subscriptionType">סוג המנוי</Label>
-              <Select value={subscriptionId} onValueChange={setSubscriptionId}>
-                <SelectTrigger id="subscriptionType">
-                  <SelectValue placeholder="בחר סוג מנוי" />
-                </SelectTrigger>
-                <SelectContent>
-                  {groupSubscriptions.map((subscription) => (
-                    <SelectItem key={subscription.id} value={subscription.id}>
-                      {subscription.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>הוספת מנוי ל{memberName}</DialogTitle>
+            <DialogDescription>בחר את סוג המנוי ואת משך הזמן שלו</DialogDescription>
+          </DialogHeader>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="duration">משך המנוי</Label>
-              <Select value={duration} onValueChange={(value) => setDuration(value as Duration)}>
-                <SelectTrigger id="duration">
-                  <SelectValue placeholder="בחר תקופה" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">חודש (₪{getPricePerMonth()} לחודש)</SelectItem>
-                  <SelectItem value="2">חודשיים (₪{getPricePerMonth()} לחודש)</SelectItem>
-                  <SelectItem value="3">שלושה חודשים (₪{getPricePerMonth()} לחודש)</SelectItem>
-                  <SelectItem value="4">ארבעה חודשים (₪{getPricePerMonth()} לחודש)</SelectItem>
-                  <SelectItem value="6">חצי שנה (₪{getPricePerMonth()} לחודש)</SelectItem>
-                  <SelectItem value="12">שנה (₪{getPricePerMonth()} לחודש)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>תאריך התחלה</Label>
-                <Input type="text" value={new Date().toLocaleDateString("he-IL")} disabled />
+          ) : (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="subscriptionType">סוג המנוי</Label>
+                <Select value={subscriptionId} onValueChange={setSubscriptionId}>
+                  <SelectTrigger id="subscriptionType">
+                    <SelectValue placeholder="בחר סוג מנוי" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groupSubscriptions.map((subscription) => (
+                      <SelectItem key={subscription.id} value={subscription.id}>
+                        {subscription.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <Label>תאריך סיום</Label>
-                <Input type="text" value={getEndDate()} disabled />
+
+              <div className="grid gap-2">
+                <Label htmlFor="duration">משך המנוי</Label>
+                <Select value={duration} onValueChange={(value) => setDuration(value as Duration)}>
+                  <SelectTrigger id="duration">
+                    <SelectValue placeholder="בחר תקופה" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">חודש (₪{getPricePerMonth()} לחודש)</SelectItem>
+                    <SelectItem value="2">חודשיים (₪{getPricePerMonth()} לחודש)</SelectItem>
+                    <SelectItem value="3">שלושה חודשים (₪{getPricePerMonth()} לחודש)</SelectItem>
+                    <SelectItem value="4">ארבעה חודשים (₪{getPricePerMonth()} לחודש)</SelectItem>
+                    <SelectItem value="6">חצי שנה (₪{getPricePerMonth()} לחודש)</SelectItem>
+                    <SelectItem value="12">שנה (₪{getPricePerMonth()} לחודש)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="status">סטטוס המנוי</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as Member["status"])}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="בחר סטטוס" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">פעיל</SelectItem>
-                  <SelectItem value="inactive">לא פעיל</SelectItem>
-                  <SelectItem value="pending">ממתין</SelectItem>
-                  <SelectItem value="expired">פג תוקף</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>תאריך התחלה</Label>
+                  <Input type="text" value={new Date().toLocaleDateString("he-IL")} disabled />
+                </div>
+                <div>
+                  <Label>תאריך סיום</Label>
+                  <Input type="text" value={getEndDate()} disabled />
+                </div>
+              </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="paymentStatus">סטטוס תשלום</Label>
-              <Select
-                value={paymentStatus}
-                onValueChange={(value) => setPaymentStatus(value as Member["paymentStatus"])}
-              >
-                <SelectTrigger id="paymentStatus">
-                  <SelectValue placeholder="בחר סטטוס תשלום" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">שולם</SelectItem>
-                  <SelectItem value="pending">ממתין</SelectItem>
-                  <SelectItem value="overdue">באיחור</SelectItem>
-                  <SelectItem value="canceled">בוטל</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="grid gap-2">
+                <Label htmlFor="status">סטטוס המנוי</Label>
+                <Select value={status} onValueChange={(value) => setStatus(value as Member["status"])}>
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="בחר סטטוס" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">פעיל</SelectItem>
+                    <SelectItem value="inactive">לא פעיל</SelectItem>
+                    <SelectItem value="pending">ממתין</SelectItem>
+                    <SelectItem value="expired">פג תוקף</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="amount">סכום לתשלום</Label>
-              <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
-            </div>
+              <div className="grid gap-2">
+                <Label htmlFor="paymentStatus">סטטוס תשלום</Label>
+                <Select
+                  value={paymentStatus}
+                  onValueChange={(value) => setPaymentStatus(value as Member["paymentStatus"])}
+                >
+                  <SelectTrigger id="paymentStatus">
+                    <SelectValue placeholder="בחר סטטוס תשלום" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="paid">שולם</SelectItem>
+                    <SelectItem value="pending">ממתין</SelectItem>
+                    <SelectItem value="overdue">באיחור</SelectItem>
+                    <SelectItem value="canceled">בוטל</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="border p-3 rounded-md">
-              <Label className="mb-2 block font-medium">אמצעי תשלום</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="amount">סכום לתשלום</Label>
+                <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+              </div>
 
-              <Tabs
-                defaultValue="cash"
-                value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
-              >
-                <TabsList className="grid grid-cols-4 mb-4">
-                  <TabsTrigger value="cash" className="flex flex-col items-center gap-1 pt-2">
-                    <Banknote className="h-4 w-4" />
-                    <span>מזומן</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="card" className="flex flex-col items-center gap-1 pt-2">
-                    <CreditCard className="h-4 w-4" />
-                    <span>כרטיס אשראי</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="bank" className="flex flex-col items-center gap-1 pt-2">
-                    <Building className="h-4 w-4" />
-                    <span>העברה בנקאית</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="check" className="flex flex-col items-center gap-1 pt-2">
-                    <CheckSquare className="h-4 w-4" />
-                    <span>המחאה</span>
-                  </TabsTrigger>
-                </TabsList>
+              <div className="border p-3 rounded-md">
+                <Label className="mb-2 block font-medium">אמצעי תשלום</Label>
 
-                <TabsContent value="cash">
-                  <div className="text-gray-500 text-sm">תשלום במזומן יתקבל ישירות בקופת המועדון.</div>
-                </TabsContent>
+                <Tabs
+                  defaultValue="cash"
+                  value={paymentMethod}
+                  onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                >
+                  <TabsList className="grid grid-cols-5 mb-4 h-auto">
+                    <TabsTrigger value="cash" className="flex flex-col items-center gap-1 pt-2">
+                      <Banknote className="h-4 w-4" />
+                      <span>מזומן</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="card" className="flex flex-col items-center gap-1 pt-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span>כרטיס אשראי</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="bank" className="flex flex-col items-center gap-1 pt-2">
+                      <Building className="h-4 w-4" />
+                      <span>העברה בנקאית</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="check" className="flex flex-col items-center gap-1 pt-2">
+                      <CheckSquare className="h-4 w-4" />
+                      <span>המחאה</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="hyp" className="flex flex-col items-center gap-1 pt-2">
+                      <div className="relative">
+                        <CreditCardIcon className="h-4 w-4" />
+                        <ShieldCheckIcon className="h-3 w-3 absolute -top-1 -right-1 text-blue-500" />
+                      </div>
+                      <span>HYP</span>
+                    </TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="card">
-                  <div className="grid gap-2">
-                    <Label htmlFor="cardNumber">מספר כרטיס</Label>
-                    <Input
-                      id="cardNumber"
-                      placeholder="**** **** **** ****"
-                      maxLength={16}
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <Label htmlFor="cardExpiry">תוקף (MM/YY)</Label>
+                  <TabsContent value="cash">
+                    <div className="text-gray-500 text-sm">תשלום במזומן יתקבל ישירות בקופת המועדון.</div>
+                  </TabsContent>
+
+                  <TabsContent value="card">
+                    <div className="grid gap-2">
+                      <Label htmlFor="cardNumber">מספר כרטיס</Label>
                       <Input
-                        id="cardExpiry"
-                        placeholder="MM/YY"
-                        maxLength={5}
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
+                        id="cardNumber"
+                        placeholder="**** **** **** ****"
+                        maxLength={16}
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="cardCvv">CVV</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <Label htmlFor="cardExpiry">תוקף (MM/YY)</Label>
+                        <Input
+                          id="cardExpiry"
+                          placeholder="MM/YY"
+                          maxLength={5}
+                          value={cardExpiry}
+                          onChange={(e) => setCardExpiry(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cardCvv">CVV</Label>
+                        <Input
+                          id="cardCvv"
+                          placeholder="123"
+                          maxLength={3}
+                          value={cardCvv}
+                          onChange={(e) => setCardCvv(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2 mt-2">
+                      <Label htmlFor="cardHolderName">שם בעל הכרטיס</Label>
                       <Input
-                        id="cardCvv"
+                        id="cardHolderName"
+                        placeholder="Israel Israeli"
+                        value={cardHolderName}
+                        onChange={(e) => setCardHolderName(e.target.value)}
+                      />
+                    </div>
+
+                    {showInstallments && (
+                      <div className="mt-4 p-3 bg-gray-50 rounded border">
+                        <Label htmlFor="installments" className="font-medium">
+                          תשלומים
+                        </Label>
+                        <RadioGroup
+                          value={installments.toString()}
+                          onValueChange={(val) => setInstallments(Number.parseInt(val))}
+                          className="flex flex-wrap gap-2 mt-2"
+                        >
+                          {getInstallmentOptions().map((num) => (
+                            <div key={num} className="flex items-center space-x-2 rtl:space-x-reverse">
+                              <RadioGroupItem value={num.toString()} id={`installments-${num}`} />
+                              <Label htmlFor={`installments-${num}`} className="text-sm">
+                                {num === 1 ? "תשלום אחד" : `${num} תשלומים של ₪${getInstallmentPrice()}`}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="bank">
+                    <div className="grid gap-2">
+                      <Label htmlFor="bankName">שם הבנק</Label>
+                      <Input
+                        id="bankName"
+                        placeholder="לאומי / פועלים / מזרחי וכו'"
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2 mt-2">
+                      <Label htmlFor="bankBranch">מספר סניף</Label>
+                      <Input
+                        id="bankBranch"
                         placeholder="123"
-                        maxLength={3}
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value)}
+                        value={bankBranch}
+                        onChange={(e) => setBankBranch(e.target.value)}
                       />
                     </div>
-                  </div>
-                  <div className="grid gap-2 mt-2">
-                    <Label htmlFor="cardHolderName">שם בעל הכרטיס</Label>
-                    <Input
-                      id="cardHolderName"
-                      placeholder="Israel Israeli"
-                      value={cardHolderName}
-                      onChange={(e) => setCardHolderName(e.target.value)}
-                    />
-                  </div>
-                </TabsContent>
+                    <div className="grid gap-2 mt-2">
+                      <Label htmlFor="bankAccountNumber">מספר חשבון</Label>
+                      <Input
+                        id="bankAccountNumber"
+                        placeholder="123456789"
+                        value={bankAccountNumber}
+                        onChange={(e) => setBankAccountNumber(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2 mt-2">
+                      <Label htmlFor="transferReference">אסמכתא</Label>
+                      <Input
+                        id="transferReference"
+                        placeholder="מספר אסמכתא להעברה"
+                        value={transferReference}
+                        onChange={(e) => setTransferReference(e.target.value)}
+                      />
+                    </div>
+                  </TabsContent>
 
-                <TabsContent value="bank">
-                  <div className="grid gap-2">
-                    <Label htmlFor="bankName">שם הבנק</Label>
-                    <Input
-                      id="bankName"
-                      placeholder="לאומי / פועלים / מזרחי וכו'"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2 mt-2">
-                    <Label htmlFor="bankBranch">מספר סניף</Label>
-                    <Input
-                      id="bankBranch"
-                      placeholder="123"
-                      value={bankBranch}
-                      onChange={(e) => setBankBranch(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2 mt-2">
-                    <Label htmlFor="bankAccountNumber">מספר חשבון</Label>
-                    <Input
-                      id="bankAccountNumber"
-                      placeholder="123456789"
-                      value={bankAccountNumber}
-                      onChange={(e) => setBankAccountNumber(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2 mt-2">
-                    <Label htmlFor="transferReference">אסמכתא</Label>
-                    <Input
-                      id="transferReference"
-                      placeholder="מספר אסמכתא להעברה"
-                      value={transferReference}
-                      onChange={(e) => setTransferReference(e.target.value)}
-                    />
-                  </div>
-                </TabsContent>
+                  <TabsContent value="check">
+                    <div className="grid gap-2">
+                      <Label htmlFor="checkNumber">מספר המחאה</Label>
+                      <Input
+                        id="checkNumber"
+                        placeholder="12345"
+                        value={checkNumber}
+                        onChange={(e) => setCheckNumber(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2 mt-2">
+                      <Label htmlFor="checkDate">תאריך המחאה</Label>
+                      <Input
+                        id="checkDate"
+                        type="date"
+                        value={checkDate}
+                        onChange={(e) => setCheckDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2 mt-2">
+                      <Label htmlFor="checkBankName">שם הבנק</Label>
+                      <Input
+                        id="checkBankName"
+                        placeholder="לאומי / פועלים / מזרחי וכו'"
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                      />
+                    </div>
+                  </TabsContent>
 
-                <TabsContent value="check">
-                  <div className="grid gap-2">
-                    <Label htmlFor="checkNumber">מספר המחאה</Label>
-                    <Input
-                      id="checkNumber"
-                      placeholder="12345"
-                      value={checkNumber}
-                      onChange={(e) => setCheckNumber(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2 mt-2">
-                    <Label htmlFor="checkDate">תאריך המחאה</Label>
-                    <Input
-                      id="checkDate"
-                      type="date"
-                      value={checkDate}
-                      onChange={(e) => setCheckDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2 mt-2">
-                    <Label htmlFor="checkBankName">שם הבנק</Label>
-                    <Input
-                      id="checkBankName"
-                      placeholder="לאומי / פועלים / מזרחי וכו'"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  <TabsContent value="hyp">
+                    <div className="flex flex-col">
+                      <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg mb-4 w-full">
+                        <div className="flex items-start">
+                          <ShieldCheckIcon className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+                          <div>
+                            <h3 className="font-medium text-blue-800 mb-2">תשלום מאובטח באמצעות HYP</h3>
+                            <p className="text-sm text-blue-700 mb-2">
+                              לחץ על "הוסף מנוי" כדי לעבור למסך התשלום המאובטח של HYP.
+                            </p>
+                            <ul className="text-sm text-blue-700 list-disc list-inside">
+                              <li>תשלום מאובטח ומוצפן</li>
+                              <li>תמיכה בכל כרטיסי האשראי</li>
+                              <li>אפשרות לתשלום באמצעות Bit, PayBox ועוד</li>
+                              <li>קבלה דיגיטלית תישלח למייל</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {showInstallments && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-100">
+                          <Label htmlFor="installments" className="font-medium text-blue-800">
+                            תשלומים
+                          </Label>
+                          <RadioGroup
+                            value={installments.toString()}
+                            onValueChange={(val) => setInstallments(Number.parseInt(val))}
+                            className="flex flex-wrap gap-2 mt-2"
+                          >
+                            {getInstallmentOptions().map((num) => (
+                              <div key={num} className="flex items-center space-x-2 rtl:space-x-reverse">
+                                <RadioGroupItem value={num.toString()} id={`installments-hyp-${num}`} />
+                                <Label htmlFor={`installments-hyp-${num}`} className="text-sm text-blue-700">
+                                  {num === 1 ? "תשלום אחד" : `${num} תשלומים של ₪${getInstallmentPrice()}`}
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-center mt-4">
+                        <img src="/abstract-hyp-logo.png" alt="HYP Payment" className="h-10 opacity-80" />
+                      </div>
+
+                      <div className="flex items-center mt-4">
+                        <a
+                          href="https://hyp.co.il"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-500 hover:underline flex items-center"
+                        >
+                          מידע נוסף על HYP
+                          <ArrowUpRightIcon className="h-3 w-3 ml-1" />
+                        </a>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <Checkbox
+                  id="sendReceipt"
+                  checked={sendReceipt}
+                  onCheckedChange={(checked) => setSendReceipt(checked as boolean)}
+                />
+                <Label htmlFor="sendReceipt" className="text-sm">
+                  שלח קבלה לאימייל של המנוי
+                </Label>
+              </div>
             </div>
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            ביטול
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || isLoading}>
-            {isSubmitting ? "מוסיף..." : "הוסף מנוי"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              ביטול
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting || isLoading}>
+              {isSubmitting ? "מוסיף..." : "הוסף מנוי"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* HYP Payment Modal */}
+      <HypPaymentModal
+        open={hypModalOpen}
+        onOpenChange={setHypModalOpen}
+        amount={amount}
+        memberId={memberId}
+        memberName={memberName}
+        memberEmail={memberEmail}
+        memberPhone={memberPhone}
+        description={`מנוי ${membershipType} - ${duration} חודשים`}
+        onPaymentSuccess={handleHypPaymentSuccess}
+        onPaymentCancel={handleHypPaymentCancel}
+      />
+    </>
   )
 }

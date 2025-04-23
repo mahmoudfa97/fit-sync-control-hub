@@ -22,6 +22,8 @@ import { Switch } from "@/components/ui/switch";
 import { membershipTypes } from "./MembershipTypes";
 import { type Member } from "@/store/slices/membersSlice";
 import { MemberFormData } from "@/services/MemberService";
+import { t } from "@/utils/translations";
+import { DatePicker } from "../ui/date-picker";
 
 interface AddMemberDialogProps {
   open: boolean;
@@ -97,14 +99,8 @@ export const AddMemberDialog = ({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="age">גיל</Label>
-              <Input
-                id="age"
-                type="number"
-                placeholder="גיל"
-                value={newMember.age}
-                onChange={(e) => setNewMember({...newMember, age: e.target.value})}
-              />
+              <Label htmlFor="dateOfBirth">{t(`dateofbirth`)}</Label>
+              <DatePicker date={undefined} onSelect={(e) => setNewMember({...newMember, dateOfBirth: e.target.value})} />
             </div>
             <div>
               <Label htmlFor="gender">מגדר</Label>
@@ -124,61 +120,20 @@ export const AddMemberDialog = ({
               </Select>
             </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="membershipType">סוג המנוי</Label>
-            <Select
-              value={newMember.membershipType}
-              onValueChange={(value) => setNewMember({...newMember, membershipType: value})}
-            >
-              <SelectTrigger id="membershipType">
-                <SelectValue placeholder="בחר סוג מנוי" />
-              </SelectTrigger>
-              <SelectContent>
-                {membershipTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+ 
           <div className="grid gap-2">
             <Label htmlFor="status">סטטוס</Label>
-            <Select
-              value={newMember.status}
-              onValueChange={(value: Member['status']) => 
-                setNewMember({...newMember, status: value})
-              }
-            >
-              <SelectTrigger id="status">
-                <SelectValue placeholder="בחר סטטוס" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">פעיל</SelectItem>
-                <SelectItem value="inactive">לא פעיל</SelectItem>
-                <SelectItem value="pending">ממתין</SelectItem>
-                <SelectItem value="expired">פג תוקף</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="paymentStatus">סטטוס תשלום</Label>
-            <Select
-              value={newMember.paymentStatus}
-              onValueChange={(value: Member['paymentStatus']) => 
-                setNewMember({...newMember, paymentStatus: value})
-              }
-            >
-              <SelectTrigger id="paymentStatus">
-                <SelectValue placeholder="בחר סטטוס תשלום" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="paid">שולם</SelectItem>
-                <SelectItem value="pending">ממתין</SelectItem>
-                <SelectItem value="overdue">באיחור</SelectItem>
-                <SelectItem value="canceled">בוטל</SelectItem>
-              </SelectContent>
-            </Select>
+            <Input
+              disabled
+              id="status"
+              value={t(`active`)} // Assuming you have a translation function
+            />
+    <Label htmlFor="paymentStatus"> סטטוס תשלום</Label>
+              <Input
+                id="paymentStatus"
+                disabled
+                value={t(`pending`)} // Assuming you have a translation function>
+                />
           </div>
           
           {/* Insurance Section */}

@@ -74,45 +74,28 @@ interface Settings {
 }
 
 // Default settings
-const defaultSettings: Settings = {
-  gymName: "",
-  email: "",
-  phone: "",
-  language: "he",
-  address: "",
-  workingHours: {
-    weekdays: "08:00-22:00",
-    weekends: "09:00-18:00",
-  },
-  notifications: {
-    email: true,
-    sms: true,
-    app: true,
-  },
-  memberReminders: true,
-  autoRenewals: false,
-  businessInfo: {
-    taxNumber: "",
-    commercialRegister: "",
-  },
-  taxRate: 17,
-  privacySettings: {
-    shareData: false,
-    membersCanSeeOthers: false,
-    publicProfile: true,
-  },
-  backupFrequency: "weekly",
-  smsSettings: {
-    provider: "twilio",
-    apiKey: "",
-    apiSecret: "",
-    fromNumber: "",
-    testMessage: "This is a test message from your gym management system.",
-  },
-}
 
+async function fetchSettings() {
+  // Get organization ID from user profile or use a default
+  const organizationId = "spartagymfiras" // In a real app, get this from auth context
+
+  const { data, error } = await supabase
+    .from("settings")
+    .select(
+      `id, gym_name, email, phone, language, address, working_hours, notifications, member_reminders, auto_renewals, business_info, tax_rate, privacy_settings, backup_frequency, sms_settings, organization_id, created_at, updated_at`,
+    )
+    .eq("organization_id", organizationId)
+    .single()
+
+  if (error) {
+    console.error("Error fetching settings:", error)
+    return null
+  }
+
+  return data
+}
 export default function Settings() {
-  const [settings, setSettings] = useState<Settings>(defaultSettings)
+  const [settings, setSettings] = useState<Settings>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [sendingTest, setSendingTest] = useState(false)
@@ -120,60 +103,36 @@ export default function Settings() {
 
   // Fetch settings from Supabase
   useEffect(() => {
-    async function fetchSettings() {
-      try {
-        setLoading(true)
+    async function loadSettings() {
+      const data = await fetchSettings()
 
-        // Get organization ID from user profile or use a default
-        // In a real app, you would get this from auth context
-        const organizationId = "default-org"
-
-        const { data, error } = await supabase
-          .from("settings")
-          .select("*")
-          .eq("organization_id", organizationId)
-          .single()
-
-        if (error && error.code !== "PGRST116") {
-          // PGRST116 is "no rows returned" error, which is expected if no settings exist yet
-          console.error("Error fetching settings:", error)
-          toast.error(t("errorFetchingSettings"))
-          return
+      if (data) {
+        // Convert snake_case database fields to camelCase for the component
+        const formattedData = {
+          id: data.id,
+          gymName: data.gym_name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          language: data.language || "",
+          address: data.address || "",
+          workingHours: data.working_hours || "",
+          notifications: data.notifications || false,
+          memberReminders: data.member_reminders || false,
+          autoRenewals: data.auto_renewals || false,
+          businessInfo: data.business_info || "",
+          taxRate: data.tax_rate || 0,
+          privacySettings: data.privacy_settings || "",
+          backupFrequency: data.backup_frequency || "",
+          smsSettings: data.sms_settings || "",
+          organizationId: data.organization_id || "",
+          createdAt: data.created_at || "",
+          updatedAt: data.updated_at || "",
         }
-
-        if (data) {
-          // Convert snake_case database fields to camelCase for the component
-          const formattedData = {
-            id: data.id,
-            gymName: data.gym_name || "",
-            email: data.email || "",
-            phone: data.phone || "",
-            language: data.language || "he",
-            address: data.address || "",
-            workingHours: data.working_hours  || defaultSettings.workingHours,
-            notifications: data.notifications || defaultSettings.notifications,
-            memberReminders: data.member_reminders || true,
-            autoRenewals: data.auto_renewals || false,
-            businessInfo: data.business_info || defaultSettings.businessInfo,
-            taxRate: data.tax_rate || 17,
-            privacySettings: data.privacy_settings || defaultSettings.privacySettings,
-            backupFrequency: data.backup_frequency || "weekly",
-            smsSettings: data.sms_settings || defaultSettings.smsSettings,
-            organizationId: data.organization_id,
-            created_at: data.created_at,
-            updated_at: data.updated_at,
-          }
-          setSettings({...formattedData})
-        }
-      } catch (error) {
-        console.error("Error in fetchSettings:", error)
-        toast.error(t("errorFetchingSettings"))
-      } finally {
-        setLoading(false)
+        setSettings({ ...formattedData })
       }
     }
 
-    fetchSettings()
+    loadSettings()
   }, [])
 
   // Handle input changes
@@ -208,7 +167,7 @@ export default function Settings() {
       setSaving(true)
 
       // Get organization ID from user profile or use a default
-      const organizationId = "default-org"
+      const organizationId = "spartagymfiras"
 
       // Convert camelCase to snake_case for database
       const settingsToSave = {

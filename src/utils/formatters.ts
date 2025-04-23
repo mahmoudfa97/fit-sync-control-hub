@@ -42,7 +42,13 @@ export const formatPrivateDate = (date: string | Date | null | undefined, hideNu
     return date
   }
 
-  return date.toLocaleDateString()
+  return date.toLocaleDateString("he-IL",{
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
 /**

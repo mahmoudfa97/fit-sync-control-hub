@@ -1,5 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
+// Update the Database type to include the new classes tables
 export type Database = {
   public: {
     Tables: {
@@ -76,89 +77,110 @@ export type Database = {
           },
         ]
       }
+      // Updated class_registrations table with member_id instead of profile_id
       class_registrations: {
         Row: {
           class_id: string
           created_at: string | null
           id: string
-          profile_id: string
+          member_id: string
           status: string
+          updated_at: string | null
         }
         Insert: {
           class_id: string
           created_at?: string | null
           id?: string
-          profile_id: string
+          member_id: string
           status?: string
+          updated_at?: string | null
         }
         Update: {
           class_id?: string
           created_at?: string | null
           id?: string
-          profile_id?: string
+          member_id?: string
           status?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "class_registrations_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_registrations_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
+      // Updated class_attendance table
+      class_attendance: {
+        Row: {
+          id: string
+          class_id: string
+          member_id: string
+          attended_at: string
+          notes: string | null
+          created_by: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          class_id: string
+          member_id: string
+          attended_at?: string
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          class_id?: string
+          member_id?: string
+          attended_at?: string
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      // Updated classes table without foreign key relationships
       classes: {
         Row: {
-          created_at: string | null
-          current_enrollment: number
-          day_of_week: string
-          description: string | null
-          end_time: string
           id: string
-          level: string
-          max_capacity: number
           name: string
-          start_time: string
-          status: string
           trainer_id: string | null
+          day_of_week: string
+          start_time: string
+          end_time: string
+          max_capacity: number
+          current_enrollment: number
+          description: string | null
+          level: string
+          status: string
+          created_at: string | null
           updated_at: string | null
         }
         Insert: {
-          created_at?: string | null
-          current_enrollment?: number
-          day_of_week: string
-          description?: string | null
-          end_time: string
           id?: string
-          level: string
-          max_capacity?: number
           name: string
-          start_time: string
-          status?: string
           trainer_id?: string | null
+          day_of_week: string
+          start_time: string
+          end_time: string
+          max_capacity?: number
+          current_enrollment?: number
+          description?: string | null
+          level: string
+          status?: string
+          created_at?: string | null
           updated_at?: string | null
         }
         Update: {
-          created_at?: string | null
-          current_enrollment?: number
-          day_of_week?: string
-          description?: string | null
-          end_time?: string
           id?: string
-          level?: string
-          max_capacity?: number
           name?: string
-          start_time?: string
-          status?: string
           trainer_id?: string | null
+          day_of_week?: string
+          start_time?: string
+          end_time?: string
+          max_capacity?: number
+          current_enrollment?: number
+          description?: string | null
+          level?: string
+          status?: string
+          created_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -249,7 +271,7 @@ export type Database = {
           last_name: string | null
           email: string | null
           phone: string | null
-          age: number | null
+          dateOfBirth: string | null
           gender: string | null
           created_at: string | null
           updated_at: string | null
@@ -261,7 +283,7 @@ export type Database = {
           last_name?: string | null
           email?: string | null
           phone?: string | null
-          age?: number | null
+          dateOfBirth?: string | null
           gender?: string | null
           created_at?: string | null
           updated_at?: string | null
@@ -273,7 +295,7 @@ export type Database = {
           last_name?: string | null
           email?: string | null
           phone?: string | null
-          age?: number | null
+          dateOfBirth?: string | null
           gender?: string | null
           created_at?: string | null
           updated_at?: string | null
@@ -487,18 +509,6 @@ export type Database = {
           receipt_number?: string | null
           status?: string
         }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          member_id?: string
-          payment_date?: string | null
-          payment_method?: string
-          payment_method_id?: string | null
-          receipt_number?: string | null
-          status?: string
-        }
         Relationships: [
           {
             foreignKeyName: "payments_member_id_fkey"
@@ -518,7 +528,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          age: number | null
+          dateOfBirth: string | null
           avatar_url: string | null
           created_at: string | null
           email: string
@@ -530,7 +540,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          age?: number | null
+          dateOfBirth?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email: string
@@ -542,7 +552,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          age?: number | null
+          dateOfBirth?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string

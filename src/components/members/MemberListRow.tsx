@@ -75,7 +75,7 @@ export const MemberListRow = ({ member, onCheckIn }: MemberListRowProps) => {
       </TableCell>
       <TableCell className="text-center">
         <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground"> {formatPrivateDate(member.age)}</span>
+          <span className="text-xs text-muted-foreground"> {formatPrivateDate(member.dateOfBirth)}</span>
         </div>
       </TableCell>
       <TableCell>

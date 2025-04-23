@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { DashboardShell } from "@/components/layout/DashboardShell"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,16 +24,24 @@ import {
   CalendarClock,
   History,
   ClipboardList,
-  FileText,
+  ShieldCheck,
+  ArrowLeft,
+  Mail,
+  User,
+  Calendar,
 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { AddSubscriptionDialog } from "../components/members/AddSubscriptionDialog"
 import type { Tables } from "@/integrations/supabase/types"
 import { MemberProfileActions } from "@/components/members/MemberProfileActions"
+import { MemberProfileTabs } from "@/components/members/MemberProfileTabs"
+import { Separator } from "@/components/ui/separator"
+import { t } from "@/utils/translations"
+import { useAppSelector } from "@/hooks/redux"
 
 // Use the types from your constants file
-type Profile = Tables<"profiles">
+type Profile = Tables<"custom_members">
 type Membership = Tables<"memberships">
 type CheckIn = Tables<"checkins">
 type Payment = Tables<"payments">
@@ -44,7 +52,8 @@ export default function MemberProfile() {
   const { toast } = useToast()
 
   // State for member data
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const {members} = useAppSelector((state) => state.members)
+  const [profile, setProfile] = useState(null)
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -67,15 +76,11 @@ export default function MemberProfile() {
         setLoading(true)
 
         // Fetch profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from("custom_members")
-          .select("*")
-          .eq("id", memberId)
-          .single()
+        const profile= members.find((member) => member.id === memberId)
 
-        if (profileError) throw profileError
+        if (!profile) throw Error
 
-        setProfile(profileData)
+        setProfile({ ...profile })
 
         // Fetch access cards
         const { data: accessCardsData, error: accessCardsError } = await supabase
@@ -249,7 +254,7 @@ export default function MemberProfile() {
   // Function to fetch memberships (used after creating a new one)
   const fetchMemberships = async () => {
     try {
-      let query = supabase.from("memberships").select("*", { count: "exact" }).eq("member_id", memberId)
+      let query = supabase.from("custom_memberships").select("*", { count: "exact" }).eq("member_id", memberId)
 
       if (currentFilter === "active") {
         query = query.eq("status", "active")
@@ -275,6 +280,37 @@ export default function MemberProfile() {
     }
   }
 
+  const fetchMember = async () => {
+    try {
+      setLoading(true)
+      console.log("Making Supabase request for member:", memberId)
+
+      const { data, error } = await supabase.from("custom_members").select("*").eq("id", memberId).single()
+
+      if (error) {
+        console.error("Supabase error:", error)
+        toast({
+          title: "Error Fetching Member",
+          description: "An error occurred while fetching the member data.",
+          variant: "destructive",
+        })
+        throw error
+      }
+
+      console.log("Member data received:", data)
+      setProfile({ ...data })
+    } catch (error) {
+      console.error("Error fetching member:", error)
+      toast({
+        title: "Error Fetching Member",
+        description: "An error occurred while fetching the member data.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // If member not found, show error state
   if (!profile && !loading) {
     return (
@@ -295,522 +331,96 @@ export default function MemberProfile() {
 
   return (
     <DashboardShell>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Link to="/members" className="text-muted-foreground hover:text-foreground ml-2">
-            ראשי
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" asChild>
+          <Link to="/members">
+            <ArrowLeft className="h-4 w-4" />
           </Link>
-          <span className="text-muted-foreground mx-2">/</span>
-          <span>פרופיל לקוח</span>
-        </div>
+        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">{t("MemberProfile")}</h1>
       </div>
+      <MemberProfileActions
+        memberId={profile?.id}
+        memberName={`${profile?.name} ${profile?.last_name || ""}`}
+        onRefresh={() => fetchMember()}
+      />
+    </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Main content area - 3 columns */}
-        <div className="col-span-1 md:col-span-3">
-          <Card className="mb-6">
-            <CardContent className="p-0">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full justify-start bg-white border-b rounded-none h-14 p-0 gap-8">
-                  <TabsTrigger
-                    value="memberships"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4"
-                  >
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4" />
-                      מנויים
-                    </div>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="payments"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      תשלומים ומעקב
-                    </div>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="checkins"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CalendarClock className="h-4 w-4" />
-                      היסטוריית כניסות
-                    </div>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="history"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4"
-                  >
-                    <div className="flex items-center gap-2">
-                      <History className="h-4 w-4" />
-                      הנהלת חשבונות
-                    </div>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="profile"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-14 px-4"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      היסטוריית פניות
-                    </div>
-                  </TabsTrigger>
-                </TabsList>
+    <div className="grid gap-6 md:grid-cols-4">
+      <Card className="md:col-span-1">
+        <CardHeader>
+          <CardTitle>{t("memberDetails")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center mb-6">
+            <Avatar className="h-24 w-24 mb-4">
+              <AvatarImage src="/placeholder.svg" />
+              <AvatarFallback className="text-xl">{getInitials(profile?.name, profile?.last_name)}</AvatarFallback>
+            </Avatar>
+            <h2 className="text-xl font-bold">{`${profile?.name} ${profile?.last_name || ""}`}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t("memberSince")} {formatDateTime(profile?.created_at)}
+            </p>
+          </div>
 
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <Button
-                      variant="default"
-                      className="bg-primary text-white"
-                      onClick={() => setIsCreateMembershipOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      מנוי חדש
-                    </Button>
+          <Separator className="my-4" />
 
-                    <div className="relative">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="חיפוש במנויים..."
-                        className="pl-10 w-[250px]"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <div className="flex gap-2">
-                      <Button
-                        variant={currentFilter === "active" ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setCurrentFilter("active")}
-                      >
-                        מנויים פעילים
-                      </Button>
-                      <Button
-                        variant={currentFilter === "inactive" ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setCurrentFilter("inactive")}
-                      >
-                        מנויים לא פעילים
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <TabsContent value="memberships" className="mt-0 border-0 p-0 px-6">
-                  {loading ? (
-                    <div className="flex justify-center p-8">
-                      <div className="animate-pulse text-muted-foreground">טוען...</div>
-                    </div>
-                  ) : (
-                    <>
-                      <Table dir="ltr" className="overflow-auto">
-                        <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="text-center">סטטוס</TableHead>
-                            <TableHead className="text-center">עד תאריך</TableHead>
-                            <TableHead className="text-center">מתאריך</TableHead>
-                            <TableHead className="text-center">סוג מנוי</TableHead>
-                            <TableHead className="text-center">תשלום</TableHead>
-                            <TableHead></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {memberships.length > 0 ? (
-                            memberships.map((membership) => (
-                              <TableRow key={membership.id}>
-                                <TableCell className="text-center">
-                                  <span
-                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                                      membership.status === "active"
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-gray-100 text-gray-800"
-                                    }`}
-                                  >
-                                    {membership.status === "active" ? "פעיל" : "לא פעיל"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {membership.end_date
-                                    ? new Date(membership.end_date).toLocaleDateString("he-IL")
-                                    : "ללא הגבלה"}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {new Date(membership.start_date).toLocaleDateString("he-IL")}
-                                </TableCell>
-                                <TableCell className="text-center">{membership.membership_type}</TableCell>
-                                <TableCell className="text-center">
-                                  <span
-                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                                      membership.payment_status === "paid"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-yellow-100 text-yellow-800"
-                                    }`}
-                                  >
-                                    {membership.payment_status === "paid" ? "שולם" : "ממתין לתשלום"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-left">
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0"
-                                      onClick={() => {
-                                        // Handle edit membership
-                                      }}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0"
-                                      onClick={() => handleRenewMembership(membership.id)}
-                                    >
-                                      <RefreshCw className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                                אין נתונים בטבלה
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-
-                      <div className="flex items-center justify-between my-4 pb-6">
-                        <div className="text-sm text-muted-foreground">
-                          סך הכל שורות: {memberships.length} מתוך {totalCount}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setPage(1)}
-                            disabled={page === 1}
-                          >
-                            <ChevronsLeft className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-
-                          <Button variant="outline" size="sm" className="h-8 min-w-[2rem] px-2">
-                            {page}
-                          </Button>
-
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setPage((p) => p + 1)}
-                            disabled={page * perPage >= totalCount}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setPage(Math.ceil(totalCount / perPage))}
-                            disabled={page * perPage >= totalCount}
-                          >
-                            <ChevronsRight className="h-4 w-4" />
-                          </Button>
-
-                          <select
-                            className="h-8 rounded-md border border-input bg-background px-3"
-                            value={perPage}
-                            onChange={(e) => {
-                              setPerPage(Number(e.target.value))
-                              setPage(1) // Reset to first page when changing items per page
-                            }}
-                          >
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="30">30</option>
-                            <option value="40">40</option>
-                            <option value="50">50</option>
-                          </select>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="payments" className="mt-0 border-0 p-6">
-                  {loading ? (
-                    <div className="flex justify-center p-8">
-                      <div className="animate-pulse text-muted-foreground">טוען...</div>
-                    </div>
-                  ) : payments.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>תאריך</TableHead>
-                          <TableHead>סכום</TableHead>
-                          <TableHead>אמצעי תשלום</TableHead>
-                          <TableHead>סטטוס</TableHead>
-                          <TableHead>תיאור</TableHead>
-                          <TableHead>מספר קבלה</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {payments.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell>
-                              {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString("he-IL") : "-"}
-                            </TableCell>
-                            <TableCell>{payment.amount} ₪</TableCell>
-                            <TableCell>{payment.payment_method}</TableCell>
-                            <TableCell>
-                              <span
-                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                                  payment.status === "paid"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-yellow-100 text-yellow-800"
-                                }`}
-                              >
-                                {payment.status === "paid" ? "שולם" : "ממתין"}
-                              </span>
-                            </TableCell>
-                            <TableCell>{payment.description || "-"}</TableCell>
-                            <TableCell>{payment.receipt_number || "-"}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <p>אין נתוני תשלומים להצגה</p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="checkins" className="mt-0 border-0 p-6">
-                  {loading ? (
-                    <div className="flex justify-center p-8">
-                      <div className="animate-pulse text-muted-foreground">טוען...</div>
-                    </div>
-                  ) : checkIns.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>תאריך ושעה</TableHead>
-                          <TableHead>הערות</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {checkIns.map((checkIn) => (
-                          <TableRow key={checkIn.id}>
-                            <TableCell>{formatDateTime(checkIn.check_in_time || "")}</TableCell>
-                            <TableCell>{checkIn.notes || "-"}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <p>אין נתוני כניסות להצגה</p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="history" className="mt-0 border-0 p-6">
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <p>אין נתוני הנהלת חשבונות להצגה</p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="profile" className="mt-0 border-0 p-6">
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <p>אין היסטוריית פניות להצגה</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right sidebar - profile info */}
-        <div className="col-span-1">
-          {loading ? (
-            <Card className="overflow-hidden">
-              <div className="flex flex-col items-center bg-blue-50 p-6">
-                <div className="w-28 h-28 rounded-full bg-blue-100 animate-pulse mb-4"></div>
-                <div className="h-6 w-32 bg-blue-100 animate-pulse mb-2"></div>
-                <div className="h-8 w-full bg-blue-100 animate-pulse mt-4"></div>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2">
+              <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{t("email")}</p>
+                <p className="text-sm">{profile?.email || t("notProvided")}</p>
               </div>
-              <CardContent className="px-6 py-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="flex justify-between items-center">
-                        <div className="h-4 w-16 bg-gray-100 animate-pulse"></div>
-                        <div className="h-4 w-24 bg-gray-100 animate-pulse"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            profile && (
-              <Card className="overflow-hidden">
-                <div className="flex flex-col items-center bg-blue-50 p-6">
-                  <Avatar className="w-28 h-28 mb-4 bg-blue-100 border-4 border-white">
-                    <AvatarImage src={profile.avatar_url || undefined} />
-                    <AvatarFallback className="text-xl text-blue-500 bg-blue-100">
-                      {getInitials(profile.name, profile.last_name)}
-                    </AvatarFallback>
-                  </Avatar>
+            </div>
+            <div className="flex items-start gap-2">
+              <ShieldCheck  className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{t("insurance")}</p>
+                <p className="text-sm">{profile?.hasInsurance ? (
+                  <>
+                  <span className="text-sm text-muted-foreground"> {t("from")}</span>
+                  <span className="text-sm">{profile?.insuranceStartDate} </span>
+                  <span className="text-sm text-muted-foreground">{t("until")}</span>
+                  <span className="text-sm">{profile?.insuranceEndDate}</span>
+                  </>
+                ): (
+                  <span className="text-sm">{t("notProvided")}</span>)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{t("phone")}</p>
+                <p className="text-sm">{profile?.phone || t("notProvided")}</p>
+              </div>
+            </div>
 
-                  <h2 className="text-xl font-semibold mb-2 text-center">
-                    {`${profile.name} ${profile.last_name || ""}`}
-                  </h2>
+            <div className="flex items-start gap-2">
+              <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{t("gender")}</p>
+                <p className="text-sm">{profile?.gender ? profile.gender : t("notProvided")}</p>
+              </div>
+            </div>
 
-                  <Button
-                    variant="default"
-                    className="w-full mt-4"
-                    size="sm"
-                    onClick={() => {
-                      // Handle send message functionality
-                    }}
-                  >
-                    שלח הודעה
-                  </Button>
-                </div>
+            <div className="flex items-start gap-2">
+              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{t("dateOfBirth")}</p>
+                <p className="text-sm">{profile?.dateOfBirth || t("notProvided")}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-                <CardContent className="px-6 py-4">
-                  <div className="space-y-4">
-                    <div>
-                      {profile.age && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-muted-foreground">גיל:</span>
-                          <span className="font-medium">{profile.age}</span>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-sm font-medium text-muted-foreground flex items-center">
-                          <Phone className="h-3.5 w-3.5 mr-1" />
-                        </span>
-                        <span className="font-medium" dir="ltr">
-                          {profile.phone || "-"}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-sm font-medium text-muted-foreground">אימייל:</span>
-                        <span className="font-medium text-sm truncate max-w-[150px]">{profile.email}</span>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-sm font-medium text-muted-foreground">הצטרף:</span>
-                        <span className="font-medium text-sm">
-                          {new Date(profile.created_at || "").toLocaleDateString("he-IL")}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-sm font-medium text-muted-foreground">כניסה אחרונה:</span>
-                        <span className="font-medium text-sm">
-                          {lastCheckIn ? formatDateTime(lastCheckIn) : "טרם נרשם"}
-                        </span>
-                      </div>
-
-                      {/* Access card information */}
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-sm font-medium text-muted-foreground">כרטיס גישה:</span>
-                        <span className="font-medium text-sm">
-                          {accessCards.length > 0 ? accessCards[0].card_number : "לא קיים"}
-                        </span>
-                      </div>
-
-                      {/* Calculate balance from payments */}
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-sm font-medium text-muted-foreground">יתרה:</span>
-                        <span className="font-medium text-green-600">
-                          {payments.reduce((total, payment) => {
-                            return payment.status === "paid" ? total + payment.amount : total
-                          }, 0)}{" "}
-                          ₪
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          // Handle add card functionality
-                        }}
-                      >
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        הוספת כרטיס
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          // Handle credit card management
-                        }}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        טיפול באשראי
-                      </Button>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        // Handle sync functionality
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      סנכרן ללקוח
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          )}
-        </div>
+      <div className="md:col-span-3">
+        <MemberProfileTabs memberId={profile?.id} />
       </div>
-
-      {/* Create Membership Modal */}
-      {isCreateMembershipOpen && memberId && (
-        <AddSubscriptionDialog
-          open={isCreateMembershipOpen}
-          onOpenChange={() => setIsCreateMembershipOpen(false)}
-          memberId={memberId}
-          memberName={profile?.name}
-          onSubscriptionAdded={fetchMemberships}
-        />
-      )}
-    </DashboardShell>
+    </div>
+  </DashboardShell>
   )
 }

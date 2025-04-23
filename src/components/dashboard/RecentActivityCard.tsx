@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { supabase } from "@/integrations/supabase/client"
 import { t } from "@/utils/translations"
-import { Link } from "react-router-dom"
+import {Link} from "react-router-dom"
 import { Activity } from "lucide-react"
+import { usePrivateFormatter } from "@/utils/formatters"
 
 interface ActivityItem {
   id: string
@@ -34,12 +35,12 @@ export function RecentActivityCard() {
 
         // Fetch recent check-ins
         const { data: checkinsData, error: checkinsError } = await supabase
-          .from("checkins")
+          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
           .select(`
             id,
             check_in_time,
             member_id,
-            profiles(id, name, last_name, avatar_url)
+            custom_members:member_id(id, name, last_name, avatar_url)
           `)
           .order("check_in_time", { ascending: false })
           .limit(5)
@@ -55,7 +56,7 @@ export function RecentActivityCard() {
             amount,
             payment_method,
             member_id,
-            profiles(id, name, last_name, avatar_url)
+            custom_members:member_id(id, name, last_name, avatar_url)
           `)
           .eq("status", "paid")
           .order("payment_date", { ascending: false })
@@ -65,13 +66,13 @@ export function RecentActivityCard() {
 
         // Fetch recent memberships
         const { data: membershipsData, error: membershipsError } = await supabase
-          .from("memberships")
+          .from("custom_memberships") // Changed from "memberships" to "custom_memberships"
           .select(`
             id,
             created_at,
             membership_type,
             member_id,
-            profiles(id, name, last_name, avatar_url)
+            custom_members:member_id(id, name, last_name, avatar_url)
           `)
           .order("created_at", { ascending: false })
           .limit(5)
@@ -84,10 +85,10 @@ export function RecentActivityCard() {
           type: "checkin",
           timestamp: checkin.check_in_time,
           profile: {
-            id: checkin.profiles.id,
-            name: checkin.profiles.name,
-            last_name: checkin.profiles.last_name,
-            avatar_url: checkin.profiles.avatar_url,
+            id: checkin.custom_members.id,
+            name: checkin.custom_members.name,
+            last_name: checkin.custom_members.last_name,
+            avatar_url: checkin.custom_members.avatar_url,
           },
           details: t("checkedIn"),
         }))
@@ -98,29 +99,27 @@ export function RecentActivityCard() {
           type: "payment",
           timestamp: payment.payment_date,
           profile: {
-            id: payment.profiles.id,
-            name: payment.profiles.name,
-            last_name: payment.profiles.last_name,
-            avatar_url: payment.profiles.avatar_url,
+            id: payment.custom_members?.id,
+            name: payment.custom_members?.name,
+            last_name: payment.custom_members?.last_name,
+            avatar_url: payment.custom_members?.avatar_url,
           },
           details: `${t("paid")} ${payment.amount} ${t("riyal")} ${t("via")} ${payment.payment_method}`,
         }))
 
         // Format memberships
         const membershipActivities: ActivityItem[] = (membershipsData || []).map((membership) => ({
-          id: `membership-${membership.id}\`,  = (membershipsData || []).map((membership) => ({
-          id: \`membership-${membership.id}`,
+          id: `membership-${membership.id}`,
           type: "membership",
           timestamp: membership.created_at,
           profile: {
-            id: membership.profiles.id,
-            name: membership.profiles.name,
-            last_name: membership.profiles.last_name,
-            avatar_url: membership.profiles.avatar_url,
+            id: membership.custom_members.id,
+            name: membership.custom_members.name,
+            last_name: membership.custom_members.last_name,
+            avatar_url: membership.custom_members.avatar_url,
           },
           details: `${t("joined")} ${membership.membership_type} ${t("membership")}`,
         }))
-
         // Combine all activities and sort by timestamp
         const allActivities = [...checkinActivities, ...paymentActivities, ...membershipActivities]
           .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -157,6 +156,7 @@ export function RecentActivityCard() {
         return "bg-gray-100 text-gray-800"
     }
   }
+  const { formatDate } = usePrivateFormatter()
 
   return (
     <Card className="col-span-1 lg:col-span-2">
@@ -195,7 +195,7 @@ export function RecentActivityCard() {
                       <div className="text-xs text-muted-foreground truncate">{activity.details}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">{activity.timestamp}</div>
+                      <div className="text-sm font-medium">{formatDate(activity.timestamp)}</div>
                     </div>
                   </div>
                   <Separator className="mt-4" />

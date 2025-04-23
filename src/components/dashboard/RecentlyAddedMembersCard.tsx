@@ -9,14 +9,13 @@ import { t } from "@/utils/translations"
 import { UserPlus } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
-import { Link } from "react-router-dom"
+import {Link} from "react-router-dom"
 
 interface RecentMember {
   id: string
   name: string
   last_name: string
   email: string
-  avatar_url: string | null
   created_at: string
   membership_type?: string
 }
@@ -31,13 +30,12 @@ export function RecentlyAddedMembersCard() {
       try {
         // First, fetch profiles without the problematic join
         const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
+          .from("custom_members") // Changed from "profiles" to "custom_members"
           .select(`
             id,
             name,
             last_name,
             email,
-            avatar_url,
             created_at
           `)
           .order("created_at", { ascending: false })
@@ -52,7 +50,7 @@ export function RecentlyAddedMembersCard() {
           profilesData.map(async (profile) => {
             try {
               const { data: membershipData, error: membershipError } = await supabase
-                .from("memberships")
+                .from("custom_memberships") // Changed from "memberships" to "custom_memberships"
                 .select("membership_type")
                 .eq("member_id", profile.id)
                 .maybeSingle()
@@ -133,7 +131,7 @@ export function RecentlyAddedMembersCard() {
                 <div key={member.id}>
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      {member.avatar_url ? <AvatarImage src={member.avatar_url || "/placeholder.svg"} /> : null}
+                      { <AvatarImage src={"/placeholder.svg"} /> }
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {getInitials(member.name, member.last_name)}
                       </AvatarFallback>

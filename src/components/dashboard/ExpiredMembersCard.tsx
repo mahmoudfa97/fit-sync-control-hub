@@ -8,33 +8,33 @@ import { Separator } from "@/components/ui/separator"
 import { formatDate } from "@/utils/format"
 import { t } from "@/utils/translations"
 import { Link } from "react-router-dom"
-import { AlertTriangle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import { MemberService, type ExpiringMember } from "@/services/MemberService"
 
-export function ExpiringMembersCard() {
+export function ExpiredMembersCard() {
   const [loading, setLoading] = useState(true)
-  const [expiringMembers, setExpiringMembers] = useState<ExpiringMember[]>([])
+  const [expiredMembers, setExpiredMembers] = useState<ExpiringMember[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchExpiringMembers()
+    fetchExpiredMembers()
   }, [])
 
-  async function fetchExpiringMembers() {
+  async function fetchExpiredMembers() {
     try {
       setLoading(true)
       setError(null)
-      console.log("Fetching expiring members...")
+      console.log("Fetching expired members...")
 
       // Use the new MemberService method
-      const data = await MemberService.fetchExpiringMembers()
+      const data = await MemberService.fetchExpiredMembers()
 
-      console.log(`Found ${data.length} expiring members`)
-      setExpiringMembers(data.slice(0, 5)) // Limit to 5 members for display
+      console.log(`Found ${data.length} expired members`)
+      setExpiredMembers(data.slice(0, 5)) // Limit to 5 members for display
     } catch (err) {
-      console.error("Error in fetchExpiringMembers:", err)
-      setError("Failed to fetch expiring members")
-      setExpiringMembers([])
+      console.error("Error in fetchExpiredMembers:", err)
+      setError("Failed to fetch expired members")
+      setExpiredMembers([])
     } finally {
       setLoading(false)
     }
@@ -47,15 +47,26 @@ export function ExpiringMembersCard() {
     return `${firstInitial}${lastInitial}`
   }
 
+  const handleUpdateStatus = async (membershipId: string) => {
+    try {
+      await MemberService.updateMembershipToExpired(membershipId)
+      // Refresh the list after updating
+      fetchExpiredMembers()
+    } catch (error) {
+      console.error("Error updating membership status:", error)
+      setError("Failed to update membership status")
+    }
+  }
+
   return (
     <Card className="col-span-1 lg:col-span-3">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>{t("expiringMembers")}</CardTitle>
-            <CardDescription>{t("expiringMembersDescription")}</CardDescription>
+            <CardTitle>{t("expiredMembers")}</CardTitle>
+            <CardDescription>{t("expiredMembersDescription")}</CardDescription>
           </div>
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <AlertCircle className="h-5 w-5 text-red-500" />
         </div>
       </CardHeader>
       <CardContent>
@@ -66,21 +77,21 @@ export function ExpiringMembersCard() {
         ) : error ? (
           <div className="text-center py-4 text-red-500">
             <p>{error}</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => fetchExpiringMembers()}>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => fetchExpiredMembers()}>
               נסה שנית
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
-            {expiringMembers.length > 0 ? (
-              expiringMembers.map((member) => (
+            {expiredMembers.length > 0 ? (
+              expiredMembers.map((member) => (
                 <div key={member.id}>
                   <div className="flex items-center gap-3">
                     <Avatar>
                       {member.avatar_url ? (
                         <AvatarImage src={member.avatar_url || "/placeholder.svg"} alt={member.name} />
                       ) : null}
-                      <AvatarFallback className="bg-amber-100 text-amber-800">
+                      <AvatarFallback className="bg-red-100 text-red-800">
                         {getInitials(member.name, member.last_name)}
                       </AvatarFallback>
                     </Avatar>
@@ -90,14 +101,21 @@ export function ExpiringMembersCard() {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium">{formatDate(member.membership.end_date)}</div>
-                      <div className="text-xs text-amber-600">{t("expiresSoon")}</div>
+                      <div className="text-xs text-red-600">{t("expired")}</div>
                     </div>
                   </div>
+                  {member.membership.status === "active" && (
+                    <div className="mt-2 flex justify-end">
+                      <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(member.membership.id)}>
+                        עדכן לפג תוקף
+                      </Button>
+                    </div>
+                  )}
                   <Separator className="mt-4" />
                 </div>
               ))
             ) : (
-              <div className="text-center py-4 text-muted-foreground">{t("noExpiringMembers")}</div>
+              <div className="text-center py-4 text-muted-foreground">{t("noExpiredMembers")}</div>
             )}
           </div>
         )}

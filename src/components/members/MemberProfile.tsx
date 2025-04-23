@@ -22,7 +22,7 @@ interface Member {
   email: string | null
   phone: string | null
   gender: string | null
-  age: number | null
+  dateOfBirth: string | null
   created_at: string
 }
 
@@ -171,8 +171,8 @@ export default function MemberProfile() {
               <div className="flex items-start gap-2">
                 <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium">{t("age")}</p>
-                  <p className="text-sm">{member.age || t("notProvided")}</p>
+                  <p className="text-sm font-medium">{t("dateOfBirth")}</p>
+                  <p className="text-sm">{member.dateOfBirth || t("notProvided")}</p>
                 </div>
               </div>
             </div>
