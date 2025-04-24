@@ -24,7 +24,7 @@ export interface ExpiringMember {
   last_name: string | null
   email: string | null
   phone: string | null
-  avatar_url: string | null
+  avatar_url?: string | null
   membership: {
     id: string
     membership_type: string

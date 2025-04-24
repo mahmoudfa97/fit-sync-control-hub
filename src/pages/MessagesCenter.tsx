@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { t } from "@/utils/translations";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { WhatsAppTemplateForm } from "@/components/notifacations/sms/sms-notifaction";
+import { WhatsAppDirectForm } from "@/components/notifacations/sms/WhatsAppDirectForm";
+import { WhatsAppBotForm } from "@/components/notifacations/sms/WhatsappBot";
+import { WhatsAppNotification } from "@/components/notifacations/sms/whatsapp-notification";
+import { WhatsAppSmartForm } from "@/components/notifacations/sms/WhatsAppSmartForm";
 
 export default function MessagesCenter() {
   return (
@@ -14,7 +18,12 @@ export default function MessagesCenter() {
           <CardDescription>{t("messages_center_desc")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <WhatsAppTemplateForm />
+         
+          <div className="container mx-auto flex flex-wrap gap-4">
+        <WhatsAppDirectForm /> <WhatsAppTemplateForm />
+        <WhatsAppBotForm />  <WhatsAppSmartForm />
+        <WhatsAppNotification /> <WhatsAppBotForm />
+      </div>
         </CardContent>
       </Card>
     </DashboardShell>

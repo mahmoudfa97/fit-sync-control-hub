@@ -3,23 +3,20 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart } from "@/components/ui/chart"
 import { supabase } from "@/integrations/supabase/client"
 import { t } from "@/utils/translations"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 
 export function CheckInsHourlyForecast() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("today")
-  const [hourlyData, setHourlyData] = useState({
-    today: Array(24).fill(0),
-    yesterday: Array(24).fill(0),
-    thisWeek: Array(24).fill(0),
-  })
+  const [chartData, setChartData] = useState<Array<{ hour: string; count: number }>>([])
 
   useEffect(() => {
     async function fetchHourlyData() {
       try {
         setLoading(true)
+        console.log("Fetching hourly data...")
 
         // Get date ranges
         const now = new Date()
@@ -33,43 +30,68 @@ export function CheckInsHourlyForecast() {
         weekStart.setDate(weekStart.getDate() - weekStart.getDay())
         const weekStartStr = weekStart.toISOString().split("T")[0]
 
-        // Fetch today's check-ins
-        const { data: todayData, error: todayError } = await supabase
-          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
+        let dateRange
+        if (activeTab === "today") {
+          dateRange = {
+            start: `${today}T00:00:00`,
+            end: `${today}T23:59:59`,
+          }
+        } else if (activeTab === "yesterday") {
+          dateRange = {
+            start: `${yesterdayStr}T00:00:00`,
+            end: `${yesterdayStr}T23:59:59`,
+          }
+        } else {
+          // thisWeek
+          dateRange = {
+            start: `${weekStartStr}T00:00:00`,
+            end: `${today}T23:59:59`,
+          }
+        }
+
+        // Fetch check-ins for the selected date range
+        const { data, error } = await supabase
+          .from("custom_checkins")
           .select("check_in_time")
-          .gte("check_in_time", `${today}T00:00:00`)
-          .lte("check_in_time", `${today}T23:59:59`)
+          .gte("check_in_time", dateRange.start)
+          .lte("check_in_time", dateRange.end)
 
-        if (todayError) throw todayError
+        if (error) {
+          console.error("Error fetching data:", error)
+          throw error
+        }
 
-        // Fetch yesterday's check-ins
-        const { data: yesterdayData, error: yesterdayError } = await supabase
-          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
-          .select("check_in_time")
-          .gte("check_in_time", `${yesterdayStr}T00:00:00`)
-          .lte("check_in_time", `${yesterdayStr}T23:59:59`)
-
-        if (yesterdayError) throw yesterdayError
-
-        // Fetch this week's check-ins
-        const { data: weekData, error: weekError } = await supabase
-          .from("custom_checkins") // Changed from "checkins" to "custom_checkins"
-          .select("check_in_time")
-          .gte("check_in_time", `${weekStartStr}T00:00:00`)
-          .lte("check_in_time", `${today}T23:59:59`)
-
-        if (weekError) throw weekError
+        console.log(`${activeTab} data:`, data)
 
         // Process hourly data
-        const todayHourly = processHourlyData(todayData || [])
-        const yesterdayHourly = processHourlyData(yesterdayData || [])
-        const weekHourly = processHourlyData(weekData || [])
+        const hourly = Array(24).fill(0)
 
-        setHourlyData({
-          today: todayHourly,
-          yesterday: yesterdayHourly,
-          thisWeek: weekHourly.map((count) => Math.round(count / (now.getDay() || 7))), // Average per day
+        data?.forEach((item) => {
+          if (item.check_in_time) {
+            // Extract hour directly from the ISO string
+            const timeStr = item.check_in_time
+            const hour = Number.parseInt(timeStr.substring(11, 13), 10)
+            hourly[hour]++
+          }
         })
+
+        console.log(`Processed ${activeTab} hourly:`, hourly)
+
+        // If this is weekly data and we want to show average
+        if (activeTab === "thisWeek") {
+          const dayCount = now.getDay() || 7 // 0 is Sunday, so use 7 instead
+          hourly.forEach((count, index) => {
+            hourly[index] = Math.round(count / dayCount)
+          })
+        }
+
+        // Format data for the chart
+        const formattedData = hourly.map((count, index) => ({
+          hour: `${index}:00`,
+          count: count,
+        }))
+
+        setChartData(formattedData)
       } catch (error) {
         console.error("Error fetching hourly check-in data:", error)
       } finally {
@@ -78,34 +100,7 @@ export function CheckInsHourlyForecast() {
     }
 
     fetchHourlyData()
-  }, [])
-
-  // Process check-in data into hourly counts
-  const processHourlyData = (data: any[]): number[] => {
-    const hourly = Array(24).fill(0)
-
-    data.forEach((item) => {
-      if (item.check_in_time) {
-        const hour = new Date(item.check_in_time).getHours()
-        hourly[hour]++
-      }
-    })
-
-    return hourly
-  }
-
-  // Prepare chart data
-  const chartData = {
-    labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-    datasets: [
-      {
-        label: t("checkIns"),
-        data: hourlyData[activeTab as keyof typeof hourlyData],
-        backgroundColor: "#3b82f6",
-        borderRadius: 4,
-      },
-    ],
-  }
+  }, [activeTab]) // Re-fetch when tab changes
 
   return (
     <Card className="col-span-1 lg:col-span-5">
@@ -126,8 +121,22 @@ export function CheckInsHourlyForecast() {
             <div className="animate-pulse text-muted-foreground">{t("loading")}</div>
           </div>
         ) : (
-          <div className="h-[300px]">
-            <BarChart data={chartData} />
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <XAxis
+                  dataKey="hour"
+                  tickFormatter={(value) => value.split(":")[0]}
+                  interval={2} // Show every 3rd hour to avoid crowding
+                />
+                <YAxis />
+                <Tooltip
+                  formatter={(value) => [`${value} ${t("checkIns")}`, ""]}
+                  labelFormatter={(label) => `${t("hour")}: ${label}`}
+                />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name={t("checkIns")} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
       </CardContent>

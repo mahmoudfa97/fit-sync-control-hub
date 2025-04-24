@@ -496,6 +496,7 @@ export type Database = {
           payment_method_id: string | null
           receipt_number: string | null
           status: string
+          payment_details: Json | null
         }
         Insert: {
           amount: number
@@ -508,6 +509,7 @@ export type Database = {
           payment_method_id?: string | null
           receipt_number?: string | null
           status?: string
+          payment_details: Json | null
         }
         Relationships: [
           {

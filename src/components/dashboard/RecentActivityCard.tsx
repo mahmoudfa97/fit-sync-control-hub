@@ -19,7 +19,7 @@ interface ActivityItem {
     id: string
     name: string
     last_name: string | null
-    avatar_url: string | null
+    avatar_url?: string | null
   }
   details: string
 }
@@ -88,7 +88,6 @@ export function RecentActivityCard() {
             id: checkin.custom_members.id,
             name: checkin.custom_members.name,
             last_name: checkin.custom_members.last_name,
-            avatar_url: checkin.custom_members.avatar_url,
           },
           details: t("checkedIn"),
         }))
@@ -102,7 +101,6 @@ export function RecentActivityCard() {
             id: payment.custom_members?.id,
             name: payment.custom_members?.name,
             last_name: payment.custom_members?.last_name,
-            avatar_url: payment.custom_members?.avatar_url,
           },
           details: `${t("paid")} ${payment.amount} ${t("riyal")} ${t("via")} ${payment.payment_method}`,
         }))
@@ -116,7 +114,6 @@ export function RecentActivityCard() {
             id: membership.custom_members.id,
             name: membership.custom_members.name,
             last_name: membership.custom_members.last_name,
-            avatar_url: membership.custom_members.avatar_url,
           },
           details: `${t("joined")} ${membership.membership_type} ${t("membership")}`,
         }))

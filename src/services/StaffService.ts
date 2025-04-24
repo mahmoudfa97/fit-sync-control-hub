@@ -38,18 +38,18 @@ export class StaffService {
         const hireDate = staff.hire_date ? new Date(staff.hire_date) : new Date(staff.created_at || Date.now())
 
         const months = [
-          "يناير",
-          "فبراير",
-          "مارس",
-          "أبريل",
-          "مايو",
-          "يونيو",
-          "يوليو",
-          "أغسطس",
-          "سبتمبر",
-          "أكتوبر",
-          "نوفمبر",
-          "ديسمبر",
+"יָנוּאָר",
+"פֶבּרוּאָר",
+"מַרס",
+"אַפּרִיל",
+"מַאִי",
+"יוּנִי",
+"יוּלִי",
+"אוֹגוּסט",
+"ספטמבר",
+"אוֹקְטוֹבֶּר",
+"נוֹבֶמבֶּר",
+"דֵצֶמבֶּר",
         ]
 
         const formattedHireDate = `${hireDate.getDate()} ${months[hireDate.getMonth()]}، ${hireDate.getFullYear()}`
@@ -60,8 +60,8 @@ export class StaffService {
           nameParts.length > 1 ? `${nameParts[0][0]}${nameParts[1][0]}` : `${nameParts[0][0]}${nameParts[0][1] || ""}`
 
         // Default work days and shift
-        const workDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
-        const shift = "صباحي (6ص - 2م)"
+        const workDays = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"]
+        const shift = "בוקר (6:00 - 14:00)"
 
         return {
           id: staff.id,
@@ -163,18 +163,18 @@ export class StaffService {
       // Format the response
       const hireDate = new Date()
       const months = [
-        "يناير",
-        "فبراير",
-        "مارس",
-        "أبريل",
-        "مايو",
-        "يونيو",
-        "يوليو",
-        "أغسطس",
-        "سبتمبر",
-        "أكتوبر",
-        "نوفمبر",
-        "ديسمبر",
+"יָנוּאָר",
+"פֶבּרוּאָר",
+"מַרס",
+"אַפּרִיל",
+"מַאִי",
+"יוּנִי",
+"יוּלִי",
+"אוֹגוּסט",
+"ספטמבר",
+"אוֹקְטוֹבֶּר",
+"נוֹבֶמבֶּר",
+"דֵצֶמבֶּר",
       ]
       const formattedHireDate = `${hireDate.getDate()} ${months[hireDate.getMonth()]}، ${hireDate.getFullYear()}`
 
@@ -184,7 +184,8 @@ export class StaffService {
         nameParts.length > 1 ? `${nameParts[0][0]}${nameParts[1][0]}` : `${nameParts[0][0]}${nameParts[0][1] || ""}`
 
       // Default work days
-      const workDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
+      const workDays = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"]
+      const shift = "בוקר (6:00 - 14:00)"
 
       return {
         id: data.id,
@@ -197,7 +198,7 @@ export class StaffService {
         status: data.status as "active" | "inactive" | "on_leave",
         schedule: {
           days: workDays,
-          shift: "صباحي (6ص - 2م)",
+          shift: shift,
         },
         initials: initials,
         joinDate: data.hire_date,
