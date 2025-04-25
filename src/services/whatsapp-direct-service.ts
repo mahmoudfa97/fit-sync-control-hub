@@ -1,62 +1,24 @@
-interface SendWhatsAppDirectParams {
-  to: string
-  message: string
-}
-
-interface WhatsAppResponse {
-  success: boolean
-  message: string
-  messageId?: string
-}
+import { supabase } from "../integrations/supabase/client"
 
 /**
  * Sends a direct WhatsApp message (only works within 24-hour window)
  */
-export async function sendWhatsAppDirect({ to, message }: SendWhatsAppDirectParams): Promise<WhatsAppResponse> {
+// Function to call your Supabase Edge Function
+export async function callWhatsappDirectFunction(params: any) {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-    // Call the Supabase Edge Function
-    const response = await fetch(`${supabaseUrl}/functions/v1/whatsapp-direct`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({
-        to,
-        message,
-      }),
+    // This is the correct way to call a Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke("whatsapp-direct", {
+      body: params,
     })
 
-    // Handle response
-    if (!response.ok) {
-      let errorMessage = "Failed to send WhatsApp message"
-      try {
-        const errorData = await response.json()
-        errorMessage = errorData.message || errorMessage
-      } catch (e) {
-        errorMessage = (await response.text()) || errorMessage
-      }
-      throw new Error(errorMessage)
-    }
-
-    // Parse response
-    let data
-    try {
-      data = await response.json()
-    } catch (e) {
-      console.error("Error parsing response:", e)
-      data = { success: true, message: "WhatsApp message sent successfully" }
+    if (error) {
+      console.error("Error calling Supabase function:", error)
+      throw error
     }
 
     return data
-  } catch (error: any) {
-    console.error("Error in sendWhatsAppDirect:", error)
-    return {
-      success: false,
-      message: error.message || "Failed to send WhatsApp message",
-    }
+  } catch (error) {
+    console.error("Exception when calling Supabase function:", error)
+    throw error
   }
 }

@@ -1,10 +1,429 @@
 import { supabase } from "@/integrations/supabase/client"
 import { generateTableReport } from "@/utils/pdfGenerator"
-import { subDays, subMonths } from "date-fns"
+import { format, subDays, subMonths } from "date-fns"
 
 // Helper function to format date for queries
 const formatDate = (date: Date): string => {
   return date.toISOString()
+}
+
+// Helper function to download a file
+const downloadFile = (content: string, fileName: string, contentType: string) => {
+  const blob = new Blob([content], { type: contentType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// Helper function to convert data to CSV
+const convertToCSV = (data: any[], columns: { key: string; header: string }[]) => {
+  const BOM = "\uFEFF" // UTF-8 BOM
+
+  // Create header row
+  const header = columns.map((col) => col.header).join(",")
+
+  // Create data rows
+  const rows = data.map((item) => {
+    return columns
+      .map((col) => {
+        let value = item[col.key]
+        if (value == null) value = ""
+        // Escape values with commas or double quotes
+        if (typeof value === "string") {
+          value = value.replace(/"/g, '""') // Escape double quotes
+          if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+            value = `"${value}"`
+          }
+        }
+        return value
+      })
+      .join(",")
+  })
+
+  return BOM + [header, ...rows].join("\n")
+}
+
+// Enhanced payments report with more detailed information
+export const generateEnhancedPaymentsReport = async (
+  startDate?: Date,
+  endDate?: Date,
+  paymentMethod?: string,
+): Promise<void> => {
+  try {
+    // Set default date range to current month if not provided
+    const effectiveStartDate = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    const effectiveEndDate = endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+
+    // Build query
+    let query = supabase
+      .from("payments")
+      .select(`
+        id, 
+        payment_date,
+        amount,
+        payment_method,
+        receipt_number,
+        notes,
+        custom_members!member_id (id, name, last_name, email, phone)
+      `)
+      .gte("payment_date", format(effectiveStartDate, "yyyy-MM-dd"))
+      .lte("payment_date", format(effectiveEndDate, "yyyy-MM-dd"))
+      .order("payment_date", { ascending: false })
+
+    // Add payment method filter if provided
+    if (paymentMethod && paymentMethod !== "all") {
+      query = query.eq("payment_method", paymentMethod)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    // Transform data for CSV
+    const reportData = (data || []).map((item) => ({
+      id: item.id,
+      member_id: item.custom_members.id,
+      name: item.custom_members.name,
+      last_name: item.custom_members.last_name,
+      email: item.custom_members.email,
+      phone: item.custom_members.phone,
+      payment_date: format(new Date(item.payment_date), "yyyy-MM-dd"),
+      amount: item.amount,
+      payment_method: item.payment_method,
+      receipt_number: item.receipt_number || "",
+      notes: item.notes || "",
+    }))
+
+    // Define columns for the report
+    const columns = [
+      { key: "id", header: "מזהה" },
+      { key: "name", header: "שם" },
+      { key: "last_name", header: "שם משפחה" },
+      { key: "phone", header: "טלפון" },
+      { key: "payment_date", header: "תאריך תשלום" },
+      { key: "amount", header: "סכום" },
+      { key: "payment_method", header: "אמצעי תשלום" },
+      { key: "receipt_number", header: "מספר קבלה" },
+      { key: "notes", header: "הערות" },
+    ]
+
+    // Convert to CSV
+    const csv = convertToCSV(reportData, columns)
+
+    // Generate filename
+    const fileName = `דוח_תקבולים_${format(effectiveStartDate, "yyyy-MM-dd")}_${format(effectiveEndDate, "yyyy-MM-dd")}.csv`
+
+    // Download the file
+    downloadFile(csv, fileName, "text/csv;charset=utf-8;")
+  } catch (error) {
+    console.error("Error generating payments report:", error)
+    throw error
+  }
+}
+
+// Financial documents report
+export const generateFinancialDocumentsReport = async (
+  startDate: string,
+  endDate: string,
+  documentType: string,
+  status: string,
+): Promise<void> => {
+  try {
+    // Build query
+    let query = supabase
+      .from("payments")
+      .select(`
+        id, 
+        payment_date,
+        amount,
+        payment_method,
+        status,
+        receipt_number,
+        custom_members!member_id (name, last_name, email, phone)
+      `)
+      .gte("payment_date", startDate)
+      .lte("payment_date", endDate)
+      .order("payment_date", { ascending: false })
+
+    // Apply filters
+    if (documentType !== "all") {
+      query = query.eq("payment_method", documentType)
+    }
+
+    if (status !== "all") {
+      query = query.eq("status", status)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    // Transform data for CSV
+    const reportData = (data || []).map((doc) => ({
+      document_number: doc.receipt_number || `INV-${Math.floor(Math.random() * 10000)}`,
+      document_type: doc.payment_method === "כרטיס אשראי" ? "חשבונית מס" : "קבלה",
+      issue_date: format(new Date(doc.payment_date), "yyyy-MM-dd"),
+      due_date: format(new Date(doc.payment_date), "yyyy-MM-dd"), // In a real app, due date would be different
+      member_name: `${doc.custom_members?.name || ""} ${doc.custom_members?.last_name || ""}`,
+      amount: doc.amount,
+      status: doc.status || "שולם",
+    }))
+
+    // Define columns for the report
+    const columns = [
+      { key: "document_number", header: "מספר מסמך" },
+      { key: "document_type", header: "סוג מסמך" },
+      { key: "issue_date", header: "תאריך הנפקה" },
+      { key: "due_date", header: "תאריך תשלום" },
+      { key: "member_name", header: "שם לקוח" },
+      { key: "amount", header: "סכום" },
+      { key: "status", header: "סטטוס" },
+    ]
+
+    // Convert to CSV
+    const csv = convertToCSV(reportData, columns)
+
+    // Generate filename
+    const fileName = `דוח_מסמכים_פיננסיים_${startDate}_${endDate}.csv`
+
+    // Download the file
+    downloadFile(csv, fileName, "text/csv;charset=utf-8;")
+  } catch (error) {
+    console.error("Error generating financial documents report:", error)
+    throw error
+  }
+}
+
+// Debts report
+export const generateDebtsReport = async (filters: any): Promise<void> => {
+  try {
+    // Get all members with their memberships and payments
+    const { data: membersData, error: membersError } = await supabase.from("custom_members").select(`
+      id, 
+      name,
+      last_name,
+      email,
+      phone,
+      custom_memberships (
+        id,
+        membership_type,
+        start_date,
+        end_date,
+        status
+      ),
+      payments (
+        amount,
+        payment_date
+      )
+    `)
+
+    if (membersError) throw membersError
+
+    // Calculate debt for each member
+    const debtData = (membersData || []).map((member) => {
+      // Get the latest membership
+      const memberships = member.custom_memberships || []
+      const latestMembership =
+        memberships.length > 0
+          ? memberships.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())[0]
+          : null
+
+      // Calculate total payments
+      const payments = member.payments || []
+      const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0)
+
+      // Get membership cost (in a real app, this would be more accurate)
+      const membershipCost = latestMembership?.membership_type === "premium" ? 200 : 100
+
+      // Calculate debt
+      const totalDebt = latestMembership ? membershipCost - totalPaid : 0
+
+      // Calculate days overdue
+      const lastPaymentDate =
+        payments.length > 0
+          ? new Date(
+              payments.sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime())[0]
+                .payment_date,
+            )
+          : new Date(2023, 0, 1)
+
+      const daysOverdue = Math.floor((new Date().getTime() - lastPaymentDate.getTime()) / (1000 * 3600 * 24))
+
+      return {
+        id: member.id,
+        name: member.name,
+        last_name: member.last_name || "",
+        email: member.email || "",
+        phone: member.phone || "",
+        total_debt: totalDebt > 0 ? totalDebt : 0,
+        last_payment_date: format(lastPaymentDate, "yyyy-MM-dd"),
+        days_overdue: daysOverdue,
+        subscription_type: latestMembership?.membership_type || "standard",
+        status: latestMembership?.status || "inactive",
+      }
+    })
+
+    // Apply filters
+    let filteredData = debtData
+
+    // Filter by debt status
+    if (filters.debtStatus === "with-debt") {
+      filteredData = filteredData.filter((debt) => debt.total_debt > 0)
+    } else if (filters.debtStatus === "no-debt") {
+      filteredData = filteredData.filter((debt) => debt.total_debt === 0)
+    }
+
+    // Filter by subscription type
+    if (filters.subscriptionType !== "all") {
+      filteredData = filteredData.filter((debt) => debt.subscription_type === filters.subscriptionType)
+    }
+
+    // Filter by amount
+    if (filters.minAmount) {
+      filteredData = filteredData.filter((debt) => debt.total_debt >= Number(filters.minAmount))
+    }
+    if (filters.maxAmount) {
+      filteredData = filteredData.filter((debt) => debt.total_debt <= Number(filters.maxAmount))
+    }
+
+    // Sort data
+    filteredData.sort((a, b) => {
+      if (filters.sortBy === "amount") {
+        return filters.sortOrder === "asc" ? a.total_debt - b.total_debt : b.total_debt - a.total_debt
+      } else if (filters.sortBy === "days") {
+        return filters.sortOrder === "asc" ? a.days_overdue - b.days_overdue : b.days_overdue - a.days_overdue
+      } else {
+        // Sort by name
+        const nameA = `${a.name} ${a.last_name}`
+        const nameB = `${b.name} ${b.last_name}`
+        return filters.sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
+      }
+    })
+
+    // Define columns for the report
+    const columns = [
+      { key: "name", header: "שם" },
+      { key: "last_name", header: "שם משפחה" },
+      { key: "phone", header: "טלפון" },
+      { key: "email", header: "אימייל" },
+      { key: "subscription_type", header: "סוג מנוי" },
+      { key: "last_payment_date", header: "תשלום אחרון" },
+      { key: "days_overdue", header: "ימי פיגור" },
+      { key: "total_debt", header: "סכום חוב" },
+      { key: "status", header: "סטטוס" },
+    ]
+
+    // Convert to CSV
+    const csv = convertToCSV(filteredData, columns)
+
+    // Generate filename
+    const fileName = `דוח_חובות_${format(new Date(), "yyyy-MM-dd")}.csv`
+
+    // Download the file
+    downloadFile(csv, fileName, "text/csv;charset=utf-8;")
+  } catch (error) {
+    console.error("Error generating debts report:", error)
+    throw error
+  }
+}
+
+// Monthly payments summary report
+export const generateMonthlyPaymentsSummaryReport = async (year: number): Promise<void> => {
+  try {
+    // Create an array of all months
+    const months = Array.from({ length: 12 }, (_, i) => i)
+    const monthNames = [
+      "ינואר",
+      "פברואר",
+      "מרץ",
+      "אפריל",
+      "מאי",
+      "יוני",
+      "יולי",
+      "אוגוסט",
+      "ספטמבר",
+      "אוקטובר",
+      "נובמבר",
+      "דצמבר",
+    ]
+
+    const result = []
+
+    for (const month of months) {
+      const startDate = new Date(year, month, 1)
+      const endDate = new Date(year, month + 1, 0) // Last day of month
+
+      // Get payments for this month
+      const { data, error } = await supabase
+        .from("payments")
+        .select(`
+          payment_method,
+          amount
+        `)
+        .gte("payment_date", format(startDate, "yyyy-MM-dd"))
+        .lte("payment_date", format(endDate, "yyyy-MM-dd"))
+
+      if (error) throw error
+
+      // Calculate totals by payment method
+      const summary = {
+        month: monthNames[month],
+        total: 0,
+        creditCard: 0,
+        cash: 0,
+        check: 0,
+        bankTransfer: 0,
+      }
+
+      data?.forEach((payment) => {
+        summary.total += payment.amount
+
+        switch (payment.payment_method.toLowerCase()) {
+          case "כרטיס אשראי":
+            summary.creditCard += payment.amount
+            break
+          case "מזומן":
+            summary.cash += payment.amount
+            break
+          case "צ'ק":
+            summary.check += payment.amount
+            break
+          case "העברה בנקאית":
+            summary.bankTransfer += payment.amount
+            break
+        }
+      })
+
+      result.push(summary)
+    }
+
+    // Define columns for the report
+    const columns = [
+      { key: "month", header: "חודש" },
+      { key: "total", header: 'סה"כ' },
+      { key: "creditCard", header: "כרטיס אשראי" },
+      { key: "cash", header: "מזומן" },
+      { key: "check", header: "צ'קים" },
+      { key: "bankTransfer", header: "העברה בנקאית" },
+    ]
+
+    // Convert to CSV
+    const csv = convertToCSV(result, columns)
+
+    // Generate filename
+    const fileName = `דוח_תקבולים_חודשי_${year}.csv`
+
+    // Download the file
+    downloadFile(csv, fileName, "text/csv;charset=utf-8;")
+  } catch (error) {
+    console.error("Error generating monthly payments report:", error)
+    throw error
+  }
 }
 
 // ==================== MEMBERSHIP REPORTS ====================
@@ -232,97 +651,6 @@ export const generateMembershipRenewalReport = async (): Promise<void> => {
 
 // ==================== FINANCIAL REPORTS ====================
 
-// Financial documents report
-export const generateFinancialDocumentsReport = async (): Promise<void> => {
-  const fetchData = async () => {
-    const { data, error } = await supabase
-      .from("invoices")
-      .select(`
-        id, 
-        invoice_number,
-        created_at,
-        due_date,
-        total_amount,
-        status,
-        custom_members!member_id (id, name, last_name)
-      `)
-      .order("created_at", { ascending: false })
-      .limit(500)
-
-    if (error) throw error
-
-    return (data || []).map((item) => ({
-      id: item.id,
-      invoice_number: item.invoice_number || item.id,
-      member_id: item.custom_members.id,
-      name: item.custom_members.name,
-      last_name: item.custom_members.last_name,
-      created_at: item.created_at,
-      due_date: item.due_date,
-      total_amount: item.total_amount,
-      status: item.status,
-    }))
-  }
-
-  const columns = [
-    { key: "invoice_number", header: "מספר חשבונית" },
-    { key: "name", header: "שם" },
-    { key: "last_name", header: "שם משפחה" },
-    { key: "created_at", header: "תאריך יצירה" },
-    { key: "due_date", header: "תאריך לתשלום" },
-    { key: "total_amount", header: "סכום כולל" },
-    { key: "status", header: "סטטוס" },
-  ]
-
-  await generateTableReport(fetchData, columns, "דוח מסמכים פיננסים", { landscape: true })
-}
-
-// Debts report
-export const generateDebtsReport = async (): Promise<void> => {
-  const fetchData = async () => {
-    const { data, error } = await supabase
-      .from("invoices")
-      .select(`
-        id, 
-        invoice_number,
-        created_at,
-        due_date,
-        total_amount,
-        custom_members!member_id (id, name, last_name, email, phone)
-      `)
-      .eq("status", "unpaid")
-      .lte("due_date", formatDate(new Date()))
-      .order("due_date", { ascending: true })
-
-    if (error) throw error
-
-    return (data || []).map((item) => ({
-      id: item.id,
-      invoice_number: item.invoice_number || item.id,
-      member_id: item.custom_members.id,
-      name: item.custom_members.name,
-      last_name: item.custom_members.last_name,
-      email: item.custom_members.email,
-      phone: item.custom_members.phone,
-      created_at: item.created_at,
-      due_date: item.due_date,
-      total_amount: item.total_amount,
-      days_overdue: Math.floor((new Date().getTime() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)),
-    }))
-  }
-
-  const columns = [
-    { key: "invoice_number", header: "מספר חשבונית" },
-    { key: "name", header: "שם" },
-    { key: "last_name", header: "שם משפחה" },
-    { key: "phone", header: "טלפון" },
-    { key: "due_date", header: "תאריך לתשלום" },
-    { key: "days_overdue", header: "ימים באיחור" },
-    { key: "total_amount", header: "סכום לתשלום" },
-  ]
-
-  await generateTableReport(fetchData, columns, "דוח חובות", { landscape: true })
-}
 
 // Payments report
 export const generatePaymentsReport = async (): Promise<void> => {

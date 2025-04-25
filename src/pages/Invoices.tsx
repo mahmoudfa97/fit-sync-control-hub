@@ -358,19 +358,28 @@ export default function FilteredReportsPage() {
                 </CardHeader>
                 <CardContent>{renderFilterControls(report.filterOptions)}</CardContent>
                 <CardFooter className="bg-muted/50 pt-2">
-                  <Button onClick={() => handleGenerateReport(key)} className="w-full" disabled={loading}>
-                    {loading ? (
-                      <span className="flex items-center">
-                        <span className="animate-spin mr-2">⏳</span>
-                        מייצר דוח...
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <Download className="mr-2 h-4 w-4" />
-                        הורד דוח
-                      </span>
-                    )}
+                  {report.title === "דוח תקבולים" ? (
+                    <Button variant="ghost" className="w-full" asChild>
+                    <Link to={'/reports/finance#'+report.title}></Link>
                   </Button>
+                    
+                  
+                  ):(
+                    <Button onClick={() => handleGenerateReport(key)} className="w-full" disabled={loading}>
+                      {loading ? (
+                        <span className="flex items-center">
+                          <span className="animate-spin mr-2">⏳</span>
+                          מייצר דוח...
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <Download className="mr-2 h-4 w-4" />
+                          הורד דוח
+                        </span>
+                      )}
+                    </Button>
+                  )}
+                
                 </CardFooter>
               </Card>
             ))}

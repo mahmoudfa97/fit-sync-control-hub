@@ -97,7 +97,7 @@ export default function Auth() {
       <div className="w-full max-w-md p-4">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Sparta Gym</h1>
-          <p className="text-muted-foreground">מערכת ניהול נאדי כושר</p>
+          <p className="text-muted-foreground">מערכת ניהול מכון כושר</p>
         </div>
 
         <Card className="w-full">

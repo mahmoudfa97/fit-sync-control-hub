@@ -50,7 +50,7 @@ const navItems = [
   { icon: Users, label: t("members_menu"), to: "/members" },
   { icon: CalendarCheck, label: t("checkins_menu"), to: "/checkins" },
   { icon: CreditCard, label: t("payments_menu"), to: "/payments" },
-  { icon: FileText, label: t("invoices_menu"), to: "/invoices" },
+  { icon: FileText, label: t("invoices_menu"), to: "/reportscenter" },
   { icon: Dumbbell, label: t("classes_menu"), to: "/classes" },
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
   { icon: MessagesSquareIcon, label: t("messages_center"), to: "/messages" },

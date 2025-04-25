@@ -1,4 +1,4 @@
-import { sendWhatsAppDirect } from "./whatsapp-direct-service"
+import { callWhatsappDirectFunction } from "./whatsapp-direct-service"
 import { sendWhatsAppTemplate } from "./whatsapp-template-service"
 
 interface SendWhatsAppSmartParams {
@@ -49,7 +49,7 @@ export async function sendWhatsAppSmart({
 
     if (inWindow) {
       // User is in 24-hour window, send direct message
-      const result = await sendWhatsAppDirect({
+      const result = await callWhatsappDirectFunction({
         to,
         message,
       })

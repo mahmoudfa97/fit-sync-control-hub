@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { sendWhatsAppDirect } from "@/services/whatsapp-direct-service"
+import { callWhatsappDirectFunction } from "@/services/whatsapp-direct-service"
 import { AlertCircle, Loader2, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -29,10 +29,11 @@ export function WhatsAppDirectForm({ recipientPhone = "", defaultMessage = "", o
 
     try {
       setSending(true)
-      const result = await sendWhatsAppDirect({
+      const params = {
         to: phone,
         message,
-      })
+      }
+      const result = await callWhatsappDirectFunction(params)
 
       if (result.success) {
         toast.success("WhatsApp message sent successfully!")
