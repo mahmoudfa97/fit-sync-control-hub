@@ -1,1 +1,5 @@
-vc-domain-verify=spartagym.vercel.com,c8564b277e3d2e020ce8
+CNAME mt73.gylemjegmangxyqzxhas.supabase.co -> smtp.mailtrap.live
+CNAME rwmt1._domainkey.gylemjegmangxyqzxhas.supabase.co -> rwmt1.dkim.smtp.mailtrap.live
+CNAME rwmt2._domainkey.gylemjegmangxyqzxhas.supabase.co -> rwmt2.dkim.smtp.mailtrap.live
+TXT _dmarc.gylemjegmangxyqzxhas.supabase.co -> v=DMARC1; p=none; rua=mailto:dmarc@smtp.mailtrap.live; ruf=mailto:dmarc@smtp.mailtrap.live; rf=afrf; pct=100
+CNAME mt-link.gylemjegmangxyqzxhas.supabase.co -> t.mailtrap.live
