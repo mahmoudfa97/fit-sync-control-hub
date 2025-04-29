@@ -95,8 +95,8 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">
       <div className="w-full max-w-md p-4">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Sparta Gym</h1>
+        <div className="text-center mb-6 flex flex-wrap flex-col content-around">
+          <img alt='SpartaGym' src="logo.png" height='200px' width='200px' className="text-3xl font-bold"></img>
           <p className="text-muted-foreground">מערכת ניהול מכון כושר</p>
         </div>
 

@@ -19,6 +19,7 @@ import {
   Group,
 } from "lucide-react";
 import { t } from "@/utils/translations";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -28,6 +29,8 @@ interface NavItemProps {
 }
 
 const NavItem = ({ icon: Icon, label, to, collapsed }: NavItemProps) => {
+    
+  
   return (
     <NavLink
       to={to}
@@ -55,12 +58,18 @@ const navItems = [
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
   { icon: MessagesSquareIcon, label: t("messages_center"), to: "/messages" },
   { icon: Group, label: t("groupSubscriptions"), to: "/group-subscriptions" },
-  { icon: Settings, label: t("settings_menu"), to: "/settings" },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-
+  const { signOut } = useAuth();
+  const handleSignOut = async () => { 
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }
   return (
     <aside className={cn("bg-sidebar h-screen flex-shrink-0 border-r border-sidebar-border flex flex-col transition-all duration-300", collapsed ? "w-16" : "w-64")}>
       <div className={cn("p-4 flex items-center", collapsed ? "justify-center" : "justify-between")}>
@@ -86,6 +95,7 @@ export function Sidebar() {
       <div className="p-4 border-t border-sidebar-border mt-auto">
         <Button
           variant="ghost"
+          onClick={() => handleSignOut()}
           className={cn("w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground", collapsed && "justify-center")}
         >
           <LogOut className="h-5 w-5 ml-2" />
