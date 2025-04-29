@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +52,6 @@ const navItems = [
   { icon: ActivitySquare, label: t("dashboard_menu"), to: "/" },
   { icon: Users, label: t("members_menu"), to: "/members" },
   { icon: CalendarCheck, label: t("checkins_menu"), to: "/checkins" },
-  { icon: CreditCard, label: t("payments_menu"), to: "/payments" },
   { icon: FileText, label: t("invoices_menu"), to: "/reportscenter" },
   { icon: Dumbbell, label: t("classes_menu"), to: "/classes" },
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
@@ -75,7 +74,9 @@ export function Sidebar() {
       <div className={cn("p-4 flex items-center", collapsed ? "justify-center" : "justify-between")}>
         {!collapsed ? (
           <div className="flex items-center gap-2">
+            <Link to="/">
             <img src="./logo.png" alt="Logo" className="h-48 w-96 object-scale-down" />
+            </Link>
           </div>
         ) : (
           <img src="./logo.png" alt="Logo" className="h-48 w-96 object-scale-down" />

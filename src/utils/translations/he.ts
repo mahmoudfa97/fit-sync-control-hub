@@ -1,9 +1,9 @@
 import MemberProfile from "@/pages/MemberProfile";
 
 const he = {
-  dashboard_menu: "לוח בקרה",
+  dashboard_menu: "דאשבורד",
   members_menu: "מנויים",
-  checkins_menu: "צ'ק-אינים",
+  checkins_menu: "כניסות",
   payments_menu: "תשלומים",
   classes_menu: "אימון אישי",
   staff_menu: "צוות",
@@ -307,7 +307,7 @@ const he = {
   smsConfigSuccess: "הגדרות ה-SMS נשמרו בהצלחה",
   smsTestSuccess: "הודעת בדיקה נשלחה בהצלחה",
   smsTestFail: "שליחת הודעת הבדיקה נכשלה",
-  groupSubscriptions: "מנויי קבוצות",
+  groupSubscriptions: "קבוצות מנויים",
   groupSubscriptionsDesc: "נהל והצג תוכניות מנוי קבוצתיות זמינות",
   subscriptionName: "שם המנוי",
   pricePerMonth: "מחיר לחודש",
