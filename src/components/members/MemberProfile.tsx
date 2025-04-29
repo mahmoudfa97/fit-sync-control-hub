@@ -137,7 +137,8 @@ export default function MemberProfile() {
               </Avatar>
               <h2 className="text-xl font-bold">{`${member.name} ${member.last_name || ""}`}</h2>
               <p className="text-sm text-muted-foreground">
-                {t("memberSince", { date: formatDate(member.created_at) })}
+                {t("memberSince")}
+                {member.created_at ? formatDate(member.created_at) : formatDate(member.joinDate)}
               </p>
             </div>
 

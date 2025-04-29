@@ -40,7 +40,7 @@ export function RecentActivityCard() {
             id,
             check_in_time,
             member_id,
-            custom_members:member_id(id, name, last_name, avatar_url)
+            custom_members:member_id(id, name, last_name)
           `)
           .order("check_in_time", { ascending: false })
           .limit(5)
@@ -56,7 +56,7 @@ export function RecentActivityCard() {
             amount,
             payment_method,
             member_id,
-            custom_members:member_id(id, name, last_name, avatar_url)
+            custom_members:member_id(id, name, last_name)
           `)
           .eq("status", "paid")
           .order("payment_date", { ascending: false })
@@ -72,7 +72,7 @@ export function RecentActivityCard() {
             created_at,
             membership_type,
             member_id,
-            custom_members:member_id(id, name, last_name, avatar_url)
+            custom_members:member_id(id, name, last_name)
           `)
           .order("created_at", { ascending: false })
           .limit(5)
@@ -139,7 +139,9 @@ export function RecentActivityCard() {
     const lastInitial = lastName ? lastName[0] : ""
     return `${firstInitial}${lastInitial}`
   }
-
+  const formatRelativeTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("he-IL")
+  }
   // Get activity icon color based on type
   const getActivityColor = (type: string) => {
     switch (type) {
@@ -174,30 +176,35 @@ export function RecentActivityCard() {
         ) : (
           <div className="space-y-4">
             {activities.length > 0 ? (
-              activities.map((activity) => (
-                <div key={activity.id}>
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      {activity.profile.avatar_url ? (
-                        <AvatarImage src={activity.profile.avatar_url || "/placeholder.svg"} />
-                      ) : null}
-                      <AvatarFallback className={getActivityColor(activity.type)}>
-                        {getInitials(activity.profile.name, activity.profile.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium">
-                        {`${activity.profile.name} ${activity.profile.last_name || ""}`}
+              activities.map((activity) => {
+                activity.timestamp = formatRelativeTime(activity.timestamp)
+                return  (
+                  <div key={activity.id}>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        {activity.profile.avatar_url ? (
+                          <AvatarImage src={activity.profile.avatar_url || "/placeholder.svg"} />
+                        ) : null}
+                        <AvatarFallback className={getActivityColor(activity.type)}>
+                          {getInitials(activity.profile.name, activity.profile.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">
+                          {`${activity.profile.name} ${activity.profile.last_name || ""}`}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{activity.details}</div>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">{activity.details}</div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{formatDate(activity.timestamp)}</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium">{formatDate(activity.timestamp)}</div>
-                    </div>
+                    <Separator className="mt-4" />
                   </div>
-                  <Separator className="mt-4" />
-                </div>
-              ))
+                )
+              }
+            
+              )
             ) : (
               <div className="text-center py-4 text-muted-foreground">{t("noRecentActivity")}</div>
             )}

@@ -31,7 +31,7 @@ i18next
   });
 
 // Export the translation function with the correct return type
-export const t = (key: string, p0: { date: string; }): string => {
+export const t = (key: string): string => {
   return i18next.t(key).toString();
 };
 

@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useDashboardPrivacy } from "@/hooks/useDashboardPrivacy"
 import { formatPrivateValue } from "@/utils/formatters"
 import { ExpiredMembersCard } from "@/components/dashboard/ExpiredMembersCard"
+import { Link } from "react-router-dom"
 
 export default function Dashboard() {
   // State for dashboard data
@@ -353,6 +354,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <Link to='/reports/finance#דוח%20חובות'>
         <StatCardWithChart
           title={t("totalDebts")}
           value={loading ? "..." : `-${formatPrivateValue(dashboardData.totalDebts.amount, hideNumbers)}`}
@@ -365,6 +367,8 @@ export default function Dashboard() {
           chartData={dashboardData.totalDebts.chartData}
           chartColor="#ef4444"
         />
+        </Link>
+       
         <StatCardWithChart
           title={t("totalReceipts")}
           value={loading ? "..." : formatPrivateValue(dashboardData.totalReceipts.amount, hideNumbers)}
