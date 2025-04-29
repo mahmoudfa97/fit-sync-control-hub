@@ -1,78 +1,63 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Loader2,
-  FileText,
-  MessageSquare,
-  ClipboardList,
-  Activity,
-  CreditCard,
-  Calendar,
-  Download,
-  Eye,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
-} from "lucide-react"
-import { supabase } from "@/integrations/supabase/client"
-import { formatDate } from "@/utils/format"
-import { t } from "@/utils/translations"
-import { FileUploadDialog } from "./FileUploadDialog"
-import { CreateProgramDialog } from "./CreateProgramDialog"
-import { CreateTaskDialog } from "./CreateTaskDialog"
-import { MemberFilesService, type MemberFile } from "@/services/MemberFilesService"
-import { MemberProgramsService, type MemberProgram } from "@/services/MemberProgramsService"
-import { MemberTasksService, type MemberTask } from "@/services/MemberTasksService"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Loader2, FileText, MessageSquare, ClipboardList, Activity, CreditCard, Calendar, Download, Eye, Trash2, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDate } from "@/utils/format";
+import { t } from "@/utils/translations";
+import { FileUploadDialog } from "./FileUploadDialog";
+import { CreateProgramDialog } from "./CreateProgramDialog";
+import { CreateTaskDialog } from "./CreateTaskDialog";
+import { MemberFilesService, type MemberFile } from "@/services/MemberFilesService";
+import { MemberProgramsService, type MemberProgram } from "@/services/MemberProgramsService";
+import { MemberTasksService, type MemberTask } from "@/services/MemberTasksService";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface MemberProfileTabsProps {
-  memberId: string
+  memberId: string;
 }
 
 interface CheckIn {
-  id: string
-  check_in_time: string
-  notes: string | null
+  id: string;
+  check_in_time: string;
+  notes: string | null;
 }
 
 interface Subscription {
-  id: string
-  membership_type: string
-  start_date: string
-  end_date: string
-  status: string
-  payment_status: string
+  id: string;
+  membership_type: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  payment_status: string;
 }
 
 interface Payment {
-  id: string
-  amount: number
-  payment_method: string
-  payment_date: string
-  description: string
-  status: string
+  id: string;
+  amount: number;
+  payment_method: string;
+  payment_date: string;
+  description: string;
+  status: string;
 }
 
 export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
-  const [activeTab, setActiveTab] = useState("subscriptions")
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([])
-  const [files, setFiles] = useState<MemberFile[]>([])
-  const [programs, setPrograms] = useState<MemberProgram[]>([])
-  const [tasks, setTasks] = useState<MemberTask[]>([])
+  const [activeTab, setActiveTab] = useState("subscriptions");
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [files, setFiles] = useState<MemberFile[]>([]);
+  const [programs, setPrograms] = useState<MemberProgram[]>([]);
+  const [tasks, setTasks] = useState<MemberTask[]>([]);
   const [loading, setLoading] = useState({
     subscriptions: true,
     payments: false,
@@ -80,43 +65,44 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
     files: false,
     programs: false,
     tasks: false,
-  })
+  });
 
   // Dialog states
-  const [isFileUploadOpen, setIsFileUploadOpen] = useState(false)
-  const [isCreateProgramOpen, setIsCreateProgramOpen] = useState(false)
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<MemberFile | null>(null)
-  const [isViewFileOpen, setIsViewFileOpen] = useState(false)
+  const [isFileUploadOpen, setIsFileUploadOpen] = useState(false);
+  const [isCreateProgramOpen, setIsCreateProgramOpen] = useState(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<MemberFile | null>(null);
+  const [isViewFileOpen, setIsViewFileOpen] = useState(false);
 
   useEffect(() => {
     if (memberId) {
-      fetchSubscriptions()
+      fetchSubscriptions();
     }
-  }, [memberId])
+  }, [memberId]);
 
   useEffect(() => {
     if (activeTab === "payments" && payments.length === 0) {
-      fetchPayments()
+      fetchPayments();
     } else if (activeTab === "checkins" && checkIns.length === 0) {
-      fetchCheckIns()
+      fetchCheckIns();
     } else if (activeTab === "files" && files.length === 0) {
-      fetchFiles()
+      fetchFiles();
     } else if (activeTab === "programs" && programs.length === 0) {
-      fetchPrograms()
+      fetchPrograms();
     } else if (activeTab === "tasks" && tasks.length === 0) {
-      fetchTasks()
+      fetchTasks();
     }
-  }, [activeTab, memberId])
+  }, [activeTab, memberId]);
 
   const fetchSubscriptions = async () => {
     try {
-      setLoading((prev) => ({ ...prev, subscriptions: true }))
-      console.log("Fetching subscriptions for member:", memberId)
+      setLoading((prev) => ({ ...prev, subscriptions: true }));
+      console.log("Fetching subscriptions for member:", memberId);
 
       const { data, error } = await supabase
         .from("custom_memberships")
-        .select(`
+        .select(
+          `
           id,
           membership_type,
           start_date,
@@ -124,124 +110,117 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
           status,
           payment_status,
           created_at
-        `)
+        `
+        )
         .eq("member_id", memberId)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching subscriptions:", error)
-        throw error
+        console.error("Error fetching subscriptions:", error);
+        throw error;
       }
 
-      console.log("Subscriptions data:", data)
-      setSubscriptions(data || [])
+      console.log("Subscriptions data:", data);
+      setSubscriptions(data || []);
     } catch (error) {
-      console.error("Error in fetchSubscriptions:", error)
+      console.error("Error in fetchSubscriptions:", error);
     } finally {
-      setLoading((prev) => ({ ...prev, subscriptions: false }))
+      setLoading((prev) => ({ ...prev, subscriptions: false }));
     }
-  }
+  };
 
   const fetchPayments = async () => {
     try {
-      setLoading((prev) => ({ ...prev, payments: true }))
-      console.log("Fetching payments for member:", memberId)
+      setLoading((prev) => ({ ...prev, payments: true }));
+      console.log("Fetching payments for member:", memberId);
 
-      const { data, error } = await supabase
-        .from("payments")
-        .select("*")
-        .eq("member_id", memberId)
-        .order("payment_date", { ascending: false })
+      const { data, error } = await supabase.from("payments").select("*").eq("member_id", memberId).order("payment_date", { ascending: false });
 
       if (error) {
-        console.error("Error fetching payments:", error)
-        throw error
+        console.error("Error fetching payments:", error);
+        throw error;
       }
 
-      console.log("Payments data:", data)
-      setPayments(data || [])
+      console.log("Payments data:", data);
+      setPayments(data || []);
     } catch (error) {
-      console.error("Error in fetchPayments:", error)
+      console.error("Error in fetchPayments:", error);
     } finally {
-      setLoading((prev) => ({ ...prev, payments: false }))
+      setLoading((prev) => ({ ...prev, payments: false }));
     }
-  }
+  };
 
   const fetchCheckIns = async () => {
     try {
-      setLoading((prev) => ({ ...prev, checkins: true }))
-      console.log("Fetching check-ins for member:", memberId)
+      setLoading((prev) => ({ ...prev, checkins: true }));
+      console.log("Fetching check-ins for member:", memberId);
 
-      const { data, error } = await supabase
-        .from("custom_checkins")
-        .select("id, check_in_time, notes")
-        .eq("member_id", memberId)
-        .order("check_in_time", { ascending: false })
+      const { data, error } = await supabase.from("custom_checkins").select("id, check_in_time, notes").eq("member_id", memberId).order("check_in_time", { ascending: false });
 
       if (error) {
-        console.error("Error fetching check-ins:", error)
-        throw error
+        console.error("Error fetching check-ins:", error);
+        throw error;
       }
 
-      console.log("Check-ins data:", data)
-      setCheckIns(data || [])
+      console.log("Check-ins data:", data);
+      setCheckIns(data || []);
     } catch (error) {
-      console.error("Error in fetchCheckIns:", error)
+      console.error("Error in fetchCheckIns:", error);
     } finally {
-      setLoading((prev) => ({ ...prev, checkins: false }))
+      setLoading((prev) => ({ ...prev, checkins: false }));
     }
-  }
+  };
 
   const fetchFiles = async () => {
     try {
-      setLoading((prev) => ({ ...prev, files: true }))
-      const data = await MemberFilesService.getFiles(memberId)
-      setFiles(data)
+      setLoading((prev) => ({ ...prev, files: true }));
+      const data = await MemberFilesService.getFiles(memberId);
+      setFiles(data);
     } catch (error) {
-      console.error("Error in fetchFiles:", error)
+      console.error("Error in fetchFiles:", error);
     } finally {
-      setLoading((prev) => ({ ...prev, files: false }))
+      setLoading((prev) => ({ ...prev, files: false }));
     }
-  }
+  };
 
   const fetchPrograms = async () => {
     try {
-      setLoading((prev) => ({ ...prev, programs: true }))
-      const data = await MemberProgramsService.getPrograms(memberId)
-      setPrograms(data)
+      setLoading((prev) => ({ ...prev, programs: true }));
+      const data = await MemberProgramsService.getPrograms(memberId);
+      setPrograms(data);
     } catch (error) {
-      console.error("Error in fetchPrograms:", error)
+      console.error("Error in fetchPrograms:", error);
     } finally {
-      setLoading((prev) => ({ ...prev, programs: false }))
+      setLoading((prev) => ({ ...prev, programs: false }));
     }
-  }
+  };
 
   const fetchTasks = async () => {
     try {
-      setLoading((prev) => ({ ...prev, tasks: true }))
-      const data = await MemberTasksService.getTasks(memberId)
-      setTasks(data)
+      setLoading((prev) => ({ ...prev, tasks: true }));
+      const data = await MemberTasksService.getTasks(memberId);
+      setTasks(data);
     } catch (error) {
-      console.error("Error in fetchTasks:", error)
+      console.error("Error in fetchTasks:", error);
     } finally {
-      setLoading((prev) => ({ ...prev, tasks: false }))
+      setLoading((prev) => ({ ...prev, tasks: false }));
     }
-  }
+  };
 
   const handleDeleteFile = async (fileId: string) => {
     try {
-      await MemberFilesService.deleteFile(fileId)
-      setFiles((prev) => prev.filter((file) => file.id !== fileId))
-      toast.success(t("fileDeletedSuccessfully"))
+      await MemberFilesService.deleteFile(fileId);
+      setFiles((prev) => prev.filter((file) => file.id !== fileId));
+      toast.success(t("fileDeletedSuccessfully"));
     } catch (error) {
-      console.error("Error deleting file:", error)
-      toast.error(t("errorDeletingFile"))
+      console.error("Error deleting file:", error);
+      toast.error(t("errorDeletingFile"));
     }
-  }
+  };
 
   const handleUpdateTaskStatus = async (taskId: string, status: string) => {
     try {
-      await MemberTasksService.updateTaskStatus(taskId, status)
+      await MemberTasksService.updateTaskStatus(taskId, status);
       setTasks((prev) =>
         prev.map((task) =>
           task.id === taskId
@@ -250,19 +229,19 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                 status,
                 completed_at: status === "completed" ? new Date().toISOString() : null,
               }
-            : task,
-        ),
-      )
-      toast.success(t("taskStatusUpdated"))
+            : task
+        )
+      );
+      toast.success(t("taskStatusUpdated"));
     } catch (error) {
-      console.error("Error updating task status:", error)
-      toast.error(t("errorUpdatingTaskStatus"))
+      console.error("Error updating task status:", error);
+      toast.error(t("errorUpdatingTaskStatus"));
     }
-  }
+  };
 
   const handleUpdateProgramStatus = async (programId: string, status: string) => {
     try {
-      await MemberProgramsService.updateProgramStatus(programId, status)
+      await MemberProgramsService.updateProgramStatus(programId, status);
       setPrograms((prev) =>
         prev.map((program) =>
           program.id === programId
@@ -270,163 +249,158 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                 ...program,
                 status,
               }
-            : program,
-        ),
-      )
-      toast.success(t("programStatusUpdated"))
+            : program
+        )
+      );
+      toast.success(t("programStatusUpdated"));
     } catch (error) {
-      console.error("Error updating program status:", error)
-      toast.error(t("errorUpdatingProgramStatus"))
+      console.error("Error updating program status:", error);
+      toast.error(t("errorUpdatingProgramStatus"));
     }
-  }
+  };
 
   const formatDateTime = (dateTimeString: string) => {
-    if (!dateTimeString) return "-"
+    if (!dateTimeString) return "-";
 
     try {
-      const date = new Date(dateTimeString)
+      const date = new Date(dateTimeString);
       return date.toLocaleString("he-IL", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
-      })
+      });
     } catch (error) {
-      console.error("Error formatting date time:", error)
-      return dateTimeString
+      console.error("Error formatting date time:", error);
+      return dateTimeString;
     }
-  }
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500"
+        return "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500";
       case "inactive":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500";
       case "expired":
-        return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500"
+        return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500";
       case "paid":
-        return "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500"
+        return "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500";
       case "overdue":
-        return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500"
+        return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500";
       case "canceled":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500";
       case "completed":
-        return "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500"
+        return "bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500";
       case "in-progress":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500";
       case "paused":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-800/30 dark:text-orange-500"
+        return "bg-orange-100 text-orange-800 dark:bg-orange-800/30 dark:text-orange-500";
       case "high":
-        return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500"
+        return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500";
       case "medium":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500";
       case "low":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500";
     }
-  }
+  };
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith("image/")) {
-      return (
-        <img
-          src={selectedFile?.file_url || "/placeholder.svg"}
-          alt="Preview"
-          className="w-full h-auto max-h-96 object-contain rounded"
-        />
-      )
+      return <img src={selectedFile?.file_url || "/placeholder.svg"} alt="Preview" className="w-full h-auto max-h-96 object-contain rounded" />;
     }
 
-    return <FileText className="h-16 w-16 text-primary" />
-  }
+    return <FileText className="h-16 w-16 text-primary" />;
+  };
 
   const getFileTypeLabel = (fileType: string) => {
-    if (fileType.startsWith("image/")) return "Image"
-    if (fileType.startsWith("application/pdf")) return "PDF"
-    if (fileType.startsWith("application/msword") || fileType.includes("officedocument.wordprocessing")) return "Word"
-    if (fileType.startsWith("application/vnd.ms-excel") || fileType.includes("spreadsheet")) return "Excel"
-    if (fileType.startsWith("text/")) return "Text"
-    return "Document"
-  }
+    if (fileType.startsWith("image/")) return "Image";
+    if (fileType.startsWith("application/pdf")) return "PDF";
+    if (fileType.startsWith("application/msword") || fileType.includes("officedocument.wordprocessing")) return "Word";
+    if (fileType.startsWith("application/vnd.ms-excel") || fileType.includes("spreadsheet")) return "Excel";
+    if (fileType.startsWith("text/")) return "Text";
+    return "Document";
+  };
 
   const getFileSizeLabel = (size: number) => {
     if (size < 1024) {
-      return `${size} B`
+      return `${size} B`;
     } else if (size < 1024 * 1024) {
-      return `${(size / 1024).toFixed(2)} KB`
+      return `${(size / 1024).toFixed(2)} KB`;
     } else {
-      return `${(size / (1024 * 1024)).toFixed(2)} MB`
+      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
     }
-  }
+  };
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
       case "document":
-        return t("document")
+        return t("document");
       case "medical":
-        return t("medical")
+        return t("medical");
       case "contract":
-        return t("contract")
+        return t("contract");
       case "progress":
-        return t("progressPhoto")
+        return t("progressPhoto");
       case "other":
-        return t("other")
+        return t("other");
       default:
-        return category
+        return category;
     }
-  }
+  };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
       case "high":
-        return <AlertCircle className="h-4 w-4 text-red-500" />
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
       case "medium":
-        return <Clock className="h-4 w-4 text-yellow-500" />
+        return <Clock className="h-4 w-4 text-yellow-500" />;
       case "low":
-        return <Clock className="h-4 w-4 text-blue-500" />
+        return <Clock className="h-4 w-4 text-blue-500" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
   const renderEmptyState = (message: string) => (
     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
       <p>{message}</p>
     </div>
-  )
+  );
 
   return (
     <>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-6 mb-4">
-          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span>{t("subscriptions")}</span>
+        <TabsTrigger value="checkins" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span>{t("checkinsHistory")}</span>
           </TabsTrigger>
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            <span>{t("accounting")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="files" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span>{t("files")}</span>
+          
+          <TabsTrigger value="tasks" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            <span>{t("tasks")}</span>
           </TabsTrigger>
           <TabsTrigger value="programs" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             <span>{t("programs")}</span>
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" />
-            <span>{t("tasks")}</span>
+          <TabsTrigger value="files" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>{t("files")}</span>
           </TabsTrigger>
-          <TabsTrigger value="checkins" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            <span>{t("checkins")}</span>
+          <TabsTrigger value="payments" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span>{t("accounting")}</span>
+          </TabsTrigger>
+          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>{t("subscriptions")}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -547,17 +521,11 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                     <Card key={file.id} className="overflow-hidden">
                       <div className="h-32 bg-muted flex items-center justify-center p-4">
                         {file.file_type.startsWith("image/") ? (
-                          <img
-                            src={file.file_url || "/placeholder.svg"}
-                            alt={file.file_name}
-                            className="max-h-full max-w-full object-contain"
-                          />
+                          <img src={file.file_url || "/placeholder.svg"} alt={file.file_name} className="max-h-full max-w-full object-contain" />
                         ) : (
                           <div className="flex flex-col items-center justify-center">
                             <FileText className="h-12 w-12 text-primary" />
-                            <span className="text-xs font-medium mt-1">
-                              {file.file_name.split(".").pop()?.toUpperCase()}
-                            </span>
+                            <span className="text-xs font-medium mt-1">{file.file_name.split(".").pop()?.toUpperCase()}</span>
                           </div>
                         )}
                       </div>
@@ -585,8 +553,8 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
-                                  setSelectedFile(file)
-                                  setIsViewFileOpen(true)
+                                  setSelectedFile(file);
+                                  setIsViewFileOpen(true);
                                 }}
                               >
                                 <Eye className="h-4 w-4" />
@@ -602,12 +570,7 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button variant="ghost" size="icon" asChild>
-                                <a
-                                  href={file.file_url}
-                                  download={file.file_name}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
+                                <a href={file.file_url} download={file.file_name} target="_blank" rel="noopener noreferrer">
                                   <Download className="h-4 w-4" />
                                 </a>
                               </Button>
@@ -667,8 +630,7 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                           <div>
                             <CardTitle className="text-lg">{program.title}</CardTitle>
                             <CardDescription>
-                              {formatDate(program.start_date)} -{" "}
-                              {program.end_date ? formatDate(program.end_date) : t("ongoing")}
+                              {formatDate(program.start_date)} - {program.end_date ? formatDate(program.end_date) : t("ongoing")}
                             </CardDescription>
                           </div>
                           <Badge variant="outline" className={getStatusBadgeColor(program.status)}>
@@ -677,15 +639,11 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                         </div>
                       </CardHeader>
                       <CardContent className="pb-2">
-                        {program.description && (
-                          <p className="text-sm text-muted-foreground mb-4">{program.description}</p>
-                        )}
+                        {program.description && <p className="text-sm text-muted-foreground mb-4">{program.description}</p>}
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="text-sm font-medium">{t("progress")}</span>
                           <Progress value={program.status === "completed" ? 100 : 45} className="h-2" />
-                          <span className="text-sm text-muted-foreground">
-                            {program.status === "completed" ? "100%" : "45%"}
-                          </span>
+                          <span className="text-sm text-muted-foreground">{program.status === "completed" ? "100%" : "45%"}</span>
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between pt-0">
@@ -694,40 +652,24 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                         </Button>
                         <div className="flex space-x-2">
                           {program.status === "active" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateProgramStatus(program.id, "completed")}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateProgramStatus(program.id, "completed")}>
                               <CheckCircle className="mr-1 h-3 w-3" />
                               {t("markComplete")}
                             </Button>
                           ) : program.status === "paused" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateProgramStatus(program.id, "active")}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateProgramStatus(program.id, "active")}>
                               <Activity className="mr-1 h-3 w-3" />
                               {t("resume")}
                             </Button>
                           ) : program.status === "completed" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateProgramStatus(program.id, "active")}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateProgramStatus(program.id, "active")}>
                               <Activity className="mr-1 h-3 w-3" />
                               {t("reactivate")}
                             </Button>
                           ) : null}
 
                           {program.status === "active" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateProgramStatus(program.id, "paused")}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateProgramStatus(program.id, "paused")}>
                               <XCircle className="mr-1 h-3 w-3" />
                               {t("pause")}
                             </Button>
@@ -764,22 +706,13 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
               ) : tasks.length > 0 ? (
                 <div className="space-y-3">
                   {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`border rounded-lg p-4 ${task.status === "completed" ? "bg-muted/50" : ""}`}
-                    >
+                    <div key={task.id} className={`border rounded-lg p-4 ${task.status === "completed" ? "bg-muted/50" : ""}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-2">
                           {getPriorityIcon(task.priority)}
                           <div>
-                            <h3
-                              className={`font-medium ${task.status === "completed" ? "line-through text-muted-foreground" : ""}`}
-                            >
-                              {task.title}
-                            </h3>
-                            {task.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                            )}
+                            <h3 className={`font-medium ${task.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{task.title}</h3>
+                            {task.description && <p className="text-sm text-muted-foreground mt-1">{task.description}</p>}
                             <div className="flex items-center space-x-3 mt-2">
                               {task.due_date && (
                                 <span className="text-xs flex items-center">
@@ -798,20 +731,12 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                         </div>
                         <div className="flex space-x-2">
                           {task.status !== "completed" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateTaskStatus(task.id, "completed")}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateTaskStatus(task.id, "completed")}>
                               <CheckCircle className="mr-1 h-3 w-3" />
                               {t("complete")}
                             </Button>
                           ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateTaskStatus(task.id, "pending")}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateTaskStatus(task.id, "pending")}>
                               <Activity className="mr-1 h-3 w-3" />
                               {t("reopen")}
                             </Button>
@@ -822,9 +747,7 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
                         <div className="mt-3 flex items-center">
                           <span className="text-xs text-muted-foreground mr-2">{t("assignedTo")}:</span>
                           <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {task.assigned_to.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
+                            <AvatarFallback className="text-xs">{task.assigned_to.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                         </div>
                       )}
@@ -841,7 +764,7 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
         <TabsContent value="checkins" className="mt-0">
           <Card>
             <CardHeader>
-              <CardTitle>{t("checkins")}</CardTitle>
+              <CardTitle>{t("checkinsHistory")}</CardTitle>
               <CardDescription>{t("checkinsDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -875,28 +798,13 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
       </Tabs>
 
       {/* File Upload Dialog */}
-      <FileUploadDialog
-        memberId={memberId}
-        isOpen={isFileUploadOpen}
-        onClose={() => setIsFileUploadOpen(false)}
-        onSuccess={() => fetchFiles()}
-      />
+      <FileUploadDialog memberId={memberId} isOpen={isFileUploadOpen} onClose={() => setIsFileUploadOpen(false)} onSuccess={() => fetchFiles()} />
 
       {/* Create Program Dialog */}
-      <CreateProgramDialog
-        memberId={memberId}
-        isOpen={isCreateProgramOpen}
-        onClose={() => setIsCreateProgramOpen(false)}
-        onSuccess={() => fetchPrograms()}
-      />
+      <CreateProgramDialog memberId={memberId} isOpen={isCreateProgramOpen} onClose={() => setIsCreateProgramOpen(false)} onSuccess={() => fetchPrograms()} />
 
       {/* Create Task Dialog */}
-      <CreateTaskDialog
-        memberId={memberId}
-        isOpen={isCreateTaskOpen}
-        onClose={() => setIsCreateTaskOpen(false)}
-        onSuccess={() => fetchTasks()}
-      />
+      <CreateTaskDialog memberId={memberId} isOpen={isCreateTaskOpen} onClose={() => setIsCreateTaskOpen(false)} onSuccess={() => fetchTasks()} />
 
       {/* View File Dialog */}
       <Dialog open={isViewFileOpen} onOpenChange={setIsViewFileOpen}>
@@ -907,9 +815,7 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
               {getFileTypeLabel(selectedFile?.file_type || "")} • {getFileSizeLabel(selectedFile?.file_size || 0)}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-4">
-            {selectedFile && getFileIcon(selectedFile.file_type)}
-          </div>
+          <div className="flex flex-col items-center justify-center py-4">{selectedFile && getFileIcon(selectedFile.file_type)}</div>
           {selectedFile?.description && (
             <div className="text-sm text-muted-foreground border-t pt-4">
               <p className="font-medium mb-1">{t("description")}:</p>
@@ -921,12 +827,7 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
               {t("close")}
             </Button>
             <Button asChild>
-              <a
-                href={selectedFile?.file_url}
-                download={selectedFile?.file_name}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={selectedFile?.file_url} download={selectedFile?.file_name} target="_blank" rel="noopener noreferrer">
                 <Download className="mr-2 h-4 w-4" />
                 {t("download")}
               </a>
@@ -935,5 +836,5 @@ export function MemberProfileTabs({ memberId }: MemberProfileTabsProps) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

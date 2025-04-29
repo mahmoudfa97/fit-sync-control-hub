@@ -28,10 +28,12 @@ export default function Members() {
     dateOfBirth: "",
     gender: "" as "male" | "female" | "",
     membershipType: "רגיל",
-    status: "active" as Member['status'],
-    paymentStatus: "paid" as Member['paymentStatus'],
+    birthYear: "",
+    birthMonth: "",
+    birthDay: "",
     hasInsurance: false,
     insurancePolicy: "",
+    sendWelcomeMessage: false,
     insuranceProvider: "",
   });
   
@@ -117,8 +119,6 @@ export default function Members() {
         dateOfBirth: "",
         gender: "",
         membershipType: "רגיל",
-        status: "active" as Member['status'],
-        paymentStatus: "paid" as Member['paymentStatus'],
         hasInsurance: false,
         insurancePolicy: "",
         insuranceProvider: "",

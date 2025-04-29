@@ -6,11 +6,15 @@ export interface MemberFormData {
   last_name: string
   email: string
   phone: string
+  sendWelcomeMessage?: boolean
   dateOfBirth: string
+  birthYear?: string
+  birthMonth?: string
+  birthDay?: string
   gender: "male" | "female" | ""
   membershipType: string
-  status: Member["status"]
-  paymentStatus: Member["paymentStatus"]
+  status?: Member["status"]
+  paymentStatus?: Member["paymentStatus"]
   hasInsurance?: boolean
   insuranceStartDate?: string
   insuranceEndDate?: string
@@ -233,6 +237,10 @@ export class MemberService {
 
         const initials = `${existingMember.name[0]}${existingMember.last_name ? existingMember.last_name[0] : ""}`
 
+        // Format join date consistently
+        const joinDate = new Date(existingMember.created_at)
+        const formattedJoinDate = this.formatDateToHebrewString(joinDate)
+
         return {
           id: existingMember.id,
           name: `${existingMember.name} ${existingMember.last_name || ""}`,
@@ -240,12 +248,12 @@ export class MemberService {
           phone: existingMember.phone || "",
           membershipType: memberData.membershipType,
           status: memberData.status,
-          joinDate: new Date(existingMember.created_at).toLocaleDateString("he-IL"),
+          joinDate: formattedJoinDate,
           lastCheckIn: "טרם נרשם",
           paymentStatus: memberData.paymentStatus,
           initials: initials,
           gender: existingMember.gender as "male" | "female" | "other" | undefined,
-          dateOfBirth: existingMember.dateOfBirth ? existingMember.dateOfBirth.toString() : undefined,
+          dateOfBirth: existingMember.dateOfBirth || undefined,
           hasInsurance: memberData.hasInsurance,
           insuranceStartDate: memberData.insuranceStartDate,
           insuranceEndDate: memberData.insuranceEndDate,
@@ -274,7 +282,7 @@ export class MemberService {
           last_name: memberData.last_name,
           email: memberData.email,
           phone: memberData.phone,
-          dateOfBirth: memberData.dateOfBirth ? Number.parseInt(memberData.dateOfBirth) : null,
+          dateOfBirth: memberData.dateOfBirth || null, // Store as full date string
           gender: memberData.gender || null,
           created_by: user.id,
         })
@@ -282,17 +290,6 @@ export class MemberService {
         .single()
 
       if (memberError) throw memberError
-
-      const { error: membershipError } = await supabase.from("custom_memberships").insert({
-        member_id: memberId,
-        membership_type: memberData.membershipType,
-        status: memberData.status,
-        payment_status: memberData.paymentStatus,
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-      })
-
-      if (membershipError) throw membershipError
 
       // Add insurance if provided
       if (memberData.hasInsurance) {
@@ -314,23 +311,20 @@ export class MemberService {
         if (insuranceError) throw insuranceError
       }
 
-      const today = new Date()
-      const hebrewMonths = [
-        "ינואר",
-        "פברואר",
-        "מרץ",
-        "אפריל",
-        "מאי",
-        "יוני",
-        "יולי",
-        "אוגוסט",
-        "ספטמבר",
-        "אוקטובר",
-        "נובמבר",
-        "דצמבר",
-      ]
-      const joinDateStr = `${today.getDate()} ${hebrewMonths[today.getMonth()]}, ${today.getFullYear()}`
+      // Send welcome message if requested
+      if (memberData.sendWelcomeMessage) {
+        try {
+          // Implement your welcome message logic here
+          // For example: await this.sendWelcomeMessage(memberData.email, memberData.name);
+          console.log(`Welcome message would be sent to ${memberData.email}`)
+        } catch (messageError) {
+          console.error("Error sending welcome message:", messageError)
+          // Continue with member creation even if message fails
+        }
+      }
 
+      const today = new Date()
+      const formattedJoinDate = this.formatDateToHebrewString(today)
       const initials = `${memberData.name[0]}${memberData.last_name ? memberData.last_name[0] : ""}`
 
       return {
@@ -340,7 +334,7 @@ export class MemberService {
         phone: memberData.phone,
         membershipType: memberData.membershipType,
         status: memberData.status,
-        joinDate: joinDateStr,
+        joinDate: formattedJoinDate,
         lastCheckIn: "טרם נרשם",
         paymentStatus: memberData.paymentStatus,
         initials: initials,
@@ -355,6 +349,25 @@ export class MemberService {
       console.error("Error adding member:", error)
       throw error
     }
+  }
+
+  // Helper method to format dates consistently
+ static formatDateToHebrewString(date: Date): string {
+    const hebrewMonths = [
+      "ינואר",
+      "פברואר",
+      "מרץ",
+      "אפריל",
+      "מאי",
+      "יוני",
+      "יולי",
+      "אוגוסט",
+      "ספטמבר",
+      "אוקטובר",
+      "נובמבר",
+      "דצמבר",
+    ]
+    return `${date.getDate()} ${hebrewMonths[date.getMonth()]}, ${date.getFullYear()}`
   }
 
   static async recordCheckIn(memberId: string) {

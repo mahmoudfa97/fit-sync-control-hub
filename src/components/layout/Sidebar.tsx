@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { t } from "@/utils/translations";
 import { useAuth } from "@/contexts/AuthContext";
-
+import logo from '@/assets/logo.png';
 interface NavItemProps {
   icon: React.ElementType;
   label: string;
@@ -75,11 +75,11 @@ export function Sidebar() {
         {!collapsed ? (
           <div className="flex items-center gap-2">
             <Link to="/">
-            <img src="./logo.png" alt="Logo" className="h-48 w-96 object-scale-down" />
+            <img src={logo} alt="Logo" className="h-48 w-96 object-scale-down" />
             </Link>
           </div>
         ) : (
-          <img src="./logo.png" alt="Logo" className="h-48 w-96 object-scale-down" />
+          <img src={logo} alt="Logo" className="h-48 w-96 object-scale-down" />
         )}
 
         <Button variant="ghost" size="icon" className={cn("h-8 w-8 text-sidebar-foreground", collapsed ? "mt-4" : "")} onClick={() => setCollapsed(!collapsed)}>
