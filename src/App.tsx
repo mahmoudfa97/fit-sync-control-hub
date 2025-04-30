@@ -27,6 +27,8 @@ import ReportsPage from "./pages/ReportsPage";
 import FinanceReportsPage from "./components/reports/FinanceReportsPage";
 import MembersReportsPage from "./components/reports/MembersReportsPage";
 import GeneralReportsPage from "./components/reports/GeneralReportsPage";
+import PaymentSuccessPage from "./components/payments/PaymentSuccessPage";
+import PaymentCancelPage from "./components/payments/PaymentCancelPage";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +64,8 @@ const AppContent = () => {
           <Route path="/members/:memberId" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
           <Route path="/checkins" element={<ProtectedRoute><CheckIns /></ProtectedRoute>} />
           <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+          <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccessPage /></ProtectedRoute>} />
+          <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancelPage /></ProtectedRoute>} />
           <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
           
           {/* Reports routes */}

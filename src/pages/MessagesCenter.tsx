@@ -20,9 +20,8 @@ export default function MessagesCenter() {
         <CardContent>
          
           <div className="container mx-auto flex flex-wrap gap-4">
-        <WhatsAppDirectForm /> <WhatsAppTemplateForm />
-        <WhatsAppBotForm />  <WhatsAppSmartForm />
-        <WhatsAppNotification /> <WhatsAppBotForm />
+        <WhatsAppDirectForm />
+
       </div>
         </CardContent>
       </Card>
