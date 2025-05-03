@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle, UserCog, Printer, MoreHorizontal } from "lucide-react"
 import { AddSubscriptionDialog } from "@/components/members/AddSubscriptionDialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import EnhancedAddSubscriptionDialog from "./EnhancedAddSubscriptionDialog"
 
 interface MemberProfileActionsProps {
   memberId: string
   memberName: string
+  memberEmail?: string
+  memberPhone?: string
   onRefresh: () => void
 }
 
-export function MemberProfileActions({ memberId, memberName, onRefresh }: MemberProfileActionsProps) {
+export function MemberProfileActions({ memberId, memberName,memberEmail, memberPhone, onRefresh }: MemberProfileActionsProps) {
   const [isAddSubscriptionOpen, setIsAddSubscriptionOpen] = useState(false)
 
   return (
@@ -40,11 +43,13 @@ export function MemberProfileActions({ memberId, memberName, onRefresh }: Member
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AddSubscriptionDialog
+      <EnhancedAddSubscriptionDialog
         open={isAddSubscriptionOpen}
         onOpenChange={setIsAddSubscriptionOpen}
         memberId={memberId}
         memberName={memberName}
+        memberEmail={memberEmail}
+        memberPhone={memberPhone}
         onSubscriptionAdded={onRefresh}
       />
     </div>

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LogOut,
   FileText,
+  LucideSettings,
   Group,
 } from "lucide-react";
 import { t } from "@/utils/translations";
@@ -57,6 +58,7 @@ const navItems = [
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
   { icon: MessagesSquareIcon, label: t("messages_center"), to: "/messages" },
   { icon: Group, label: t("groupSubscriptions"), to: "/group-subscriptions" },
+   { icon: LucideSettings, label: t("admin"), to: "/assets" },
 ];
 
 export function Sidebar() {

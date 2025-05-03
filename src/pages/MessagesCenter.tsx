@@ -8,6 +8,7 @@ import { WhatsAppDirectForm } from "@/components/notifacations/sms/WhatsAppDirec
 import { WhatsAppBotForm } from "@/components/notifacations/sms/WhatsappBot";
 import { WhatsAppNotification } from "@/components/notifacations/sms/whatsapp-notification";
 import { WhatsAppSmartForm } from "@/components/notifacations/sms/WhatsAppSmartForm";
+import WhatsAppMessaging from "@/components/whatsapp/WhatsAppMessaging";
 
 export default function MessagesCenter() {
   return (
@@ -18,9 +19,9 @@ export default function MessagesCenter() {
           <CardDescription>{t("messages_center_desc")}</CardDescription>
         </CardHeader>
         <CardContent>
-         
+
           <div className="container mx-auto flex flex-wrap gap-4">
-        <WhatsAppDirectForm />
+           <WhatsAppMessaging />
 
       </div>
         </CardContent>

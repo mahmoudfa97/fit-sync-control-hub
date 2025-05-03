@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Loader2, CheckCircle, XCircle, CreditCard, AlertTriangle, ChevronLeft } from "lucide-react"
+import { Loader2, CheckCircle, XCircle, CreditCard, AlertTriangle, ChevronLeft, PhoneCall } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { EnhancedHypPaymentService } from "@/services/EnhancedHypPaymentService"
 import { Progress } from "@/components/ui/progress"
@@ -50,6 +50,8 @@ export const EnhancedHypPaymentModal = ({
   const [statusCheckProgress, setStatusCheckProgress] = useState(0)
   const [showReceipt, setShowReceipt] = useState(false)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isApiPermissionError, setIsApiPermissionError] = useState(false)
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const statusCheckIntervalRef = useRef<number | null>(null)
@@ -144,6 +146,8 @@ export const EnhancedHypPaymentModal = ({
         setStatusCheckProgress(0)
         setShowReceipt(false)
         setReceiptUrl(null)
+        setErrorMessage(null)
+        setIsApiPermissionError(false)
       }, 300)
     }
   }, [open])
@@ -168,6 +172,10 @@ export const EnhancedHypPaymentModal = ({
       setIsLoading(true)
       setIframeError(false)
       setShowFallback(false)
+      setErrorMessage(null)
+      setIsApiPermissionError(false)
+
+      console.log("Initializing payment with amount:", amount)
 
       const paymentResponse = await EnhancedHypPaymentService.createSecurePayment({
         amount,
@@ -187,6 +195,8 @@ export const EnhancedHypPaymentModal = ({
         cancelUrl: `${window.location.origin}/payment/cancel`,
       })
 
+      console.log("Payment response received:", paymentResponse)
+
       setPaymentId(paymentResponse.id)
       setPaymentUrl(paymentResponse.paymentUrl || null)
       setSecretTransactionId(paymentResponse.secretTransactionId || null)
@@ -198,14 +208,22 @@ export const EnhancedHypPaymentModal = ({
       }
     } catch (error) {
       console.error("Failed to initialize payment:", error)
+
+      // Check for API permission error
+      if (error instanceof Error && error.message.includes("API_CLEARING")) {
+        setIsApiPermissionError(true)
+        setErrorMessage("חשבון ה-HYP שלך אינו מורשה לבצע תשלומים דרך ה-API. יש לפנות לתמיכה של HYP להפעלת התכונה.")
+      } else {
+        // Show generic error message
+        setShowFallback(true)
+        setErrorMessage(error instanceof Error ? error.message : "אירעה שגיאה בעת יצירת התשלום. נסה שנית.")
+      }
+
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה בעת יצירת התשלום. נסה שנית.",
+        description: error instanceof Error ? error.message : "אירעה שגיאה בעת יצירת התשלום. נסה שנית.",
         variant: "destructive",
       })
-
-      // Show fallback option when HYP fails
-      setShowFallback(true)
     } finally {
       setIsLoading(false)
     }
@@ -213,9 +231,11 @@ export const EnhancedHypPaymentModal = ({
 
   // Handle cancel
   const handleCancel = () => {
-    if (paymentId) {
-      EnhancedHypPaymentService.updatePaymentStatus(paymentId, "canceled")
-    }
+    // No need to update payment status in database since we're not saving pending payments
+    // Just clean up localStorage
+    localStorage.removeItem("hyp_transaction_id")
+    localStorage.removeItem("hyp_payment_id")
+    localStorage.removeItem("hyp_payment_details")
 
     // Stop any status checking
     if (statusCheckIntervalRef.current) {
@@ -250,6 +270,35 @@ export const EnhancedHypPaymentModal = ({
     setShowReceipt(true)
   }
 
+  // Render API permission error
+  const renderApiPermissionError = () => {
+    return (
+      <div className="flex flex-col items-center justify-center py-10">
+        <AlertTriangle className="h-16 w-16 text-amber-500 mb-4" />
+        <h3 className="text-xl font-semibold mb-2">שגיאת הרשאות HYP</h3>
+        <p className="text-center text-gray-600 mb-4">
+          {errorMessage || "חשבון ה-HYP שלך אינו מורשה לבצע תשלומים דרך ה-API. יש לפנות לתמיכה של HYP להפעלת התכונה."}
+        </p>
+        <div className="flex flex-col gap-3 items-center">
+          <p className="text-sm text-gray-500 mb-2">
+            יש לפנות לתמיכה של HYP ולבקש להפעיל את תכונת API_CLEARING בחשבון שלך.
+          </p>
+          <Button
+            variant="outline"
+            className="flex items-center"
+            onClick={() => window.open("https://www.hyp.co.il/contact", "_blank")}
+          >
+            <PhoneCall className="h-4 w-4 mr-2" />
+            פנה לתמיכה של HYP
+          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="mt-2">
+            סגור
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   // Render different UI based on status
   const renderContent = () => {
     if (isLoading) {
@@ -259,6 +308,10 @@ export const EnhancedHypPaymentModal = ({
           <p className="text-center text-gray-600">מכין את התשלום...</p>
         </div>
       )
+    }
+
+    if (isApiPermissionError) {
+      return renderApiPermissionError()
     }
 
     if (showReceipt && receiptUrl) {
@@ -300,7 +353,7 @@ export const EnhancedHypPaymentModal = ({
           <XCircle className="h-16 w-16 text-red-500 mb-4" />
           <h3 className="text-xl font-semibold mb-2">התשלום נכשל</h3>
           <p className="text-center text-gray-600 mb-4">
-            אירעה שגיאה בעת ביצוע התשלום. נסה שנית או בחר אמצעי תשלום אחר.
+            {errorMessage || "אירעה שגיאה בעת ביצוע התשלום. נסה שנית או בחר אמצעי תשלום אחר."}
           </p>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -318,7 +371,7 @@ export const EnhancedHypPaymentModal = ({
           <AlertTriangle className="h-16 w-16 text-amber-500 mb-4" />
           <h3 className="text-xl font-semibold mb-2">לא ניתן להתחבר למערכת HYP</h3>
           <p className="text-center text-gray-600 mb-4">
-            אירעה שגיאה בהתחברות למערכת התשלומים. אנא נסה שנית או בחר אמצעי תשלום אחר.
+            {errorMessage || "אירעה שגיאה בהתחברות למערכת התשלומים. אנא נסה שנית או בחר אמצעי תשלום אחר."}
           </p>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => onOpenChange(false)}>

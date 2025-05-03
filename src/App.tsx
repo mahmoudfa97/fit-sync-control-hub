@@ -29,6 +29,7 @@ import MembersReportsPage from "./components/reports/MembersReportsPage";
 import GeneralReportsPage from "./components/reports/GeneralReportsPage";
 import PaymentSuccessPage from "./components/payments/PaymentSuccessPage";
 import PaymentCancelPage from "./components/payments/PaymentCancelPage";
+import HypDocumentCreator from "./components/payments/createPayment";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const AppContent = () => {
           <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccessPage /></ProtectedRoute>} />
           <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancelPage /></ProtectedRoute>} />
           <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+          <Route path="/assets" element={<ProtectedRoute><HypDocumentCreator /></ProtectedRoute>} />
           
           {/* Reports routes */}
           <Route path="/reportscenter" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />

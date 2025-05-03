@@ -70,9 +70,14 @@ export const EnhancedHypPaymentService = {
     try {
       console.log("Creating secure HYP payment:", request)
 
-      // Call our Supabase Edge Function to get a secure payment URL
-      const { data, error } = await supabase.functions.invoke("hyp-create-payment", {
-        body: {
+      // Direct fetch to the Edge Function to bypass Supabase client issues
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyp-create-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
           amount: request.amount,
           currency: request.currency || "ILS",
           description: request.description || "מנוי למועדון כושר",
@@ -84,12 +89,28 @@ export const EnhancedHypPaymentService = {
           successUrl: request.successUrl || window.location.origin + "/payment/success",
           cancelUrl: request.cancelUrl || window.location.origin + "/payment/cancel",
           payments: request.payments || "1",
-        },
+        }),
       })
 
-      if (error) {
-        throw new Error(error.message || "שגיאה ביצירת תשלום")
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        console.error("Edge Function error response:", data)
+
+        // Handle specific HYP API errors
+        if (data.errNum === 200 && data.errMsg?.includes("API_CLEARING")) {
+          throw new Error("שגיאת הרשאות HYP: נדרש להפעיל את תכונת API_CLEARING. אנא פנה לתמיכה של HYP.")
+        }
+
+        throw new Error(data.errMsg || data.error || "שגיאה ביצירת תשלום")
       }
+
+      if (!data) {
+        console.error("No data returned from Edge Function")
+        throw new Error("No data returned from payment service")
+      }
+
+      console.log("Payment URL created successfully:", data)
 
       // Store the secretTransactionId in localStorage for validation later
       if (data.secretTransactionId) {
@@ -106,32 +127,11 @@ export const EnhancedHypPaymentService = {
       if (request.customerPhone) localStorage.setItem("customer_phone", request.customerPhone)
       if (request.description) localStorage.setItem("payment_description", request.description)
 
-      // Save initial payment record
-      await this.savePaymentRecord(
-        request.customerId || "",
-        {
-          id: paymentId,
-          status: "pending",
-          amount: request.amount,
-          currency: request.currency || "ILS",
-          paymentUrl: data.url,
-          createdAt: new Date().toISOString(),
-          secretTransactionId: data.secretTransactionId,
-          customerDetails: {
-            name: request.customerName,
-            email: request.customerEmail,
-            phone: request.customerPhone,
-          },
-        },
-        {
-          description: request.description,
-          metadata: request.metadata,
-        },
-      )
-
-      return {
+      // Create a payment response object but DON'T save to database yet
+      // We'll only save successful payments to the database
+      const paymentResponse = {
         id: paymentId,
-        status: "pending",
+        status: "pending" as const,
         amount: request.amount,
         currency: request.currency || "ILS",
         paymentUrl: data.url,
@@ -143,6 +143,28 @@ export const EnhancedHypPaymentService = {
           phone: request.customerPhone,
         },
       }
+
+      // Store payment details in localStorage for later use
+      localStorage.setItem(
+        "hyp_payment_details",
+        JSON.stringify({
+          id: paymentId,
+          customerId: request.customerId || "",
+          amount: request.amount,
+          currency: request.currency || "ILS",
+          description: request.description,
+          metadata: request.metadata,
+          createdAt: new Date().toISOString(),
+          secretTransactionId: data.secretTransactionId,
+          customerDetails: {
+            name: request.customerName,
+            email: request.customerEmail,
+            phone: request.customerPhone,
+          },
+        }),
+      )
+
+      return paymentResponse
     } catch (error) {
       console.error("Error creating secure HYP payment:", error)
       throw error
@@ -154,14 +176,25 @@ export const EnhancedHypPaymentService = {
    */
   async validatePayment(secretTransactionId: string): Promise<HypValidationResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke("hyp-validate-payment", {
-        body: {
-          secretTransactionId,
+      // Direct fetch to the Edge Function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyp-validate-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
+        body: JSON.stringify({ secretTransactionId }),
       })
 
-      if (error) {
-        throw new Error(error.message || "שגיאה באימות התשלום")
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        // Handle specific HYP API errors
+        if (data.errNum === 200 && data.errMsg?.includes("API_CLEARING")) {
+          throw new Error("שגיאת הרשאות HYP: נדרש להפעיל את תכונת API_CLEARING. אנא פנה לתמיכה של HYP.")
+        }
+
+        throw new Error(data.errMsg || data.error || "שגיאה באימות התשלום")
       }
 
       return data
@@ -184,16 +217,25 @@ export const EnhancedHypPaymentService = {
     description: string,
   ): Promise<HypReceiptResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke("hyp-create-receipt", {
-        body: {
-          validationData,
-          customerDetails,
-          description,
+      // Direct fetch to the Edge Function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyp-create-receipt`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
+        body: JSON.stringify({ validationData, customerDetails, description }),
       })
 
-      if (error) {
-        throw new Error(error.message || "שגיאה ביצירת קבלה")
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        // Handle specific HYP API errors
+        if (data.errNum === 200) {
+          throw new Error(`שגיאת HYP: ${data.errMsg}. אנא פנה לתמיכה של HYP.`)
+        }
+
+        throw new Error(data.errMsg || data.error || "שגיאה ביצירת קבלה")
       }
 
       return data
@@ -203,9 +245,7 @@ export const EnhancedHypPaymentService = {
     }
   },
 
-  /**
-   * Save payment record to Supabase
-   */
+  // Rest of the service methods remain unchanged
   async savePaymentRecord(memberId: string, paymentResponse: HypPaymentResponse, metadata: any = {}): Promise<string> {
     try {
       const paymentId = paymentResponse.id || uuidv4()
@@ -260,9 +300,6 @@ export const EnhancedHypPaymentService = {
     }
   },
 
-  /**
-   * Update payment status in Supabase
-   */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
     try {
       const { error } = await supabase
@@ -283,9 +320,6 @@ export const EnhancedHypPaymentService = {
     }
   },
 
-  /**
-   * Handle payment success callback
-   */
   async handlePaymentSuccess(
     secretTransactionId: string,
     paymentId: string,
@@ -308,10 +342,37 @@ export const EnhancedHypPaymentService = {
         throw new Error("Payment validation failed")
       }
 
+      // Get stored payment details from localStorage
+      const paymentDetailsStr = localStorage.getItem("hyp_payment_details")
+      if (!paymentDetailsStr) {
+        throw new Error("Payment details not found")
+      }
+
+      const paymentDetails = JSON.parse(paymentDetailsStr)
+
+      // NOW save the payment record to the database since it was successful
+      await this.savePaymentRecord(
+        paymentDetails.customerId || "",
+        {
+          id: paymentId,
+          status: "completed",
+          amount: paymentDetails.amount,
+          currency: paymentDetails.currency || "ILS",
+          createdAt: paymentDetails.createdAt,
+          secretTransactionId: secretTransactionId,
+          customerDetails: paymentDetails.customerDetails,
+          transactionId: validationData.cgp_ksys_transacion_id,
+        },
+        {
+          description: paymentDetails.description,
+          metadata: paymentDetails.metadata,
+        },
+      )
+
       // Generate receipt
       const receiptResponse = await this.generateReceipt(validationData, customerDetails, description)
 
-      // Update payment status
+      // Update payment with receipt info
       await this.updatePaymentStatus(paymentId, "paid", {
         payment_details: {
           validation_data: validationData,
@@ -321,6 +382,9 @@ export const EnhancedHypPaymentService = {
         },
       })
 
+      // Clear the stored payment details
+      localStorage.removeItem("hyp_payment_details")
+
       return {
         success: true,
         receiptUrl: receiptResponse.doc_url,
@@ -328,16 +392,13 @@ export const EnhancedHypPaymentService = {
       }
     } catch (error) {
       console.error("Error handling payment success:", error)
-      await this.updatePaymentStatus(paymentId, "failed", {
-        error_message: error.message,
-      })
+
+      // Don't update payment status in the database since we're not saving failed payments
+
       throw error
     }
   },
 
-  /**
-   * Get payment receipt URL
-   */
   async getReceiptUrl(paymentId: string): Promise<string | null> {
     try {
       const { data, error } = await supabase.from("payments").select("payment_details").eq("id", paymentId).single()
@@ -353,9 +414,6 @@ export const EnhancedHypPaymentService = {
     }
   },
 
-  /**
-   * Get member's payment history
-   */
   async getMemberPayments(memberId: string): Promise<any[]> {
     try {
       const { data, error } = await supabase
@@ -375,9 +433,6 @@ export const EnhancedHypPaymentService = {
     }
   },
 
-  /**
-   * Get payment details by ID
-   */
   async getPaymentById(paymentId: string): Promise<HypPaymentResponse | null> {
     try {
       const { data, error } = await supabase.from("payments").select("*").eq("id", paymentId).single()
