@@ -62,10 +62,15 @@ export const HypDatabase = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
     try {
-      const updateData = {
+      // Create update object with explicit typing to avoid TypeScript issues
+      const updateData: Record<string, any> = {
         status,
         updated_at: new Date().toISOString(),
-        ...additionalData,
+      }
+
+      // Add additional data properties individually to avoid type inference issues
+      for (const [key, value] of Object.entries(additionalData)) {
+        updateData[key] = value
       }
 
       const { error } = await supabase
