@@ -161,7 +161,7 @@ export const HypPaymentService = {
         status: paymentResponse.status === "completed" ? "paid" : "pending",
         description: metadata.description || "תשלום באמצעות HYP",
         receipt_number: receiptNumber,
-        payment_details: fullMetadata,
+        payment_details: fullMetadata as any,
       })
 
       if (error) {
@@ -229,14 +229,16 @@ export const HypPaymentService = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
     try {
-      // Update main payments table
+      // Update main payments table - simplified to avoid type issues
+      const updateData: Record<string, any> = {
+        status,
+        updated_at: new Date().toISOString(),
+        ...additionalData,
+      }
+
       const { error } = await supabase
         .from("payments")
-        .update({
-          status,
-          ...additionalData,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", paymentId)
 
       if (error) {
