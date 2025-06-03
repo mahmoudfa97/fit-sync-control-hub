@@ -62,16 +62,14 @@ export const HypDatabase = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
     try {
-      // Create update object with explicit typing to avoid TypeScript issues
-      const updateData: Record<string, any> = {
-        status,
+      // Build update object step by step to avoid type inference issues
+      const baseUpdate = {
+        status: status,
         updated_at: new Date().toISOString(),
       }
 
-      // Add additional data properties individually to avoid type inference issues
-      for (const [key, value] of Object.entries(additionalData)) {
-        updateData[key] = value
-      }
+      // Merge additional data using Object.assign to avoid spreading issues
+      const updateData = Object.assign(baseUpdate, additionalData)
 
       const { error } = await supabase
         .from("payments")
