@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +8,8 @@ import { Provider } from "react-redux";
 import { store } from "@/store";
 import { useLanguage } from "@/hooks/useLanguage";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import React from 'react'; // Import React
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
+import React from 'react';
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -33,7 +35,6 @@ import HypDocumentCreator from "./components/payments/createPayment";
 
 const queryClient = new QueryClient();
 
-// Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { session, isLoading } = useAuth();
   
@@ -48,9 +49,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
-// Create a wrapper component to use hooks
 const AppContent = () => {
-  // Initialize language
   useLanguage();
   
   return (
@@ -70,7 +69,6 @@ const AppContent = () => {
           <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
           <Route path="/assets" element={<ProtectedRoute><HypDocumentCreator /></ProtectedRoute>} />
           
-          {/* Reports routes */}
           <Route path="/reportscenter" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
           <Route path="/reports/finance" element={<ProtectedRoute><FinanceReportsPage /></ProtectedRoute>} />
           <Route path="/reports/members" element={<ProtectedRoute><MembersReportsPage /></ProtectedRoute>} />
@@ -93,7 +91,9 @@ const App = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppContent />
+        <OrganizationProvider>
+          <AppContent />
+        </OrganizationProvider>
       </AuthProvider>
     </QueryClientProvider>
   </Provider>

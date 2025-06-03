@@ -1,4 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client"
+import { WhatsAppConfigService } from './WhatsAppConfigService'
 
 interface WhatsAppTemplate {
   id: string
@@ -16,25 +18,35 @@ interface MessageResponse {
 }
 
 export const WhatsAppService = {
-  /**
-   * Get all WhatsApp message templates
-   */
-  async getTemplates(): Promise<WhatsAppTemplate[]> {
-    try {
-      console.log("Fetching WhatsApp templates from Edge Function...")
+  async getConfig(organizationId: string) {
+    return await WhatsAppConfigService.getConfig(organizationId)
+  },
 
-      // Call the Edge Function to get templates
-      const { data, error } = await supabase.functions.invoke("get-whatsapp-templates")
+  async getTemplates(organizationId: string): Promise<WhatsAppTemplate[]> {
+    try {
+      console.log("Fetching WhatsApp templates for organization:", organizationId)
+
+      const config = await this.getConfig(organizationId)
+      if (!config || !config.access_token || !config.phone_number_id) {
+        console.log("WhatsApp not configured for organization, returning mock templates")
+        return this.getMockTemplates()
+      }
+
+      const { data, error } = await supabase.functions.invoke("get-whatsapp-templates", {
+        body: { 
+          organizationId,
+          phoneNumberId: config.phone_number_id,
+          accessToken: config.access_token
+        }
+      })
 
       if (error) {
         console.error("Error invoking Edge Function:", error)
-        throw error
+        return this.getMockTemplates()
       }
 
       if (!data || !data.templates) {
         console.error("Invalid response from Edge Function:", data)
-
-        // If we can't get real templates, return mock data for development
         return this.getMockTemplates()
       }
 
@@ -42,16 +54,10 @@ export const WhatsAppService = {
       return data.templates
     } catch (error) {
       console.error("Error fetching WhatsApp templates:", error)
-
-      // Return mock templates as fallback
-      console.log("Returning mock templates as fallback")
       return this.getMockTemplates()
     }
   },
 
-  /**
-   * Get mock templates for development/testing
-   */
   getMockTemplates(): WhatsAppTemplate[] {
     return [
       {
@@ -64,16 +70,12 @@ export const WhatsAppService = {
             type: "HEADER",
             format: "TEXT",
             text: "تذكير بدفع الاشتراك",
-            example: {
-              variables: [],
-            },
+            example: { variables: [] },
           },
           {
             type: "BODY",
             text: "مرحباً {{1}}،\n\nهذا تذكير بأن الدفعة المستحقة لاشتراكك بقيمة {{2}} شيكل ستتم في تاريخ {{3}}.\n\nللاستفسارات، يرجى التواصل مع فريق النادي.",
-            example: {
-              variables: ["محمد", "250", "01/06/2023"],
-            },
+            example: { variables: ["محمد", "250", "01/06/2023"] },
           },
         ],
         language: "ar",
@@ -88,16 +90,12 @@ export const WhatsAppService = {
             type: "HEADER",
             format: "TEXT",
             text: "اشتراكك على وشك الانتهاء",
-            example: {
-              variables: [],
-            },
+            example: { variables: [] },
           },
           {
             type: "BODY",
             text: "مرحباً {{1}}،\n\nاشتراكك في النادي الرياضي على وشك الانتهاء في تاريخ {{2}}.\n\nلتجديد اشتراكك، يرجى زيارة النادي أو الاتصال بنا على الرقم {{3}}.",
-            example: {
-              variables: ["محمد", "15/06/2023", "03-1234567"],
-            },
+            example: { variables: ["محمد", "15/06/2023", "03-1234567"] },
           },
         ],
         language: "ar",
@@ -112,16 +110,12 @@ export const WhatsAppService = {
             type: "HEADER",
             format: "TEXT",
             text: "تذكير بالحصة غداً",
-            example: {
-              variables: [],
-            },
+            example: { variables: [] },
           },
           {
             type: "BODY",
             text: "مرحباً {{1}}،\n\nهذا تذكير بحصة {{2}} التي سجلت فيها غداً في الساعة {{3}}.\n\nنتطلع لرؤيتك!",
-            example: {
-              variables: ["محمد", "يوغا", "18:00"],
-            },
+            example: { variables: ["محمد", "يوغا", "18:00"] },
           },
         ],
         language: "ar",
@@ -129,19 +123,23 @@ export const WhatsAppService = {
     ]
   },
 
-  /**
-   * Send a direct WhatsApp message
-   * Note: Direct messages can only be sent within a 24-hour window after the customer's last message
-   * or if the customer has opted in to receive messages
-   */
-  async sendDirectMessage(phoneNumber: string, message: string): Promise<MessageResponse> {
+  async sendDirectMessage(organizationId: string, phoneNumber: string, message: string): Promise<MessageResponse> {
     try {
-      // Format phone number (remove spaces, ensure it starts with country code)
+      const config = await this.getConfig(organizationId)
+      if (!config || !config.access_token || !config.phone_number_id) {
+        throw new Error('WhatsApp not configured for this organization')
+      }
+
       const formattedPhone = this.formatPhoneNumber(phoneNumber)
 
-      // Call the Edge Function to send the message
       const { data, error } = await supabase.functions.invoke("send-whatsapp-message", {
-        body: { phoneNumber: formattedPhone, message },
+        body: { 
+          organizationId,
+          phoneNumber: formattedPhone, 
+          message,
+          phoneNumberId: config.phone_number_id,
+          accessToken: config.access_token
+        },
       })
 
       if (error) {
@@ -149,7 +147,9 @@ export const WhatsAppService = {
         throw error
       }
 
-      // Return the response from the WhatsApp API
+      // Store outgoing message
+      await this.storeOutgoingMessage(organizationId, formattedPhone, message, 'direct')
+
       return {
         id: data.messages?.[0]?.id || `msg_${Date.now()}`,
         status: "sent",
@@ -161,21 +161,29 @@ export const WhatsAppService = {
     }
   },
 
-  /**
-   * Send a template WhatsApp message
-   */
   async sendTemplateMessage(
+    organizationId: string,
     phoneNumber: string,
     templateId: string,
     variables: Record<string, string>,
   ): Promise<MessageResponse> {
     try {
-      // Format phone number
+      const config = await this.getConfig(organizationId)
+      if (!config || !config.access_token || !config.phone_number_id) {
+        throw new Error('WhatsApp not configured for this organization')
+      }
+
       const formattedPhone = this.formatPhoneNumber(phoneNumber)
 
-      // Call the Edge Function to send the template message
       const { data, error } = await supabase.functions.invoke("send-whatsapp-template", {
-        body: { phoneNumber: formattedPhone, templateId, variables },
+        body: { 
+          organizationId,
+          phoneNumber: formattedPhone, 
+          templateId, 
+          variables,
+          phoneNumberId: config.phone_number_id,
+          accessToken: config.access_token
+        },
       })
 
       if (error) {
@@ -183,7 +191,9 @@ export const WhatsAppService = {
         throw error
       }
 
-      // Return the response from the WhatsApp API
+      // Store outgoing message
+      await this.storeOutgoingMessage(organizationId, formattedPhone, `Template: ${templateId}`, 'template', templateId, variables)
+
       return {
         id: data.messages?.[0]?.id || `msg_${Date.now()}`,
         status: "sent",
@@ -195,19 +205,42 @@ export const WhatsAppService = {
     }
   },
 
-  /**
-   * Format phone number to international format
-   */
+  async storeOutgoingMessage(
+    organizationId: string,
+    recipient: string,
+    content: string,
+    messageType: string,
+    templateId?: string,
+    templateVariables?: Record<string, string>
+  ) {
+    try {
+      const { error } = await supabase
+        .from("whatsapp_outgoing_messages")
+        .insert({
+          recipient,
+          content,
+          message_type: messageType,
+          template_id: templateId,
+          template_variables: templateVariables,
+          status: 'sent',
+          timestamp: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error("Error storing outgoing message:", error)
+      }
+    } catch (error) {
+      console.error("Error storing outgoing message:", error)
+    }
+  },
+
   formatPhoneNumber(phoneNumber: string): string {
-    // Remove any non-digit characters
     let cleaned = phoneNumber.replace(/\D/g, "")
 
-    // Ensure it starts with country code (default to Israel +972)
     if (cleaned.startsWith("0")) {
       cleaned = "972" + cleaned.substring(1)
     }
 
-    // If no country code, assume Israel
     if (!cleaned.startsWith("972") && !cleaned.startsWith("1")) {
       cleaned = "972" + cleaned
     }
@@ -215,12 +248,8 @@ export const WhatsAppService = {
     return cleaned
   },
 
-  /**
-   * Get message status
-   */
   async getMessageStatus(messageId: string): Promise<string> {
     try {
-      // Query the database for message status
       const { data, error } = await supabase
         .from("whatsapp_message_statuses")
         .select("status")
@@ -241,12 +270,8 @@ export const WhatsAppService = {
     }
   },
 
-  /**
-   * Get recent messages for a member
-   */
   async getMemberMessages(memberId: string, limit = 10): Promise<any[]> {
     try {
-      // First get the member's phone number
       const { data: memberData, error: memberError } = await supabase
         .from("custom_members")
         .select("phone")
@@ -260,7 +285,6 @@ export const WhatsAppService = {
 
       const phoneNumber = this.formatPhoneNumber(memberData.phone)
 
-      // Get outgoing messages
       const { data: outgoingData, error: outgoingError } = await supabase
         .from("whatsapp_outgoing_messages")
         .select("*")
@@ -273,7 +297,6 @@ export const WhatsAppService = {
         return []
       }
 
-      // Get incoming messages - match by formatted phone number
       const { data: incomingData, error: incomingError } = await supabase
         .from("whatsapp_incoming_messages")
         .select("*")
@@ -286,7 +309,6 @@ export const WhatsAppService = {
         return []
       }
 
-      // Combine and sort messages
       const allMessages = [
         ...(outgoingData || []).map((msg) => ({
           ...msg,
@@ -305,14 +327,8 @@ export const WhatsAppService = {
     }
   },
 
-  /**
-   * Check if a member has opted in to receive WhatsApp messages
-   * Note: This is a simplified version since the opt-in field doesn't exist
-   */
   async checkMemberOptIn(memberId: string): Promise<boolean> {
     try {
-      // Since the whatsapp_opt_in field doesn't exist, we'll assume all members are opted in
-      // You may want to add this field to your custom_members table in the future
       return true
     } catch (error) {
       console.error("Error checking member opt-in status:", error)
@@ -320,14 +336,8 @@ export const WhatsAppService = {
     }
   },
 
-  /**
-   * Update member opt-in status
-   * Note: This is a placeholder since the opt-in field doesn't exist
-   */
   async updateMemberOptIn(memberId: string, optIn: boolean): Promise<boolean> {
     try {
-      // Since the whatsapp_opt_in field doesn't exist, this is a no-op
-      // You may want to add this field to your custom_members table in the future
       console.log(`Member ${memberId} opt-in status would be set to ${optIn}`)
       return true
     } catch (error) {
