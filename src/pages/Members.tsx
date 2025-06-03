@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { MembersHeader } from "@/components/members/MembersHeader";
 import { MemberList } from "@/components/members/MemberList";
 import { AddMemberDialog } from "@/components/members/AddMemberDialog";
-import { EnhancedAddSubscriptionDialog } from "@/components/members/EnhancedAddSubscriptionDialog";
+import EnhancedAddSubscriptionDialog from "@/components/members/EnhancedAddSubscriptionDialog";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { MemberService, MemberFormData } from "@/services/MemberService";
@@ -20,6 +20,9 @@ export default function Members() {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedMemberName, setSelectedMemberName] = useState<string>("");
+  const [selectedMemberEmail, setSelectedMemberEmail] = useState<string>("");
+  const [selectedMemberPhone, setSelectedMemberPhone] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,8 +70,14 @@ export default function Members() {
   };
 
   const handleAddSubscription = (memberId: string) => {
-    setSelectedMemberId(memberId);
-    setIsSubscriptionDialogOpen(true);
+    const member = members.find(m => m.id === memberId);
+    if (member) {
+      setSelectedMemberId(memberId);
+      setSelectedMemberName(member.name);
+      setSelectedMemberEmail(member.email || "");
+      setSelectedMemberPhone(member.phone || "");
+      setIsSubscriptionDialogOpen(true);
+    }
   };
 
   const handleCheckIn = async (memberId: string) => {
@@ -122,6 +131,9 @@ export default function Members() {
             open={isSubscriptionDialogOpen}
             onOpenChange={setIsSubscriptionDialogOpen}
             memberId={selectedMemberId}
+            memberName={selectedMemberName}
+            memberEmail={selectedMemberEmail}
+            memberPhone={selectedMemberPhone}
             onSuccess={() => {
               setIsSubscriptionDialogOpen(false);
               setSelectedMemberId(null);

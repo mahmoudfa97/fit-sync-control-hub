@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-interface Payment {
+export interface Payment {
   id: string;
   amount: number;
   payment_method: string;
@@ -9,6 +9,29 @@ interface Payment {
   payment_date: string;
   member_id: string;
   description?: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  user_id: string;
+  payment_type: string;
+  provider?: string;
+  last_four?: string;
+  card_holder_name?: string;
+  expiry_date?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentMethodFormData {
+  paymentType: 'card' | 'bank' | 'other';
+  cardNumber?: string;
+  expiryDate?: string;
+  cvv?: string;
+  cardHolderName?: string;
+  provider?: string;
+  isDefault: boolean;
 }
 
 export const PaymentService = {
@@ -39,6 +62,30 @@ export const PaymentService = {
       return data;
     } catch (error) {
       console.error('Error creating payment:', error);
+      throw error;
+    }
+  },
+
+  async addPaymentMethod(paymentMethodData: PaymentMethodFormData): Promise<PaymentMethod> {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .insert([{
+          user_id: 'temp-user-id', // This should be replaced with actual user ID
+          payment_type: paymentMethodData.paymentType,
+          provider: paymentMethodData.provider,
+          last_four: paymentMethodData.cardNumber?.slice(-4),
+          card_holder_name: paymentMethodData.cardHolderName,
+          expiry_date: paymentMethodData.expiryDate,
+          is_default: paymentMethodData.isDefault,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error adding payment method:', error);
       throw error;
     }
   }

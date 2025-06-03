@@ -1,80 +1,70 @@
-"use client"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { DashboardShell } from "@/components/layout/DashboardShell";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
-import { useState, useEffect } from "react"
-import { DashboardShell } from "@/components/layout/DashboardShell"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ChevronDown, Send, Loader2 } from "lucide-react"
-import { t } from "@/utils/translations"
-import { supabase } from "@/integrations/supabase/client"
-
-// Define types for settings
 interface WorkingHours {
-  weekdays: string
-  weekends: string
-}
-
-interface BusinessInfo {
-  taxNumber: string
-  commercialRegister: string
-}
-
-interface PrivacySettings {
-  shareData: boolean
-  membersCanSeeOthers: boolean
-  publicProfile: boolean
+  weekdays: string;
+  weekends: string;
 }
 
 interface Notifications {
-  email: boolean
-  sms: boolean
-  app: boolean
+  email: boolean;
+  sms: boolean;
+  app: boolean;
+}
+
+interface BusinessInfo {
+  taxNumber: string;
+  commercialRegister: string;
+  [key: string]: Json;
+}
+
+interface PrivacySettings {
+  shareData: boolean;
+  membersCanSeeOthers: boolean;
+  publicProfile: boolean;
 }
 
 interface SmsSettings {
-  provider: string
-  apiKey: string
-  apiSecret: string
-  fromNumber: string
-  testMessage: string
+  provider: string;
+  apiKey: string;
+  apiSecret: string;
+  fromNumber: string;
+  testMessage: string;
 }
 
 interface Settings {
-  id?: string
-  gymName: string
-  email: string
-  phone: string
-  language: string
-  address: string
-  workingHours: WorkingHours
-  notifications: Notifications
-  memberReminders: boolean
-  autoRenewals: boolean
-  businessInfo: BusinessInfo
-  taxRate: number
-  privacySettings: PrivacySettings
-  backupFrequency: string
-  smsSettings: SmsSettings
-  organizationId?: string
-  created_at?: string
-  updated_at?: string
+  id: string;
+  gymName: string;
+  email: string;
+  phone: string;
+  language: string;
+  address: string;
+  workingHours: WorkingHours;
+  notifications: Notifications;
+  memberReminders: boolean;
+  autoRenewals: boolean;
+  businessInfo: BusinessInfo;
+  taxRate: number;
+  privacySettings: PrivacySettings;
+  smsSettings: SmsSettings;
+  backupFrequency: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Default settings
 const defaultSettings: Settings = {
+  id: "",
   gymName: "",
   email: "",
   phone: "",
@@ -101,575 +91,495 @@ const defaultSettings: Settings = {
     membersCanSeeOthers: false,
     publicProfile: true
   },
-  backupFrequency: "weekly",
   smsSettings: {
     provider: "twilio",
     apiKey: "",
     apiSecret: "",
     fromNumber: "",
     testMessage: "This is a test message from your gym management system."
-  }
+  },
+  backupFrequency: "weekly",
+  createdAt: "",
+  updatedAt: ""
 };
 
-// Fetch settings from Supabase
-async function fetchSettings() {
-  const organizationId = "spartagymfiras"
-
-  const { data, error } = await supabase
-    .from("settings")
-    .select("*")
-    .eq("organization_id", organizationId)
-    .single()
-
-  if (error) {
-    console.error("Error fetching settings:", error)
-    return null
-  }
-
-  return data
-}
-
 export default function Settings() {
-  const [settings, setSettings] = useState<Settings>(defaultSettings)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [sendingTest, setSendingTest] = useState(false)
-  const [activeTab, setActiveTab] = useState("general")
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    async function loadSettings() {
-      const data = await fetchSettings()
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
 
       if (data) {
-        const formattedData: Settings = {
+        const loadedSettings: Settings = {
           id: data.id,
           gymName: data.gym_name || "",
           email: data.email || "",
           phone: data.phone || "",
           language: data.language || "he",
           address: data.address || "",
-          workingHours: typeof data.working_hours === 'object' && data.working_hours ? 
-            data.working_hours as WorkingHours : defaultSettings.workingHours,
-          notifications: typeof data.notifications === 'object' && data.notifications ? 
-            data.notifications as Notifications : defaultSettings.notifications,
-          memberReminders: data.member_reminders || false,
-          autoRenewals: data.auto_renewals || false,
-          businessInfo: typeof data.business_info === 'object' && data.business_info ? 
-            data.business_info as BusinessInfo : defaultSettings.businessInfo,
+          workingHours: (data.working_hours as unknown as WorkingHours) || defaultSettings.workingHours,
+          notifications: (data.notifications as unknown as Notifications) || defaultSettings.notifications,
+          memberReminders: data.member_reminders ?? true,
+          autoRenewals: data.auto_renewals ?? false,
+          businessInfo: (data.business_info as unknown as BusinessInfo) || defaultSettings.businessInfo,
           taxRate: data.tax_rate || 17,
-          privacySettings: typeof data.privacy_settings === 'object' && data.privacy_settings ? 
-            data.privacy_settings as PrivacySettings : defaultSettings.privacySettings,
+          privacySettings: (data.privacy_settings as unknown as PrivacySettings) || defaultSettings.privacySettings,
+          smsSettings: (data.sms_settings as unknown as SmsSettings) || defaultSettings.smsSettings,
           backupFrequency: data.backup_frequency || "weekly",
-          smsSettings: typeof data.sms_settings === 'object' && data.sms_settings ? 
-            data.sms_settings as SmsSettings : defaultSettings.smsSettings,
-          organizationId: data.organization_id || "",
-          created_at: data.created_at || "",
-          updated_at: data.updated_at || "",
-        }
-        setSettings(formattedData)
+          createdAt: data.created_at || "",
+          updatedAt: data.updated_at || ""
+        };
+        setSettings(loadedSettings);
       }
-      setLoading(false)
+    } catch (error) {
+      console.error("Error loading settings:", error);
+      toast.error("שגיאה בטעינת ההגדרות");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    loadSettings()
-  }, [])
-
-  // Handle input changes
-  const handleInputChange = (field: string, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  // Handle nested changes
-  const handleNestedChange = <
-  Parent extends keyof Settings,
-  Field extends keyof Settings[Parent]
->(
-  parent: Parent,
-  field: Field,
-  value: Settings[Parent][Field]
-) => {
-  setSettings((prev) => ({
-    ...prev,
-    [parent]: {
-      ...(typeof prev[parent] === "object" && prev[parent] !== null ? prev[parent] : {}),
-      [field]: value,
-    },
-  }));
-};
-
-  // Save settings to Supabase
   const saveSettings = async () => {
     try {
-      setSaving(true)
-
-      const organizationId = "spartagymfiras"
-
-      const settingsToSave = {
-        organization_id: organizationId,
+      setSaving(true);
+      
+      const settingsData = {
+        organization_id: "default",
         gym_name: settings.gymName,
         email: settings.email,
         phone: settings.phone,
         language: settings.language,
         address: settings.address,
-        working_hours: settings.workingHours,
-        notifications: settings.notifications,
+        working_hours: settings.workingHours as Json,
+        notifications: settings.notifications as Json,
         member_reminders: settings.memberReminders,
         auto_renewals: settings.autoRenewals,
-        business_info: settings.businessInfo,
+        business_info: settings.businessInfo as Json,
         tax_rate: settings.taxRate,
-        privacy_settings: settings.privacySettings,
+        privacy_settings: settings.privacySettings as Json,
+        sms_settings: settings.smsSettings as Json,
         backup_frequency: settings.backupFrequency,
-        sms_settings: settings.smsSettings,
-        updated_at: new Date().toISOString(),
-      }
+        updated_at: new Date().toISOString()
+      };
 
-      const { data: existingData, error: checkError } = await supabase
-        .from("settings")
-        .select("id")
-        .eq("organization_id", organizationId)
-        .maybeSingle()
-
-      if (checkError && checkError.code !== "PGRST116") {
-        throw checkError
-      }
-
-      let result
-
-      if (existingData?.id) {
-        result = await supabase.from("settings").update(settingsToSave).eq("id", existingData.id).select()
+      let result;
+      if (settings.id) {
+        result = await supabase
+          .from("settings")
+          .update(settingsData)
+          .eq("id", settings.id);
       } else {
         result = await supabase
           .from("settings")
-          .insert({
-            ...settingsToSave,
-            created_at: new Date().toISOString(),
-          })
-          .select()
+          .insert([{ ...settingsData, created_at: new Date().toISOString() }]);
       }
 
-      if (result.error) {
-        throw result.error
-      }
+      if (result.error) throw result.error;
 
-      toast.success(t("settingsSaved"))
+      toast.success("ההגדרות נשמרו בהצלחה");
+      await loadSettings();
     } catch (error) {
-      console.error("Error saving settings:", error)
-      toast.error(t("errorSavingSettings"))
+      console.error("Error saving settings:", error);
+      toast.error("שגיאה בשמירת ההגדרות");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <DashboardShell>
-        <div className="flex items-center justify-center h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>טוען הגדרות...</p>
+          </div>
         </div>
       </DashboardShell>
-    )
+    );
   }
 
   return (
     <DashboardShell>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("settings")}</h1>
-          <p className="text-muted-foreground">{t("settingsDesc")}</p>
+          <h1 className="text-3xl font-bold">הגדרות</h1>
+          <p className="text-muted-foreground">נהל את הגדרות המערכת שלך</p>
         </div>
-        <Button onClick={saveSettings} disabled={saving}>
-          {saving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t("saving")}
-            </>
-          ) : (
-            t("saveSettings")
-          )}
-        </Button>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="flex flex-wrap">
-          <TabsTrigger value="general">{t("general")}</TabsTrigger>
-          <TabsTrigger value="notifications">{t("notifications")}</TabsTrigger>
-          <TabsTrigger value="business">{t("businessInfo")}</TabsTrigger>
-          <TabsTrigger value="privacy">{t("privacyAndSecurity")}</TabsTrigger>
-          <TabsTrigger value="system">{t("system")}</TabsTrigger>
-          <TabsTrigger value="sms">{t("smsProvider")}</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="general" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="general">כללי</TabsTrigger>
+            <TabsTrigger value="notifications">התראות</TabsTrigger>
+            <TabsTrigger value="business">עסק</TabsTrigger>
+            <TabsTrigger value="privacy">פרטיות</TabsTrigger>
+            <TabsTrigger value="sms">SMS</TabsTrigger>
+            <TabsTrigger value="backup">גיבוי</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("basicInfo")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="gymName">{t("gymName")}</Label>
-                  <Input
-                    id="gymName"
-                    value={settings.gymName}
-                    onChange={(e) => handleInputChange("gymName", e.target.value)}
-                  />
+          <TabsContent value="general">
+            <Card>
+              <CardHeader>
+                <CardTitle>הגדרות כלליות</CardTitle>
+                <CardDescription>הגדר את פרטי העסק הבסיסיים</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="gymName">שם החדר כושר</Label>
+                    <Input
+                      id="gymName"
+                      value={settings.gymName}
+                      onChange={(e) => setSettings({...settings, gymName: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="language">שפה</Label>
+                    <Select value={settings.language} onValueChange={(value) => setSettings({...settings, language: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="he">עברית</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">{t("email")}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={settings.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">{t("phone")}</Label>
-                  <Input
-                    id="phone"
-                    value={settings.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="language">{t("language")}</Label>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
-                        {settings.language === "he" ? "עברית" : "English"}
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56">
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={() => handleInputChange("language", "he")}>עברית</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleInputChange("language", "en")}>English</DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="address">{t("address")}</Label>
-                <Textarea
-                  id="address"
-                  value={settings.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("workingHours")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weekdays">{t("weekdays")}</Label>
-                  <Input
-                    id="weekdays"
-                    value={settings.workingHours.weekdays}
-                    onChange={(e) => handleNestedChange("workingHours", "weekdays", e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email">אימייל</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={settings.email}
+                      onChange={(e) => setSettings({...settings, email: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">טלפון</Label>
+                    <Input
+                      id="phone"
+                      value={settings.phone}
+                      onChange={(e) => setSettings({...settings, phone: e.target.value})}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weekends">{t("weekends")}</Label>
-                  <Input
-                    id="weekends"
-                    value={settings.workingHours.weekends}
-                    onChange={(e) => handleNestedChange("workingHours", "weekends", e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("notificationSettings")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("emailNotifications")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("receiveEmailNotifications")}</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.email}
-                  onCheckedChange={(value) => handleNestedChange("notifications", "email", value)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("smsNotifications")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("receiveSmsNotifications")}</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.sms}
-                  onCheckedChange={(value) => handleNestedChange("notifications", "sms", value)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("appNotifications")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("receiveAppNotifications")}</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.app}
-                  onCheckedChange={(value) => handleNestedChange("notifications", "app", value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("membershipReminders")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("expiryReminders")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("sendRemindersBeforeExpiry")}</p>
-                </div>
-                <Switch
-                  checked={settings.memberReminders}
-                  onCheckedChange={(value) => handleInputChange("memberReminders", value)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("autoRenewals")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("renewMembershipsAutomatically")}</p>
-                </div>
-                <Switch
-                  checked={settings.autoRenewals}
-                  onCheckedChange={(value) => handleInputChange("autoRenewals", value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="business" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("businessInfo")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="taxNumber">{t("taxNumber")}</Label>
-                  <Input
-                    id="taxNumber"
-                    value={settings.businessInfo.taxNumber}
-                    onChange={(e) => handleNestedChange("businessInfo", "taxNumber", e.target.value)}
+                <div>
+                  <Label htmlFor="address">כתובת</Label>
+                  <Textarea
+                    id="address"
+                    value={settings.address}
+                    onChange={(e) => setSettings({...settings, address: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="commercialRegister">{t("commercialRegister")}</Label>
-                  <Input
-                    id="commercialRegister"
-                    value={settings.businessInfo.commercialRegister}
-                    onChange={(e) => handleNestedChange("businessInfo", "commercialRegister", e.target.value)}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="weekdays">שעות פעילות - ימי חול</Label>
+                    <Input
+                      id="weekdays"
+                      value={settings.workingHours.weekdays}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        workingHours: {...settings.workingHours, weekdays: e.target.value}
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="weekends">שעות פעילות - סופי שבוע</Label>
+                    <Input
+                      id="weekends"
+                      value={settings.workingHours.weekends}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        workingHours: {...settings.workingHours, weekends: e.target.value}
+                      })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle>הגדרות התראות</CardTitle>
+                <CardDescription>בחר איך תרצה לקבל התראות</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-notifications">התראות אימייל</Label>
+                  <Switch
+                    id="email-notifications"
+                    checked={settings.notifications.email}
+                    onCheckedChange={(checked) => setSettings({
+                      ...settings,
+                      notifications: {...settings.notifications, email: checked}
+                    })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="taxRate">{t("taxRate")}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="sms-notifications">התראות SMS</Label>
+                  <Switch
+                    id="sms-notifications"
+                    checked={settings.notifications.sms}
+                    onCheckedChange={(checked) => setSettings({
+                      ...settings,
+                      notifications: {...settings.notifications, sms: checked}
+                    })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="app-notifications">התראות אפליקציה</Label>
+                  <Switch
+                    id="app-notifications"
+                    checked={settings.notifications.app}
+                    onCheckedChange={(checked) => setSettings({
+                      ...settings,
+                      notifications: {...settings.notifications, app: checked}
+                    })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="member-reminders">תזכורות לחברים</Label>
+                  <Switch
+                    id="member-reminders"
+                    checked={settings.memberReminders}
+                    onCheckedChange={(checked) => setSettings({...settings, memberReminders: checked})}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="auto-renewals">חידושים אוטומטיים</Label>
+                  <Switch
+                    id="auto-renewals"
+                    checked={settings.autoRenewals}
+                    onCheckedChange={(checked) => setSettings({...settings, autoRenewals: checked})}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="business">
+            <Card>
+              <CardHeader>
+                <CardTitle>פרטי עסק</CardTitle>
+                <CardDescription>הגדר את פרטי העסק למסמכים רשמיים</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="taxNumber">מספר עוסק מורשה</Label>
+                    <Input
+                      id="taxNumber"
+                      value={settings.businessInfo.taxNumber}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        businessInfo: {...settings.businessInfo, taxNumber: e.target.value}
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="commercialRegister">רישום מסחרי</Label>
+                    <Input
+                      id="commercialRegister"
+                      value={settings.businessInfo.commercialRegister}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        businessInfo: {...settings.businessInfo, commercialRegister: e.target.value}
+                      })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="taxRate">אחוז מס (%)</Label>
                   <Input
                     id="taxRate"
                     type="number"
                     value={settings.taxRate}
-                    onChange={(e) => handleInputChange("taxRate", Number.parseInt(e.target.value))}
+                    onChange={(e) => setSettings({...settings, taxRate: parseInt(e.target.value) || 0})}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="privacy" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("privacyAndSecurity")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("dataSharing")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("shareDataWithPartners")}</p>
+          <TabsContent value="privacy">
+            <Card>
+              <CardHeader>
+                <CardTitle>הגדרות פרטיות</CardTitle>
+                <CardDescription>בחר איך המידע שלך משותף</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="shareData">שתף נתונים לשיפור השירות</Label>
+                  <Switch
+                    id="shareData"
+                    checked={settings.privacySettings.shareData}
+                    onCheckedChange={(checked) => setSettings({
+                      ...settings,
+                      privacySettings: {...settings.privacySettings, shareData: checked}
+                    })}
+                  />
                 </div>
-                <Switch
-                  checked={settings.privacySettings.shareData}
-                  onCheckedChange={(value) => handleNestedChange("privacySettings", "shareData", value)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("memberVisibility")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("membersCanSeeOthers")}</p>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="membersCanSeeOthers">חברים יכולים לראות חברים אחרים</Label>
+                  <Switch
+                    id="membersCanSeeOthers"
+                    checked={settings.privacySettings.membersCanSeeOthers}
+                    onCheckedChange={(checked) => setSettings({
+                      ...settings,
+                      privacySettings: {...settings.privacySettings, membersCanSeeOthers: checked}
+                    })}
+                  />
                 </div>
-                <Switch
-                  checked={settings.privacySettings.membersCanSeeOthers}
-                  onCheckedChange={(value) => handleNestedChange("privacySettings", "membersCanSeeOthers", value)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>{t("publicProfile")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("makeGymProfilePublic")}</p>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="publicProfile">פרופיל ציבורי</Label>
+                  <Switch
+                    id="publicProfile"
+                    checked={settings.privacySettings.publicProfile}
+                    onCheckedChange={(checked) => setSettings({
+                      ...settings,
+                      privacySettings: {...settings.privacySettings, publicProfile: checked}
+                    })}
+                  />
                 </div>
-                <Switch
-                  checked={settings.privacySettings.publicProfile}
-                  onCheckedChange={(value) => handleNestedChange("privacySettings", "publicProfile", value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="system" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("backupAndSystem")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="backupFrequency">{t("backupFrequency")}</Label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      {settings.backupFrequency === "daily"
-                        ? t("daily")
-                        : settings.backupFrequency === "weekly"
-                          ? t("weekly")
-                          : settings.backupFrequency === "monthly"
-                            ? t("monthly")
-                            : t("disabled")}
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "daily")}>
-                        {t("daily")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "weekly")}>
-                        {t("weekly")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "monthly")}>
-                        {t("monthly")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleInputChange("backupFrequency", "disabled")}>
-                        {t("disabled")}
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="space-y-4 pt-4">
-                <Button variant="secondary" onClick={() => toast.success(t("backupStarted"))}>
-                  {t("backupNow")}
-                </Button>
-                <Button variant="outline" onClick={() => toast.info(t("restoreNotImplemented"))}>
-                  {t("restoreFromBackup")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sms" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("smsProvider")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground mb-4">{t("smsProviderDesc")}</p>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="smsProvider">{t("smsProviderSelect")}</Label>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
-                        {settings.smsSettings.provider === "twilio" ? t("twilioProvider") : t("nexmoProvider")}
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56">
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={() => handleNestedChange("smsSettings", "provider", "twilio")}>
-                          {t("twilioProvider")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleNestedChange("smsSettings", "provider", "nexmo")}>
-                          {t("nexmoProvider")}
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          <TabsContent value="sms">
+            <Card>
+              <CardHeader>
+                <CardTitle>הגדרות SMS</CardTitle>
+                <CardDescription>הגדר את שירות ה-SMS</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="provider">ספק שירות</Label>
+                  <Select 
+                    value={settings.smsSettings.provider} 
+                    onValueChange={(value) => setSettings({
+                      ...settings,
+                      smsSettings: {...settings.smsSettings, provider: value}
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="twilio">Twilio</SelectItem>
+                      <SelectItem value="nexmo">Nexmo</SelectItem>
+                      <SelectItem value="other">אחר</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smsApiKey">{t("smsApiKey")}</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="apiKey">API Key</Label>
                     <Input
-                      id="smsApiKey"
+                      id="apiKey"
+                      type="password"
                       value={settings.smsSettings.apiKey}
-                      onChange={(e) => handleNestedChange("smsSettings", "apiKey", e.target.value)}
-                      placeholder="xxxxxxxxxxxxxxxxxxxx"
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        smsSettings: {...settings.smsSettings, apiKey: e.target.value}
+                      })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smsApiSecret">{t("smsApiSecret")}</Label>
+                  <div>
+                    <Label htmlFor="apiSecret">API Secret</Label>
                     <Input
-                      id="smsApiSecret"
+                      id="apiSecret"
                       type="password"
                       value={settings.smsSettings.apiSecret}
-                      onChange={(e) => handleNestedChange("smsSettings", "apiSecret", e.target.value)}
-                      placeholder="••••••••••••••••••••"
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        smsSettings: {...settings.smsSettings, apiSecret: e.target.value}
+                      })}
                     />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="smsFromNumber">{t("smsFromNumber")}</Label>
+                <div>
+                  <Label htmlFor="fromNumber">מספר שולח</Label>
                   <Input
-                    id="smsFromNumber"
+                    id="fromNumber"
                     value={settings.smsSettings.fromNumber}
-                    onChange={(e) => handleNestedChange("smsSettings", "fromNumber", e.target.value)}
-                    placeholder="+972xxxxxxxxx"
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      smsSettings: {...settings.smsSettings, fromNumber: e.target.value}
+                    })}
                   />
                 </div>
-
-                <div className="border-t pt-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smsTestMessage">{t("smsTestMessage")}</Label>
-                    <div className="flex space-x-2">
-                      <Input
-                        id="smsTestMessage"
-                        value={settings.smsSettings.testMessage}
-                        onChange={(e) => handleNestedChange("smsSettings", "testMessage", e.target.value)}
-                        placeholder="Enter a test message"
-                        className="flex-1"
-                      />
-                  
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="testMessage">הודעת בדיקה</Label>
+                  <Textarea
+                    id="testMessage"
+                    value={settings.smsSettings.testMessage}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      smsSettings: {...settings.smsSettings, testMessage: e.target.value}
+                    })}
+                  />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="backup">
+            <Card>
+              <CardHeader>
+                <CardTitle>הגדרות גיבוי</CardTitle>
+                <CardDescription>בחר תדירות גיבוי נתונים</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="backupFrequency">תדירות גיבוי</Label>
+                  <Select 
+                    value={settings.backupFrequency} 
+                    onValueChange={(value) => setSettings({...settings, backupFrequency: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">יומי</SelectItem>
+                      <SelectItem value="weekly">שבועי</SelectItem>
+                      <SelectItem value="monthly">חודשי</SelectItem>
+                      <SelectItem value="manual">ידני בלבד</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end">
+          <Button onClick={saveSettings} disabled={saving}>
+            {saving ? "שומר..." : "שמור הגדרות"}
+          </Button>
+        </div>
+      </div>
     </DashboardShell>
-  )
+  );
 }

@@ -31,7 +31,7 @@ import {
 import { SubscriptionService, type GroupSubscription, type PaymentDetails } from "@/services/SubscriptionService"
 import { WhatsAppTemplateForm } from "@/components/notifacations/sms/whatsapp-template-form"
 
-interface EnhancedAddSubscriptionDialogProps {
+export interface EnhancedAddSubscriptionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   memberId: string
@@ -39,8 +39,10 @@ interface EnhancedAddSubscriptionDialogProps {
   memberEmail?: string
   memberPhone?: string
   onSuccess: () => void
+  onSubscriptionAdded?: () => void
 }
 
+// ... keep existing code (membershipTypes, paymentMethods)
 const membershipTypes = [
   { value: "monthly", label: "חודשי", duration: 1, price: 150 },
   { value: "quarterly", label: "רבעוני", duration: 3, price: 400 },
@@ -63,7 +65,8 @@ export default function EnhancedAddSubscriptionDialog({
   memberName,
   memberEmail,
   memberPhone,
-  onSuccess
+  onSuccess,
+  onSubscriptionAdded
 }: EnhancedAddSubscriptionDialogProps) {
   const [membershipType, setMembershipType] = useState("")
   const [customDuration, setCustomDuration] = useState("")
@@ -214,6 +217,9 @@ export default function EnhancedAddSubscriptionDialog({
 
       toast.success("המנוי נוסף בהצלחה!")
       onSuccess()
+      if (onSubscriptionAdded) {
+        onSubscriptionAdded()
+      }
       onOpenChange(false)
       
       // Reset form
@@ -567,5 +573,4 @@ export default function EnhancedAddSubscriptionDialog({
   )
 }
 
-// Export the component as named export as well for compatibility
 export { EnhancedAddSubscriptionDialog };
