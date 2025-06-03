@@ -1,311 +1,177 @@
+
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { DashboardShell } from "@/components/layout/DashboardShell";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import {
-  CreditCard,
-  Banknote,
-  Building,
-  Plus,
-  Filter,
-  XCircle,
-  Search,
-} from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { useToast } from "@/hooks/use-toast";
-import { filterPaymentsByMember, filterPaymentsByStatus } from "@/store/slices/paymentsSlice";
-import AddPaymentForm from "@/components/payments/AddPaymentForm";
-import AddPaymentMethodForm from "@/components/payments/AddPaymentMethodForm";
+import { Badge } from "@/components/ui/badge";
+import { DashboardShell } from "@/components/layout/DashboardShell";
+import { Plus, CreditCard, Calendar, DollarSign } from "lucide-react";
+import { PaymentService } from "@/services/PaymentService";
 import { MemberService } from "@/services/MemberService";
-import { PaymentService, PaymentMethod } from "@/services/PaymentService";
-import { useAuth } from "@/contexts/AuthContext";
-import { Member } from "@/store/slices/membersSlice";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { convertServiceMembersToStoreMembers } from "@/utils/memberConverter";
+import { Member } from "@/store/slices/members/types";
+
+interface Payment {
+  id: string;
+  amount: number;
+  payment_method: string;
+  status: string;
+  payment_date: string;
+  member_id: string;
+  description?: string;
+}
 
 export default function Payments() {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const { session } = useAuth();
-  const { toast } = useToast();
-  const { filteredPayments } = useAppSelector((state) => state.payments);
-  
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
-  const [isAddPaymentMethodOpen, setIsAddPaymentMethodOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session && !isLoading) {
-      navigate("/auth");
-    }
-  }, [session, navigate, isLoading]);
+    loadData();
+  }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const membersData = await MemberService.fetchMembers();
-        setMembers(membersData);
-
-        if (session) {
-          const paymentMethodsData = await PaymentService.getPaymentMethods();
-          setPaymentMethods(paymentMethodsData);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast({
-          title: "שגיאה בטעינת נתונים",
-          description: "לא ניתן לטעון את הנתונים הדרושים",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [session, toast]);
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    dispatch(filterPaymentsByMember(term));
-  };
-
-  const handleStatusFilter = (status: string | null) => {
-    setStatusFilter(status);
-    dispatch(filterPaymentsByStatus(status));
-  };
-
-  const refreshPaymentMethods = async () => {
+  const loadData = async () => {
     try {
-      const paymentMethodsData = await PaymentService.getPaymentMethods();
-      setPaymentMethods(paymentMethodsData);
+      setLoading(true);
+      const [paymentsData, membersData] = await Promise.all([
+        PaymentService.fetchPayments(),
+        MemberService.fetchMembers()
+      ]);
+      
+      setPayments(paymentsData);
+      const storeMembers = convertServiceMembersToStoreMembers(membersData);
+      setMembers(storeMembers);
     } catch (error) {
-      console.error("Error refreshing payment methods:", error);
+      console.error("Error loading data:", error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const getMemberName = (memberId: string) => {
+    const member = members.find(m => m.id === memberId);
+    return member ? member.name : "לא ידוע";
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      paid: { label: "שולם", variant: "default" as const },
+      pending: { label: "ממתין", variant: "secondary" as const },
+      failed: { label: "נכשל", variant: "destructive" as const },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  if (loading) {
+    return (
+      <DashboardShell>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">טוען תשלומים...</p>
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold mb-1">ניהול תשלומים</h1>
-            <p className="text-muted-foreground">
-              נהל תשלומים וצפה בהיסטוריית תשלומים
-            </p>
+            <h1 className="text-3xl font-bold">תשלומים</h1>
+            <p className="text-muted-foreground">נהל תשלומים וחיובים</p>
           </div>
-          <Button
-            onClick={() => setIsAddPaymentOpen(true)}
-            disabled={!session}
-          >
-            <Plus className="h-4 w-4 mr-2" /> תשלום חדש
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            הוסף תשלום
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-1 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>אפשרויות</CardTitle>
-                <CardDescription>סנן וחפש תשלומים</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col space-y-2">
-                  <label className="font-medium text-sm">חיפוש</label>
-                  <div className="relative">
-                    <Input
-                      placeholder="חפש לפי שם לקוח..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                    <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-                  </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">סה"כ תשלומים החודש</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ₪{payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString()}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">תשלומים שולמו</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {payments.filter(p => p.status === 'paid').length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">תשלומים ממתינים</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {payments.filter(p => p.status === 'pending').length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Payments List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>רשימת תשלומים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {payments.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">אין תשלומים להצגה</p>
                 </div>
-
-                <div className="flex flex-col space-y-2">
-                  <label className="font-medium text-sm">סנן לפי סטטוס</label>
-                  <Select
-                    value={statusFilter || ""}
-                    onValueChange={(value) => handleStatusFilter(value || null)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="כל הסטטוסים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל הסטטוסים</SelectItem>
-                      <SelectItem value="paid">שולם</SelectItem>
-                      <SelectItem value="pending">ממתין</SelectItem>
-                      <SelectItem value="overdue">באיחור</SelectItem>
-                      <SelectItem value="canceled">בוטל</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {(searchTerm || statusFilter) && (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setStatusFilter(null);
-                      handleSearch("");
-                      handleStatusFilter(null);
-                    }}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" /> נקה מסננים
-                  </Button>
-                )}
-
-                <div className="pt-4">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setIsAddPaymentMethodOpen(true)}
-                    disabled={!session}
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" /> הוסף אמצעי תשלום
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="md:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>היסטוריית תשלומים</CardTitle>
-                <CardDescription>
-                  סה"כ {filteredPayments.length} תשלומים
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredPayments.length === 0 ? (
-                    <div className="text-center p-4">
-                      <p className="text-muted-foreground">לא נמצאו תשלומים</p>
-                    </div>
-                  ) : (
-                    filteredPayments.map((payment) => (
-                      <div
-                        key={payment.id}
-                        className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between"
-                      >
-                        <div className="flex items-center mb-2 md:mb-0">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                            {payment.paymentMethod === "card" ? (
-                              <CreditCard className="h-5 w-5 text-primary" />
-                            ) : payment.paymentMethod === "cash" ? (
-                              <Banknote className="h-5 w-5 text-primary" />
-                            ) : (
-                              <Building className="h-5 w-5 text-primary" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium">{payment.memberName}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {payment.paymentDate}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col md:items-end mt-2 md:mt-0">
-                          <div className="text-lg font-bold">
-                            {payment.currency} {payment.amount}
-                          </div>
-                          <div className="text-sm">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              payment.status === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : payment.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : payment.status === "overdue"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}>
-                              {payment.status === "paid"
-                                ? "שולם"
-                                : payment.status === "pending"
-                                ? "ממתין"
-                                : payment.status === "overdue"
-                                ? "באיחור"
-                                : "בוטל"}
-                            </span>
-                          </div>
+              ) : (
+                payments.map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium">{getMemberName(payment.member_id)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {payment.description || "תשלום מנוי"}
+                          </p>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-medium">₪{payment.amount.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(payment.payment_date).toLocaleDateString('he-IL')}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground mb-1">{payment.payment_method}</p>
+                        {getStatusBadge(payment.status)}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
-      <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הוסף תשלום חדש</DialogTitle>
-            <DialogDescription>
-              הזן את פרטי התשלום החדש
-            </DialogDescription>
-          </DialogHeader>
-          <AddPaymentForm
-            members={members}
-            paymentMethods={paymentMethods}
-            onPaymentAdded={() => setIsAddPaymentOpen(false)}
-            onAddPaymentMethod={() => {
-              setIsAddPaymentOpen(false);
-              setTimeout(() => setIsAddPaymentMethodOpen(true), 100);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={isAddPaymentMethodOpen}
-        onOpenChange={setIsAddPaymentMethodOpen}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הוסף אמצעי תשלום</DialogTitle>
-            <DialogDescription>
-              הזן את פרטי אמצעי התשלום החדש
-            </DialogDescription>
-          </DialogHeader>
-          <AddPaymentMethodForm
-            onSuccess={() => {
-              refreshPaymentMethods();
-              setIsAddPaymentMethodOpen(false);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
     </DashboardShell>
   );
 }

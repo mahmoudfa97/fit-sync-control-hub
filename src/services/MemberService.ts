@@ -19,6 +19,7 @@ export interface ExpiringMember {
   last_name: string | null;
   email: string | null;
   phone: string | null;
+  avatar_url?: string | null;
   membership: {
     id: string;
     membership_type: string;
@@ -230,6 +231,7 @@ export const MemberService = {
         last_name: member.last_name,
         email: member.email,
         phone: member.phone,
+        avatar_url: null,
         membership: member.custom_memberships[0]
       }));
     } catch (error) {
@@ -269,6 +271,7 @@ export const MemberService = {
         last_name: member.last_name,
         email: member.email,
         phone: member.phone,
+        avatar_url: null,
         membership: member.custom_memberships[0]
       }));
     } catch (error) {
@@ -293,7 +296,6 @@ export const MemberService = {
 
   async addMember(memberData: MemberFormData) {
     try {
-      // Check if member already exists by email
       if (memberData.email) {
         try {
           const existingMember = await this.findMemberByEmail(memberData.email);
@@ -305,7 +307,6 @@ export const MemberService = {
         }
       }
 
-      // Create new member
       const newMember = await this.createMember({
         name: memberData.name,
         last_name: memberData.last_name,
@@ -315,7 +316,6 @@ export const MemberService = {
         gender: memberData.gender,
       });
 
-      // Handle insurance if provided
       if (memberData.hasInsurance && memberData.insuranceStartDate && memberData.insuranceEndDate) {
         await supabase
           .from('custom_member_insurance')
