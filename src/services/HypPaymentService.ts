@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client"
 import { v4 as uuidv4 } from "uuid"
 
@@ -190,22 +191,17 @@ export const HypPaymentService = {
     metadata: any = {},
   ): Promise<void> {
     try {
-      // Check if hyp_payments table exists, create it if not
-      await this.ensureHypPaymentsTable()
-
-      // Insert into hyp_payments table
+      // Insert into hyp_payments table if it exists
       const { error } = await supabase.from("hyp_payments").insert({
         id: uuidv4(),
         payment_id: paymentId,
-        hyp_payment_id: paymentResponse.id,
         member_id: memberId,
         amount: paymentResponse.amount,
         currency: paymentResponse.currency,
         status: paymentResponse.status,
-        payment_date: paymentDate,
-        description: metadata.description || "תשלום באמצעות HYP",
-        transaction_id: paymentResponse.transactionId,
-        reference_id: paymentResponse.referenceId,
+        payment_url: paymentResponse.paymentUrl,
+        created_at: paymentDate,
+        updated_at: paymentDate,
         metadata: {
           ...metadata,
           customerDetails: paymentResponse.customerDetails,
@@ -219,23 +215,6 @@ export const HypPaymentService = {
     } catch (error) {
       // Don't throw error here, just log it
       console.error("Error saving to HYP payments table (non-critical):", error)
-    }
-  },
-
-  /**
-   * Make sure hyp_payments table exists
-   */
-  async ensureHypPaymentsTable(): Promise<void> {
-    try {
-      // Check if table exists
-      const { data, error } = await supabase.from("hyp_payments").select("id").limit(1)
-
-      if (error && error.code === "42P01") {
-        // Table doesn't exist, create it (this would normally be in a migration)
-        await supabase.rpc("create_hyp_payments_table")
-      }
-    } catch (error) {
-      console.error("Error checking/creating HYP payments table:", error)
     }
   },
 

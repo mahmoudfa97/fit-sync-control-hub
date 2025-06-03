@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client"
 import { v4 as uuidv4 } from "uuid"
 
@@ -407,7 +408,8 @@ export const EnhancedHypPaymentService = {
         throw error
       }
 
-      return data.payment_details?.receipt_url || data.payment_details?.validation_data?.receipt_url || null
+      const paymentDetails = data.payment_details as any
+      return paymentDetails?.receipt_url || paymentDetails?.validation_data?.receipt_url || null
     } catch (error) {
       console.error("Error getting receipt URL:", error)
       return null
@@ -441,17 +443,19 @@ export const EnhancedHypPaymentService = {
         throw error
       }
 
+      const paymentDetails = data.payment_details as any
+
       // Convert database record to HypPaymentResponse format
       return {
         id: data.id,
         status: data.status as "pending" | "completed" | "failed" | "canceled",
         amount: data.amount,
-        currency: data.currency || "ILS",
+        currency: "ILS", // Default currency
         createdAt: data.payment_date,
-        secretTransactionId: data.payment_details?.hyp_secret_transaction_id,
-        transactionId: data.payment_details?.hyp_transaction_id,
-        referenceId: data.payment_details?.hyp_reference_id,
-        customerDetails: data.payment_details?.customer,
+        secretTransactionId: paymentDetails?.hyp_secret_transaction_id,
+        transactionId: paymentDetails?.hyp_transaction_id,
+        referenceId: paymentDetails?.hyp_reference_id,
+        customerDetails: paymentDetails?.customer,
       }
     } catch (error) {
       console.error("Error getting payment by ID:", error)

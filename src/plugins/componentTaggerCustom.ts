@@ -53,7 +53,7 @@ export function componentTaggerCustom(): Plugin {
       const relativePath = path.relative(cwd, id);
       const parserOptions = {
         sourceType: "module" as const,
-        plugins: ["jsx", "typescript"] as const
+        plugins: ["jsx", "typescript"] as ["jsx", "typescript"]
       };
 
       try {
