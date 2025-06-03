@@ -230,7 +230,7 @@ export const HypPaymentService = {
   async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
     try {
       // Update main payments table - simplified to avoid type issues
-      const updateData: Record<string, any> = {
+      const updateData: any = {
         status,
         updated_at: new Date().toISOString(),
         ...additionalData,
