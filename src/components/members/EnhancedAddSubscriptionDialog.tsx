@@ -38,7 +38,7 @@ interface EnhancedAddSubscriptionDialogProps {
   memberName: string
   memberEmail?: string
   memberPhone?: string
-  onSubscriptionAdded: () => void
+  onSuccess: () => void
 }
 
 const membershipTypes = [
@@ -63,7 +63,7 @@ export default function EnhancedAddSubscriptionDialog({
   memberName,
   memberEmail,
   memberPhone,
-  onSubscriptionAdded
+  onSuccess
 }: EnhancedAddSubscriptionDialogProps) {
   const [membershipType, setMembershipType] = useState("")
   const [customDuration, setCustomDuration] = useState("")
@@ -213,7 +213,7 @@ export default function EnhancedAddSubscriptionDialog({
       await SubscriptionService.addSubscription(memberId, subscriptionData, paymentDetails)
 
       toast.success("המנוי נוסף בהצלחה!")
-      onSubscriptionAdded()
+      onSuccess()
       onOpenChange(false)
       
       // Reset form
@@ -566,3 +566,6 @@ export default function EnhancedAddSubscriptionDialog({
     </Dialog>
   )
 }
+
+// Export the component as named export as well for compatibility
+export { EnhancedAddSubscriptionDialog };

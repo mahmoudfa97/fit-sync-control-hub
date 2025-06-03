@@ -1,183 +1,45 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Payment } from "@/store/slices/paymentsSlice";
+import { supabase } from '@/integrations/supabase/client';
 
-export interface PaymentMethod {
+interface Payment {
   id: string;
-  userId: string;
-  paymentType: 'card' | 'bank' | 'other';
-  provider?: 'visa' | 'mastercard' | 'other';
-  lastFour?: string;
-  cardHolderName?: string;
-  expiryDate?: string;
-  isDefault?: boolean;
-  createdAt: string;
+  amount: number;
+  payment_method: string;
+  status: string;
+  payment_date: string;
+  member_id: string;
+  description?: string;
 }
 
-export type AddPaymentMethodInput = {
-  paymentType: 'card' | 'bank' | 'other';
-  provider?: 'visa' | 'mastercard' | 'other';
-  lastFour?: string;
-  cardHolderName?: string;
-  expiryDate?: string;
-  isDefault: boolean;
-};
-
-export class PaymentService {
-  static async getPaymentMethods() {
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw error;
-    }
-
-    return data.map(item => ({
-      id: item.id,
-      userId: item.user_id,
-      paymentType: item.payment_type,
-      provider: item.provider,
-      lastFour: item.last_four,
-      cardHolderName: item.card_holder_name,
-      expiryDate: item.expiry_date,
-      isDefault: item.is_default,
-      createdAt: item.created_at
-    })) as PaymentMethod[];
-  }
-static async createPayment(paymentData) {
-    const { data, error } = await supabase.functions.invoke('process-payment', {
-      body: {
-        amount: paymentData.amount,
-        customerId: paymentData.memberId,
-        customerName: paymentData.memberName,
-        customerEmail: paymentData.memberEmail,
-        customerPhone: paymentData.memberPhone,
-        description: paymentData.description,
-        metadata: {
-          subscriptionId: paymentData.subscriptionId,
-          membershipType: paymentData.membershipType,
-          durationMonths: paymentData.durationMonths
-        }
-      }
-    });
-  
-    if (error) throw error;
-    return data;
-  };
-  
-  // Verify a payment
-  static async verifyPayment  (paymentId) {
-    const { data, error } = await supabase.functions.invoke('verify-payment', {
-      body: { paymentId }
-    });
-  
-    if (error) throw error;
-    return data;
-  };
-  
-  static async addPaymentMethod(paymentMethod: AddPaymentMethodInput) {
-    const { data: user } = await supabase.auth.getUser();
-    
-    if (!user.user) {
-      throw new Error('User not authenticated');
-    }
-
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .insert({
-        user_id: user.user.id,
-        payment_type: paymentMethod.paymentType,
-        provider: paymentMethod.provider,
-        last_four: paymentMethod.lastFour,
-        card_holder_name: paymentMethod.cardHolderName,
-        expiry_date: paymentMethod.expiryDate,
-        is_default: paymentMethod.isDefault || false
-      })
-      .select('*')
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      id: data.id,
-      userId: data.user_id,
-      paymentType: data.payment_type,
-      provider: data.provider,
-      lastFour: data.last_four,
-      cardHolderName: data.card_holder_name,
-      expiryDate: data.expiry_date,
-      isDefault: data.is_default,
-      createdAt: data.created_at
-    } as PaymentMethod;
-  }
-
-  static async processPayment(memberId: string, amount: number, paymentMethod: string, description?: string) {
-    const { data: user } = await supabase.auth.getUser();
-    
-    if (!user.user) {
-      throw new Error('User not authenticated');
-    }
-
-    let paymentMethodId = null;
-    if (paymentMethod !== 'cash') {
+export const PaymentService = {
+  async fetchPayments(): Promise<Payment[]> {
+    try {
       const { data, error } = await supabase
-        .from('payment_methods')
-        .select('id')
-        .eq('id', paymentMethod)
+        .from('payments')
+        .select('*')
+        .order('payment_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      return [];
+    }
+  },
+
+  async createPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .insert([payment])
+        .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
-      paymentMethodId = data.id;
-    }
-
-    const receiptNumber = `REC-${Date.now().toString().slice(-6)}`;
-
-    const { data, error } = await supabase
-      .from('payments')
-      .insert({
-        member_id: memberId,
-        amount: amount,
-        payment_method: paymentMethod === 'card' ? 'card' : (paymentMethod === 'cash' ? 'cash' : 'bank'),
-        payment_method_id: paymentMethodId,
-        description: description || 'Membership payment',
-        receipt_number: receiptNumber,
-        status: 'paid'
-      })
-      .select(`
-        id,
-        member_id,
-        amount,
-        payment_method,
-        payment_date,
-        description,
-        receipt_number,
-        status,
-        profiles:member_id(name, last_name)
-      `)
-      .single();
-
-    if (error) {
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating payment:', error);
       throw error;
     }
-
-    return {
-      id: data.id,
-      memberId: data.member_id,
-      memberName: data.profiles ? `${data.profiles.name} ${data.profiles.last_name || ''}` : 'Unknown',
-      memberInitials: data.profiles ? `${data.profiles.name[0]}${data.profiles.last_name ? data.profiles.last_name[0] : ''}` : 'UN',
-      amount: data.amount,
-      currency: '₪',
-      paymentMethod: data.payment_method,
-      paymentDate: new Date(data.payment_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }),
-      status: data.status,
-      description: data.description,
-      receiptNumber: data.receipt_number
-    } as Payment;
   }
-}
+};

@@ -56,7 +56,7 @@ export default function FinancialDocumentsReport() {
       setFilters((prev) => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof FilterState],
+          ...(prev[parent as keyof FilterState] as object),
           [child]: value,
         },
       }))

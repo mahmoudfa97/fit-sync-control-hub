@@ -74,16 +74,50 @@ interface Settings {
 }
 
 // Default settings
+const defaultSettings: Settings = {
+  gymName: "",
+  email: "",
+  phone: "",
+  language: "he",
+  address: "",
+  workingHours: {
+    weekdays: "08:00-22:00",
+    weekends: "09:00-18:00"
+  },
+  notifications: {
+    email: true,
+    sms: true,
+    app: true
+  },
+  memberReminders: true,
+  autoRenewals: false,
+  businessInfo: {
+    taxNumber: "",
+    commercialRegister: ""
+  },
+  taxRate: 17,
+  privacySettings: {
+    shareData: false,
+    membersCanSeeOthers: false,
+    publicProfile: true
+  },
+  backupFrequency: "weekly",
+  smsSettings: {
+    provider: "twilio",
+    apiKey: "",
+    apiSecret: "",
+    fromNumber: "",
+    testMessage: "This is a test message from your gym management system."
+  }
+};
 
+// Fetch settings from Supabase
 async function fetchSettings() {
-  // Get organization ID from user profile or use a default
-  const organizationId = "spartagymfiras" // In a real app, get this from auth context
+  const organizationId = "spartagymfiras"
 
   const { data, error } = await supabase
     .from("settings")
-    .select(
-      `id, gym_name, email, phone, language, address, working_hours, notifications, member_reminders, auto_renewals, business_info, tax_rate, privacy_settings, backup_frequency, sms_settings, organization_id, created_at, updated_at`,
-    )
+    .select("*")
     .eq("organization_id", organizationId)
     .single()
 
@@ -94,42 +128,47 @@ async function fetchSettings() {
 
   return data
 }
+
 export default function Settings() {
-  const [settings, setSettings] = useState<Settings>()
+  const [settings, setSettings] = useState<Settings>(defaultSettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [sendingTest, setSendingTest] = useState(false)
   const [activeTab, setActiveTab] = useState("general")
 
-  // Fetch settings from Supabase
   useEffect(() => {
     async function loadSettings() {
       const data = await fetchSettings()
 
       if (data) {
-        // Convert snake_case database fields to camelCase for the component
-        const formattedData = {
+        const formattedData: Settings = {
           id: data.id,
           gymName: data.gym_name || "",
           email: data.email || "",
           phone: data.phone || "",
-          language: data.language || "",
+          language: data.language || "he",
           address: data.address || "",
-          workingHours: data.working_hours || "",
-          notifications: data.notifications || false,
+          workingHours: typeof data.working_hours === 'object' && data.working_hours ? 
+            data.working_hours as WorkingHours : defaultSettings.workingHours,
+          notifications: typeof data.notifications === 'object' && data.notifications ? 
+            data.notifications as Notifications : defaultSettings.notifications,
           memberReminders: data.member_reminders || false,
           autoRenewals: data.auto_renewals || false,
-          businessInfo: data.business_info || "",
-          taxRate: data.tax_rate || 0,
-          privacySettings: data.privacy_settings || "",
-          backupFrequency: data.backup_frequency || "",
-          smsSettings: data.sms_settings || "",
+          businessInfo: typeof data.business_info === 'object' && data.business_info ? 
+            data.business_info as BusinessInfo : defaultSettings.businessInfo,
+          taxRate: data.tax_rate || 17,
+          privacySettings: typeof data.privacy_settings === 'object' && data.privacy_settings ? 
+            data.privacy_settings as PrivacySettings : defaultSettings.privacySettings,
+          backupFrequency: data.backup_frequency || "weekly",
+          smsSettings: typeof data.sms_settings === 'object' && data.sms_settings ? 
+            data.sms_settings as SmsSettings : defaultSettings.smsSettings,
           organizationId: data.organization_id || "",
-          createdAt: data.created_at || "",
-          updatedAt: data.updated_at || "",
+          created_at: data.created_at || "",
+          updated_at: data.updated_at || "",
         }
-        setSettings({ ...formattedData })
+        setSettings(formattedData)
       }
+      setLoading(false)
     }
 
     loadSettings()
@@ -166,10 +205,8 @@ export default function Settings() {
     try {
       setSaving(true)
 
-      // Get organization ID from user profile or use a default
       const organizationId = "spartagymfiras"
 
-      // Convert camelCase to snake_case for database
       const settingsToSave = {
         organization_id: organizationId,
         gym_name: settings.gymName,
@@ -189,7 +226,6 @@ export default function Settings() {
         updated_at: new Date().toISOString(),
       }
 
-      // Check if settings already exist
       const { data: existingData, error: checkError } = await supabase
         .from("settings")
         .select("id")
@@ -203,10 +239,8 @@ export default function Settings() {
       let result
 
       if (existingData?.id) {
-        // Update existing settings
         result = await supabase.from("settings").update(settingsToSave).eq("id", existingData.id).select()
       } else {
-        // Insert new settings
         result = await supabase
           .from("settings")
           .insert({

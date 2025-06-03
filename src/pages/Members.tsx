@@ -101,6 +101,7 @@ export default function Members() {
           filterStatus={filterStatus}
           onFilterChange={handleFilterChange}
           totalMembers={members.length}
+          onAddMemberClick={() => setIsAddMemberOpen(true)}
         />
 
         <MemberList
