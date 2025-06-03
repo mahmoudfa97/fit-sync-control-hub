@@ -19,7 +19,6 @@ export interface ExpiringMember {
   last_name: string | null;
   email: string | null;
   phone: string | null;
-  avatar_url: string | null;
   membership: {
     id: string;
     membership_type: string;
@@ -211,7 +210,6 @@ export const MemberService = {
           last_name,
           email,
           phone,
-          avatar_url,
           custom_memberships!inner (
             id,
             membership_type,
@@ -232,7 +230,6 @@ export const MemberService = {
         last_name: member.last_name,
         email: member.email,
         phone: member.phone,
-        avatar_url: member.avatar_url,
         membership: member.custom_memberships[0]
       }));
     } catch (error) {
@@ -253,7 +250,6 @@ export const MemberService = {
           last_name,
           email,
           phone,
-          avatar_url,
           custom_memberships!inner (
             id,
             membership_type,
@@ -273,7 +269,6 @@ export const MemberService = {
         last_name: member.last_name,
         email: member.email,
         phone: member.phone,
-        avatar_url: member.avatar_url,
         membership: member.custom_memberships[0]
       }));
     } catch (error) {

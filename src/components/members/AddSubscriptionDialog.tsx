@@ -10,17 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { format } from "date-fns"
 import { he } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
-import {
-  Loader2,
-  CreditCard,
-  Banknote,
-  Building,
-  CheckSquare,
-  ArrowLeft,
-  ArrowRight,
-  ShieldCheck,
-  CreditCardIcon,
-} from "lucide-react"
+import { Loader2, CreditCard, Banknote, Building, CheckSquare, ArrowLeft, ArrowRight, ShieldCheck, CreditCardIcon } from "lucide-react"
 import { SubscriptionService, type GroupSubscription, type PaymentDetails } from "@/services/SubscriptionService"
 import EnhancedHypPaymentModal from "@/components/payments/EnhancedHypPaymentModal"
 import { Switch } from "@/components/ui/switch"
@@ -40,14 +30,7 @@ interface AddSubscriptionDialogProps {
 
 type Duration = "1" | "2" | "3" | "4" | "6" | "12"
 type PaymentMethod = "cash" | "card" | "bank" | "check" | "hyp"
-type DocumentType =
-  | "none"
-  | "unofficial_transaction"
-  | "unofficial"
-  | "receipt"
-  | "credit_invoice"
-  | "tax_invoice"
-  | "tax_invoice_receipt"
+type DocumentType = "none" | "unofficial_transaction" | "unofficial" | "receipt" | "credit_invoice" | "tax_invoice" | "tax_invoice_receipt"
 
 export const AddSubscriptionDialog = ({
   open,
@@ -66,7 +49,7 @@ export const AddSubscriptionDialog = ({
 
   // Step management
   const [currentStep, setCurrentStep] = useState(1)
-  const [totalSteps = 2] = useState(2)
+  const [totalSteps] = useState(2)
 
   // Subscription details
   const [subscriptionId, setSubscriptionId] = useState("")
@@ -226,27 +209,31 @@ export const AddSubscriptionDialog = ({
         case "card":
           paymentDetails.cardDetails = {
             cardNumber: cardNumber.slice(-4), // Only store last 4 for security
-            cardExpiry,
+            expiryDate: cardExpiry,
             cardHolderName,
+            cvv: cardCvv,
           }
           break
         case "check":
           paymentDetails.checkDetails = {
             checkNumber,
-            checkDate,
             bankName,
+            accountNumber: bankAccountNumber,
+            checkDate,
           }
           break
         case "bank":
           paymentDetails.bankDetails = {
             accountNumber: bankAccountNumber,
             bankName,
-            branch: bankBranch,
+            branchNumber: bankBranch,
             reference: transferReference,
           }
           break
         case "hyp":
           paymentDetails.hypDetails = {
+            paymentMethod: "hyp",
+            redirectUrl: "",
             paymentId: hypPaymentId || "",
           }
           break
@@ -266,8 +253,8 @@ export const AddSubscriptionDialog = ({
       await SubscriptionService.addSubscription(memberId, {
         membershipType,
         subscriptionId,
-        status: "active", // Default to active
-        paymentStatus: "paid", // Default to paid
+        status: "active",
+        paymentStatus: "paid",
         durationMonths: Number.parseInt(duration),
         startDate: startDate,
         endDate: endDate,
@@ -277,7 +264,7 @@ export const AddSubscriptionDialog = ({
         notes: notes,
         documentType: documentType,
         paymentDetails,
-      })
+      }, paymentDetails)
 
       toast({
         title: "הוסף בהצלחה",
@@ -969,24 +956,8 @@ export const AddSubscriptionDialog = ({
           {renderStepIndicator()}
 
           <div className="py-2">
-            {/* Basic form content for demonstration */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="subscriptionType">סוג מנוי</Label>
-                <Select value={subscriptionId} onValueChange={setSubscriptionId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר סוג מנוי" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {groupSubscriptions.map((subscription) => (
-                      <SelectItem key={subscription.id} value={subscription.id}>
-                        {subscription.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
           </div>
 
           <DialogFooter className="flex justify-between sm:justify-between">

@@ -31,6 +31,9 @@ export interface GroupSubscription {
 
 export interface PaymentDetails {
   payment_method: string;
+  amount?: number;
+  duration?: number;
+  subscription_type?: string;
   cardDetails?: {
     cardNumber: string;
     expiryDate: string;
@@ -41,15 +44,19 @@ export interface PaymentDetails {
     checkNumber: string;
     bankName: string;
     accountNumber: string;
+    checkDate?: string;
   };
   bankDetails?: {
     accountNumber: string;
     bankName: string;
     branchNumber: string;
+    reference?: string;
+    branch?: string;
   };
   hypDetails?: {
     paymentMethod: string;
     redirectUrl: string;
+    paymentId?: string;
   };
   installments?: number;
   installmentAmount?: number;
