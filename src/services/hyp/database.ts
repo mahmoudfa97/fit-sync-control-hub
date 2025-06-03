@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client"
 import { v4 as uuidv4 } from "uuid"
 import { HypPaymentResponse } from "./types"
@@ -62,14 +61,12 @@ export const HypDatabase = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
     try {
-      // Build update object step by step to avoid type inference issues
-      const baseUpdate = {
-        status: status,
+      // Create a simple update object with explicit any type to avoid TS inference issues
+      const updateData: any = {
+        status,
         updated_at: new Date().toISOString(),
+        ...additionalData
       }
-
-      // Merge additional data using Object.assign to avoid spreading issues
-      const updateData = Object.assign(baseUpdate, additionalData)
 
       const { error } = await supabase
         .from("payments")
