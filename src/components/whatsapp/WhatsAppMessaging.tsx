@@ -144,10 +144,8 @@ export default function WhatsAppMessaging() {
   // Handle select all checkbox
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      // Only select filtered members
       const filteredIds = filteredMembers.map((member) => member.id)
       setSelectedMembers((prev) => {
-        // Combine previously selected members with newly selected filtered members
         const combined = [...prev]
         filteredIds.forEach((id) => {
           if (!combined.includes(id)) {
@@ -158,7 +156,6 @@ export default function WhatsAppMessaging() {
       })
       setSelectAll(true)
     } else {
-      // Remove all filtered members from selection
       const filteredIds = filteredMembers.map((member) => member.id)
       setSelectedMembers((prev) => prev.filter((id) => !filteredIds.includes(id)))
       setSelectAll(false)
@@ -171,7 +168,6 @@ export default function WhatsAppMessaging() {
     
     try {
       setIsLoading(true)
-      // First fetch members with their basic information
       const { data: membersData, error: membersError } = await supabase
         .from("custom_members")
         .select("id, name, phone, last_name")
@@ -182,7 +178,6 @@ export default function WhatsAppMessaging() {
         throw membersError
       }
 
-      // Then fetch membership information
       const { data: membershipsData, error: membershipsError } = await supabase
         .from("custom_memberships")
         .select("member_id, membership_type, start_date, end_date")
@@ -192,18 +187,16 @@ export default function WhatsAppMessaging() {
         throw membershipsError
       }
 
-      // Create a map of memberships by member_id
       const membershipsByMemberId = membershipsData.reduce((acc, membership) => {
         acc[membership.member_id] = {
           group_name: membership.membership_type,
           start_date: membership.start_date,
           end_date: membership.end_date,
-          is_active: new Date(membership.end_date) >= new Date(), // Check if membership is still active
+          is_active: new Date(membership.end_date) >= new Date(),
         }
         return acc
       }, {})
 
-      // Combine member data with membership data
       const validMembers = membersData
         .filter((member) => member.phone && member.phone.trim() !== "")
         .map((member) => ({
@@ -212,7 +205,6 @@ export default function WhatsAppMessaging() {
           membership: membershipsByMemberId[member.id] || null,
         }))
 
-      // Extract unique groups
       const groups = Array.from(new Set(validMembers.map((member) => member.group).filter(Boolean))) as string[]
       setAvailableGroups(groups)
 
@@ -262,7 +254,6 @@ export default function WhatsAppMessaging() {
   // Handle template selection
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId)
-    // Reset template variables when template changes
     setTemplateVariables({})
   }
 
@@ -289,7 +280,6 @@ export default function WhatsAppMessaging() {
     const template = templates.find((t) => t.id === selectedTemplate)
     if (!template) return null
 
-    // Extract variables from template components
     const variables: { key: string; example: string }[] = []
     template.components?.forEach((component) => {
       if (component.type === "BODY" || component.type === "HEADER") {
@@ -359,17 +349,14 @@ export default function WhatsAppMessaging() {
       setIsSending(true)
       const selectedMembersList = members.filter((member) => selectedMembers.includes(member.id))
 
-      // Initialize message status for all selected members
       const initialStatus: Record<string, "pending" | "sent" | "failed"> = {}
       selectedMembersList.forEach((member) => {
         initialStatus[member.id] = "pending"
       })
       setMessageStatus(initialStatus)
 
-      // Set active tab to status
       setActiveTab("status")
 
-      // Send messages to each member
       for (const member of selectedMembersList) {
         try {
           if (messageType === "direct") {
@@ -378,7 +365,6 @@ export default function WhatsAppMessaging() {
             await WhatsAppService.sendTemplateMessage(currentOrganization.id, member.phone, selectedTemplate, templateVariables)
           }
 
-          // Update status for this member
           setMessageStatus((prev) => ({
             ...prev,
             [member.id]: "sent",
@@ -386,14 +372,12 @@ export default function WhatsAppMessaging() {
         } catch (error) {
           console.error(`Error sending message to ${member.name}:`, error)
 
-          // Update status for this member
           setMessageStatus((prev) => ({
             ...prev,
             [member.id]: "failed",
           }))
         }
 
-        // Small delay between messages to avoid rate limiting
         await new Promise((resolve) => setTimeout(resolve, 500))
       }
 
@@ -411,80 +395,6 @@ export default function WhatsAppMessaging() {
     } finally {
       setIsSending(false)
     }
-  }
-
-  // Toggle member selection
-  const toggleMemberSelection = (memberId: string) => {
-    if (selectedMembers.includes(memberId)) {
-      setSelectedMembers(selectedMembers.filter((id) => id !== memberId))
-    } else {
-      setSelectedMembers([...selectedMembers, memberId])
-    }
-  }
-
-  // Handle template selection
-  const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplate(templateId)
-    // Reset template variables when template changes
-    setTemplateVariables({})
-  }
-
-  // Update template variable
-  const updateTemplateVariable = (key: string, value: string) => {
-    setTemplateVariables({
-      ...templateVariables,
-      [key]: value,
-    })
-  }
-
-  // Reset all filters
-  const resetFilters = () => {
-    setFilterOptions({
-      status: "all",
-      gender: "all",
-      group: "all",
-    })
-    setSearchQuery("")
-  }
-
-  // Get template variable fields based on selected template
-  const getTemplateVariableFields = () => {
-    const template = templates.find((t) => t.id === selectedTemplate)
-    if (!template) return null
-
-    // Extract variables from template components
-    const variables: { key: string; example: string }[] = []
-    template.components?.forEach((component) => {
-      if (component.type === "BODY" || component.type === "HEADER") {
-        component.example?.variables?.forEach((variable: string, index: number) => {
-          variables.push({
-            key: `${component.type.toLowerCase()}_${index}`,
-            example: variable,
-          })
-        })
-      }
-    })
-
-    if (variables.length === 0) return <p className="text-sm text-gray-500">תבנית זו אינה מכילה משתנים.</p>
-
-    return (
-      <div className="space-y-4 mt-4">
-        <h3 className="text-sm font-medium">משתני תבנית:</h3>
-        {variables.map((variable) => (
-          <div key={variable.key} className="space-y-2">
-            <Label htmlFor={variable.key}>
-              משתנה {variable.key} <span className="text-gray-500 text-xs">(לדוגמה: {variable.example})</span>
-            </Label>
-            <Input
-              id={variable.key}
-              value={templateVariables[variable.key] || ""}
-              onChange={(e) => updateTemplateVariable(variable.key, e.target.value)}
-              placeholder={variable.example}
-            />
-          </div>
-        ))}
-      </div>
-    )
   }
 
   // Get status icon based on message status
@@ -651,7 +561,6 @@ export default function WhatsAppMessaging() {
                   </div>
                 </div>
 
-                {/* Active filters display */}
                 {getActiveFilterCount() > 0 && (
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-sm text-muted-foreground">מסננים פעילים:</span>
@@ -747,10 +656,7 @@ export default function WhatsAppMessaging() {
                                     {member.group}
                                   </Badge>
                                 )}
-                                
-                              </div>
-                            </div>
-                            {member.membership && (
+                                {member.membership && (
                                   <Badge
                                     variant={member.membership.is_active ? "default" : "secondary"}
                                     className="text-xs"
@@ -758,6 +664,8 @@ export default function WhatsAppMessaging() {
                                     {member.membership.is_active ? "מנוי פעיל" : "מנוי לא פעיל"}
                                   </Badge>
                                 )}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

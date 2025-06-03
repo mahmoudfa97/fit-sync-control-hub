@@ -38,7 +38,7 @@ export interface ExpiringMember {
   }
 }
 
-export class MemberService {
+export const MemberService = {
   static async fetchMembers() {
     try {
       // Fetch from custom_members table
@@ -157,7 +157,7 @@ export class MemberService {
       console.error("Error fetching members:", error)
       throw error
     }
-  }
+  },
 
   static async findMemberByEmail(email: string) {
     try {
@@ -197,7 +197,7 @@ export class MemberService {
       console.error("Error finding member by email:", error)
       throw error
     }
-  }
+  },
 
   static async addMember(memberData: MemberFormData) {
     try {
@@ -349,10 +349,10 @@ export class MemberService {
       console.error("Error adding member:", error)
       throw error
     }
-  }
+  },
 
   // Helper method to format dates consistently
- static formatDateToHebrewString(date: Date): string {
+  static formatDateToHebrewString(date: Date): string {
     const hebrewMonths = [
       "ינואר",
       "פברואר",
@@ -368,7 +368,7 @@ export class MemberService {
       "דצמבר",
     ]
     return `${date.getDate()} ${hebrewMonths[date.getMonth()]}, ${date.getFullYear()}`
-  }
+  },
 
   static async recordCheckIn(memberId: string) {
     try {
@@ -384,7 +384,7 @@ export class MemberService {
       console.error("Error recording check-in:", error)
       throw error
     }
-  }
+  },
 
   /**
    * Fetch members with expired memberships
@@ -470,7 +470,7 @@ export class MemberService {
       console.error("Error in fetchExpiredMembers:", error)
       throw error
     }
-  }
+  },
 
   /**
    * Fetch members with memberships expiring in the next 7 days
@@ -564,7 +564,7 @@ export class MemberService {
       console.error("Error in fetchExpiringMembers:", error)
       throw error
     }
-  }
+  },
 
   /**
    * Update membership status to expired
@@ -590,7 +590,7 @@ export class MemberService {
       console.error("Error updating membership to expired:", error)
       throw error
     }
-  }
+  },
 
   /**
    * Automatically update all expired memberships
@@ -619,5 +619,19 @@ export class MemberService {
       console.error("Error auto-updating expired memberships:", error)
       throw error
     }
-  }
+  },
+
+  async updateMember(memberId: string, updates: Partial<any>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('custom_members')
+        .update(updates)
+        .eq('id', memberId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating member:', error);
+      throw error;
+    }
+  },
 }

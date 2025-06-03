@@ -35,6 +35,16 @@ export interface PaymentDetails {
   duration: number;
   subscription_type: string;
   payment_method: string;
+  cardDetails?: any;
+  checkDetails?: any;
+  bankDetails?: any;
+  hypDetails?: any;
+  installments?: number;
+  installmentAmount?: number;
+  sendReceipt?: boolean;
+  receiptEmail?: string;
+  receiptUrl?: string;
+  receiptNumber?: string;
 }
 
 export const SubscriptionService = {

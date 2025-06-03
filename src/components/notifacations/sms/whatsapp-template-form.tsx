@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -123,7 +124,7 @@ export function WhatsAppTemplateForm({ recipientPhone = "", onSent }: WhatsAppTe
       </CardHeader>
       <CardContent className="space-y-4">
         {showWarning && (
-          <Alert variant="warning">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Template Pending Approval</AlertTitle>
             <AlertDescription>

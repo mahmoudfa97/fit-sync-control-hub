@@ -4,9 +4,9 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FinanceReportsPage } from "@/components/reports/FinanceReportsPage";
-import { GeneralReportsPage } from "@/components/reports/GeneralReportsPage";
-import { MembersReportsPage } from "@/components/reports/MembersReportsPage";
+import FinanceReportsPage from "@/components/reports/FinanceReportsPage";
+import GeneralReportsPage from "@/components/reports/GeneralReportsPage";
+import MembersReportsPage from "@/components/reports/MembersReportsPage";
 import { PaymentReportPage } from "@/components/reports/PaymentReportPage";
 import { FileText, TrendingUp, Users, CreditCard, Download, Clock } from "lucide-react";
 
