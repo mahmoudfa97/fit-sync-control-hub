@@ -9,6 +9,7 @@ import { sendWhatsAppTemplate } from "@/services/whatsapp-template-service"
 import { AlertCircle, Loader2, MessageSquare, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 
 interface WhatsAppTemplateFormProps {
   recipientPhone?: string
@@ -156,7 +157,11 @@ export function WhatsAppTemplateForm({ recipientPhone = "", onSent }: WhatsAppTe
             <SelectContent>
               {templates.map((template) => (
                 <SelectItem key={template.id} value={template.id}>
-                  {template.name} {template.status === "PENDING" ? "(Pending)" : ""}
+                  {template.name} {template.status !== "APPROVED" && (
+                    <Badge variant="destructive" className="text-xs">
+                      {template.status}
+                    </Badge>
+                  )}
                 </SelectItem>
               ))}
             </SelectContent>

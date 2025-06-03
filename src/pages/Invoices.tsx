@@ -1,421 +1,231 @@
-"use client"
 
-import type React from "react"
+import { useState, useEffect } from "react";
+import { DashboardShell } from "@/components/layout/DashboardShell";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileText, Plus, Search, Eye, Download, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { DashboardShell } from "@/components/layout/DashboardShell"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, Download, Users, CreditCard, Calendar, ArrowLeft } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import * as ReportsService from "@/services/ReportsService"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import {Link} from "react-router-dom"
-
-interface FilterState {
-  startDate: Date | undefined
-  endDate: Date | undefined
-  membershipType: string
-  status: string
-  minAmount: string
-  maxAmount: string
-  includeInactive: boolean
-  searchTerm: string
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  member_name: string;
+  amount: number;
+  status: "paid" | "pending" | "overdue";
+  due_date: string;
+  created_at: string;
 }
 
-interface ReportConfig {
-  title: string
-  description: string
-  icon: React.ReactNode
-  filterOptions: string[]
-  generateFn: (filters: FilterState) => Promise<void>
-}
+export default function Invoices() {
+  const navigate = useNavigate();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
 
-export default function FilteredReportsPage() {
-  const { toast } = useToast()
-  const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("membership")
-  const [filters, setFilters] = useState<FilterState>({
-    startDate: undefined,
-    endDate: undefined,
-    membershipType: "",
-    status: "",
-    minAmount: "",
-    maxAmount: "",
-    includeInactive: false,
-    searchTerm: "",
-  })
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
-  const handleFilterChange = (key: keyof FilterState, value: any) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
-
-  const membershipReports: Record<string, ReportConfig> = {
-    membersMain: {
-      title: "דוח ראשי מנויים",
-      description: "רשימה מלאה של כל המנויים במערכת",
-      icon: <Users className="h-5 w-5 text-primary" />,
-      filterOptions: ["startDate", "endDate", "membershipType", "status", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateMembersMainReport()
-      },
-    },
-    membershipExpiry: {
-      title: "דוח תוקף מנויים",
-      description: "מנויים שעומדים לפוג בתקופה שנבחרה",
-      icon: <Calendar className="h-5 w-5 text-orange-500" />,
-      filterOptions: ["startDate", "endDate", "membershipType", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateMembershipExpiryReport()
-      },
-    },
-    memberAbsence: {
-      title: "דוח היעדרות מנויים",
-      description: "מנויים שלא ביקרו במרכז בתקופה שנבחרה",
-      icon: <Users className="h-5 w-5 text-red-500" />,
-      filterOptions: ["startDate", "endDate", "membershipType", "includeInactive", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateMemberAbsenceReport()
-      },
-    },
-  }
-
-  const financialReports: Record<string, ReportConfig> = {
-    financialDocuments: {
-      title: "דוח מסמכים פיננסים",
-      description: "רשימת כל החשבוניות והקבלות",
-      icon: <FileText className="h-5 w-5 text-primary" />,
-      filterOptions: ["startDate", "endDate", "minAmount", "maxAmount", "status", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateFinancialDocumentsReport()
-      },
-    },
-    debts: {
-      title: "דוח חובות",
-      description: "רשימת חובות של לקוחות",
-      icon: <CreditCard className="h-5 w-5 text-red-500" />,
-      filterOptions: ["startDate", "endDate", "minAmount", "maxAmount", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateDebtsReport()
-      },
-    },
-    payments: {
-      title: "דוח תקבולים",
-      description: "רשימת כל התשלומים שהתקבלו",
-      icon: <CreditCard className="h-5 w-5 text-green-500" />,
-      filterOptions: ["startDate", "endDate", "minAmount", "maxAmount", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generatePaymentsReport()
-      },
-    },
-  }
-
-  const generalReports: Record<string, ReportConfig> = {
-    employeeAttendance: {
-      title: "דוח נוכחות עובדים",
-      description: "רשימת נוכחות של עובדים",
-      icon: <Users className="h-5 w-5 text-primary" />,
-      filterOptions: ["startDate", "endDate", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateEmployeeAttendanceReport()
-      },
-    },
-    inactiveCustomers: {
-      title: "דוח לקוחות לא פעילים",
-      description: "לקוחות שלא היו פעילים בתקופה שנבחרה",
-      icon: <Users className="h-5 w-5 text-red-500" />,
-      filterOptions: ["startDate", "endDate", "membershipType", "searchTerm"],
-      generateFn: async (filters) => {
-        await ReportsService.generateInactiveCustomersReport()
-      },
-    },
-  }
-
-  const getReportsForTab = () => {
-    switch (activeTab) {
-      case "membership":
-        return membershipReports
-      case "financial":
-        return financialReports
-      case "general":
-        return generalReports
-      default:
-        return {}
-    }
-  }
-
-  const handleGenerateReport = async (reportKey: string) => {
+  const fetchInvoices = async () => {
     try {
-      setLoading(true)
-      const reports = getReportsForTab()
-      const report = reports[reportKey]
-
-      if (!report) {
-        throw new Error("דוח לא נמצא")
-      }
-
-      await report.generateFn(filters)
-
-      toast({
-        title: "הדוח נוצר בהצלחה",
-        description: "הקובץ הורד למחשב שלך",
-      })
+      setIsLoading(true);
+      // Mock data for now - replace with actual API call
+      const mockInvoices: Invoice[] = [
+        {
+          id: "1",
+          invoice_number: "INV-001",
+          member_name: "יוסי כהן",
+          amount: 199.90,
+          status: "paid",
+          due_date: "2024-01-15",
+          created_at: "2024-01-01"
+        },
+        {
+          id: "2", 
+          invoice_number: "INV-002",
+          member_name: "שרה לוי",
+          amount: 299.90,
+          status: "pending",
+          due_date: "2024-01-20",
+          created_at: "2024-01-05"
+        }
+      ];
+      
+      setInvoices(mockInvoices);
     } catch (error) {
-      console.error("Error generating report:", error)
-      toast({
-        title: "שגיאה ביצירת הדוח",
-        description: "אנא נסה שוב מאוחר יותר",
-        variant: "destructive",
-      })
+      console.error('Error fetching invoices:', error);
+      toast.error('שגיאה בטעינת החשבוניות');
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const renderFilterControls = (filterOptions: string[]) => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        {filterOptions.includes("startDate") && (
-          <div className="space-y-2">
-            <Label htmlFor="startDate">מתאריך</Label>
-            <DatePicker
-              id="startDate"
-              date={filters.startDate}
-              onSelect={(date) => handleFilterChange("startDate", date)}
-              className="w-full"
-            />
-          </div>
-        )}
+  const generateInvoice = async (memberId?: string, amount?: number, description?: string, dueDate?: string) => {
+    try {
+      // Mock implementation - replace with actual API call
+      const newInvoice: Invoice = {
+        id: Date.now().toString(),
+        invoice_number: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+        member_name: "חבר חדש",
+        amount: amount || 199.90,
+        status: "pending",
+        due_date: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        created_at: new Date().toISOString().split('T')[0]
+      };
+      
+      setInvoices(prev => [newInvoice, ...prev]);
+      toast.success('חשבונית נוצרה בהצלחה');
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      toast.error('שגיאה ביצירת החשבונית');
+    }
+  };
 
-        {filterOptions.includes("endDate") && (
-          <div className="space-y-2">
-            <Label htmlFor="endDate">עד תאריך</Label>
-            <DatePicker
-              id="endDate"
-              date={filters.endDate}
-              onSelect={(date) => handleFilterChange("endDate", date)}
-              className="w-full"
-            />
-          </div>
-        )}
+  const downloadInvoice = async (invoiceId: string) => {
+    try {
+      // Mock implementation - replace with actual PDF generation
+      toast.success('החשבונית הורדה בהצלחה');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('שגיאה בהורדת החשבונית');
+    }
+  };
 
-        {filterOptions.includes("membershipType") && (
-          <div className="space-y-2">
-            <Label htmlFor="membershipType">סוג מנוי</Label>
-            <Select
-              value={filters.membershipType}
-              onValueChange={(value) => handleFilterChange("membershipType", value)}
-            >
-              <SelectTrigger id="membershipType">
-                <SelectValue placeholder="כל סוגי המנויים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל סוגי המנויים</SelectItem>
-                <SelectItem value="standard">סטנדרט</SelectItem>
-                <SelectItem value="premium">פרימיום</SelectItem>
-                <SelectItem value="student">סטודנט</SelectItem>
-                <SelectItem value="senior">ותיק</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = invoice.member_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-        {filterOptions.includes("status") && (
-          <div className="space-y-2">
-            <Label htmlFor="status">סטטוס</Label>
-            <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
-              <SelectTrigger id="status">
-                <SelectValue placeholder="כל הסטטוסים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסטטוסים</SelectItem>
-                <SelectItem value="active">פעיל</SelectItem>
-                <SelectItem value="inactive">לא פעיל</SelectItem>
-                <SelectItem value="pending">ממתין</SelectItem>
-                <SelectItem value="expired">פג תוקף</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "paid": return "bg-green-100 text-green-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "overdue": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
 
-        {filterOptions.includes("minAmount") && (
-          <div className="space-y-2">
-            <Label htmlFor="minAmount">סכום מינימלי</Label>
-            <Input
-              id="minAmount"
-              type="number"
-              value={filters.minAmount}
-              onChange={(e) => handleFilterChange("minAmount", e.target.value)}
-              placeholder="סכום מינימלי"
-            />
-          </div>
-        )}
-
-        {filterOptions.includes("maxAmount") && (
-          <div className="space-y-2">
-            <Label htmlFor="maxAmount">סכום מקסימלי</Label>
-            <Input
-              id="maxAmount"
-              type="number"
-              value={filters.maxAmount}
-              onChange={(e) => handleFilterChange("maxAmount", e.target.value)}
-              placeholder="סכום מקסימלי"
-            />
-          </div>
-        )}
-
-        {filterOptions.includes("searchTerm") && (
-          <div className="space-y-2">
-            <Label htmlFor="searchTerm">חיפוש</Label>
-            <Input
-              id="searchTerm"
-              value={filters.searchTerm}
-              onChange={(e) => handleFilterChange("searchTerm", e.target.value)}
-              placeholder="חיפוש לפי שם, אימייל, טלפון..."
-            />
-          </div>
-        )}
-
-        {filterOptions.includes("includeInactive") && (
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Checkbox
-              id="includeInactive"
-              checked={filters.includeInactive}
-              onCheckedChange={(checked) => handleFilterChange("includeInactive", checked)}
-            />
-            <Label htmlFor="includeInactive">כלול מנויים לא פעילים</Label>
-          </div>
-        )}
-      </div>
-    )
-  }
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "paid": return "שולם";
+      case "pending": return "ממתין";
+      case "overdue": return "באיחור";
+      default: return status;
+    }
+  };
 
   return (
     <DashboardShell>
-      <div className="container px-4 py-6 mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
- 
-            <h1 className="text-3xl font-bold">דוחות מסוננים</h1>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">חשבוניות</h1>
+            <p className="text-muted-foreground">נהל חשבוניות ותשלומים</p>
           </div>
+          <Button onClick={() => generateInvoice()}>
+            <Plus className="h-4 w-4 mr-2" />
+            צור חשבונית חדשה
+          </Button>
         </div>
 
-        <Tabs defaultValue="membership" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="membership">דוחות מנויים</TabsTrigger>
-            <TabsTrigger value="financial">דוחות פיננסיים</TabsTrigger>
-            <TabsTrigger value="general">דוחות כלליים</TabsTrigger>
-          </TabsList>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              רשימת חשבוניות
+            </CardTitle>
+            <CardDescription>
+              כאן תוכל לראות ולנהל את כל החשבוניות במערכת
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="חפש לפי שם חבר או מספר חשבונית..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="סנן לפי סטטוס" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הסטטוסים</SelectItem>
+                  <SelectItem value="paid">שולם</SelectItem>
+                  <SelectItem value="pending">ממתין</SelectItem>
+                  <SelectItem value="overdue">באיחור</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <TabsContent value="membership" className="space-y-4">
-            {Object.entries(membershipReports).map(([key, report]) => (
-              <Card key={key} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{report.title}</CardTitle>
-                    {report.icon}
-                  </div>
-                  <CardDescription>{report.description}</CardDescription>
-                </CardHeader>
-                <CardContent>{renderFilterControls(report.filterOptions)}</CardContent>
-                <CardFooter className="bg-muted/50 pt-2">
-                  <Button onClick={() => handleGenerateReport(key)} className="w-full" disabled={loading}>
-                    {loading ? (
-                      <span className="flex items-center">
-                        <span className="animate-spin mr-2">⏳</span>
-                        מייצר דוח...
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <Download className="mr-2 h-4 w-4" />
-                        הורד דוח
-                      </span>
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </TabsContent>
-
-          <TabsContent value="financial" className="space-y-4">
-            {Object.entries(financialReports).map(([key, report]) => (
-              <Card key={key} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{report.title}</CardTitle>
-                    {report.icon}
-                  </div>
-                  <CardDescription>{report.description}</CardDescription>
-                </CardHeader>
-                <CardContent>{renderFilterControls(report.filterOptions)}</CardContent>
-                <CardFooter className="bg-muted/50 pt-2">
-                  {report.title === "דוח תקבולים" ? (
-                    <Button variant="ghost" className="w-full" asChild>
-                    <Link to={'/reports/finance#'+report.title}></Link>
-                  </Button>
-                    
-                  
-                  ):(
-                    <Button onClick={() => handleGenerateReport(key)} className="w-full" disabled={loading}>
-                      {loading ? (
-                        <span className="flex items-center">
-                          <span className="animate-spin mr-2">⏳</span>
-                          מייצר דוח...
-                        </span>
-                      ) : (
-                        <span className="flex items-center">
-                          <Download className="mr-2 h-4 w-4" />
-                          הורד דוח
-                        </span>
-                      )}
-                    </Button>
-                  )}
-                
-                </CardFooter>
-              </Card>
-            ))}
-          </TabsContent>
-
-          <TabsContent value="general" className="space-y-4">
-            {Object.entries(generalReports).map(([key, report]) => (
-              <Card key={key} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{report.title}</CardTitle>
-                    {report.icon}
-                  </div>
-                  <CardDescription>{report.description}</CardDescription>
-                </CardHeader>
-                <CardContent>{renderFilterControls(report.filterOptions)}</CardContent>
-                <CardFooter className="bg-muted/50 pt-2">
-                  <Button onClick={() => handleGenerateReport(key)} className="w-full" disabled={loading}>
-                    {loading ? (
-                      <span className="flex items-center">
-                        <span className="animate-spin mr-2">⏳</span>
-                        מייצר דוח...
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <Download className="mr-2 h-4 w-4" />
-                        הורד דוח
-                      </span>
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </TabsContent>
-        </Tabs>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>מספר חשבונית</TableHead>
+                  <TableHead>שם חבר</TableHead>
+                  <TableHead>סכום</TableHead>
+                  <TableHead>סטטוס</TableHead>
+                  <TableHead>תאריך יעד</TableHead>
+                  <TableHead>תאריך יצירה</TableHead>
+                  <TableHead>פעולות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      טוען...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredInvoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      לא נמצאו חשבוניות
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
+                      <TableCell>{invoice.member_name}</TableCell>
+                      <TableCell>{invoice.amount.toFixed(2)} ₪</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(invoice.status)}>
+                          {getStatusText(invoice.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(invoice.due_date).toLocaleDateString('he-IL')}</TableCell>
+                      <TableCell>{new Date(invoice.created_at).toLocaleDateString('he-IL')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button size="sm" variant="ghost">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => downloadInvoice(invoice.id)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </DashboardShell>
-  )
+  );
 }

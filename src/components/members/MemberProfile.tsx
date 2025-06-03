@@ -1,189 +1,210 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
-import { DashboardShell } from "@/components/layout/DashboardShell"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
-import { Loader2, Mail, Phone, Calendar, User, ArrowLeft } from "lucide-react"
-import { Link } from "react-router-dom"
-import { supabase } from "@/integrations/supabase/client"
-import { MemberProfileActions } from "@/components/members/MemberProfileActions"
-import { MemberProfileTabs } from "@/components/members/MemberProfileTabs"
-import { t } from "@/utils/translations"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Calendar, CreditCard, Edit, User, UserPlus } from "lucide-react";
+import { MemberProfileActions } from "./MemberProfileActions";
+import { MemberSubscriptions } from "./MemberSubscriptions";
+import { MemberPayments } from "./MemberPayments";
+import { MemberCheckins } from "./MemberCheckins";
+import { MemberEditForm } from "./MemberEditForm";
+import { useToast } from "@/hooks/use-toast";
+import { MemberService } from "@/services/MemberService";
 
 interface Member {
-  id: string
-  name: string
-  last_name: string | null
-  email: string | null
-  phone: string | null
-  gender: string | null
-  dateOfBirth: string | null
-  created_at: string
+  id: string;
+  name: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  gender?: string;
+  created_at?: string;
+  status?: string;
+  membership_status?: string;
+  membership_type?: string;
+  membership_end_date?: string;
+  last_checkin?: string;
+  [key: string]: any;
 }
 
-export default function MemberProfile() {
-  const { id } = useParams<{ id: string }>()
-  const [member, setMember] = useState<Member | null>(null)
-  const [loading, setLoading] = useState(true)
+interface MemberProfileProps {
+  member: Member;
+}
 
-  useEffect(() => {
-    if (id) {
-      console.log("Fetching member with ID:", id)
-      fetchMember(id)
-    } else {
-      console.error("No member ID provided in route parameters")
-      setLoading(false)
-    }
-  }, [id])
+export function MemberProfile({ member }: MemberProfileProps) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedMember, setEditedMember] = useState(member);
+  const [activeTab, setActiveTab] = useState("profile");
 
-  const fetchMember = async (memberId: string) => {
+  // Handle member update
+  const handleUpdateMember = async (updatedData: Partial<Member>) => {
     try {
-      setLoading(true)
-      console.log("Making Supabase request for member:", memberId)
-
-      const { data, error } = await supabase.from("custom_members").select("*").eq("id", memberId).single()
-
-      if (error) {
-        console.error("Supabase error:", error)
-        toast.error(t("errorFetchingMember"))
-        throw error
-      }
-
-      console.log("Member data received:", data)
-      setMember(data)
+      await MemberService.updateMember(member.id, updatedData);
+      setEditedMember({ ...editedMember, ...updatedData });
+      setIsEditing(false);
+      toast({
+        title: "פרטי חבר עודכנו",
+        description: "פרטי החבר עודכנו בהצלחה",
+      });
     } catch (error) {
-      console.error("Error fetching member:", error)
-      toast.error(t("errorFetchingMember"))
-    } finally {
-      setLoading(false)
+      console.error('Error updating member:', error);
+      toast({
+        title: "שגיאה בעדכון פרטי חבר",
+        description: "לא ניתן לעדכן את פרטי החבר. נסה שנית.",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
-  const getInitials = (name: string, lastName: string | null) => {
-    const firstInitial = name ? name[0] : ""
-    const lastInitial = lastName ? lastName[0] : ""
-    return `${firstInitial}${lastInitial}`
-  }
+  // Get membership status badge color
+  const getMembershipStatusColor = (status?: string) => {
+    if (!status) return "bg-gray-100 text-gray-800";
+    
+    switch (status.toLowerCase()) {
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "expired":
+        return "bg-red-100 text-red-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("he-IL", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-  }
-
-  if (loading) {
-    return (
-      <DashboardShell>
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardShell>
-    )
-  }
-
-  if (!member) {
-    return (
-      <DashboardShell>
-        <div className="text-center py-8">
-          <h2 className="text-2xl font-bold mb-2">{t("memberNotFound")}</h2>
-          <p className="text-muted-foreground mb-4">{t("memberNotFoundDesc")}</p>
-          <Button asChild>
-            <Link to="/members">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("backToMembers")}
-            </Link>
-          </Button>
-        </div>
-      </DashboardShell>
-    )
-  }
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "לא זמין";
+    return new Date(dateString).toLocaleDateString('he-IL');
+  };
 
   return (
-    <DashboardShell>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" asChild>
-            <Link to="/members">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/members")}>
+            <ArrowLeft className="h-4 w-4" />
+            חזור לרשימת החברים
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">{t("memberProfile")}</h1>
+          <div>
+            <h1 className="text-2xl font-bold">{member.name} {member.last_name}</h1>
+            <p className="text-muted-foreground">
+              חבר מאז {new Date(member.created_at || Date.now()).toLocaleDateString('he-IL')}
+            </p>
+          </div>
         </div>
         <MemberProfileActions
-          memberId={member.id}
-          memberName={`${member.name} ${member.last_name || ""}`}
-          onRefresh={() => fetchMember(member.id)}
+          member={member}
+          onEdit={() => setIsEditing(true)}
+          onAddSubscription={() => {/* handler */}}
+          onAddPayment={() => {/* handler */}}
+          onCheckIn={() => {/* handler */}}
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="md:col-span-1">
+      {isEditing ? (
+        <Card>
           <CardHeader>
-            <CardTitle>{t("memberInfo")}</CardTitle>
+            <CardTitle>עריכת פרטי חבר</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center mb-6">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback className="text-xl">{getInitials(member.name, member.last_name)}</AvatarFallback>
-              </Avatar>
-              <h2 className="text-xl font-bold">{`${member.name} ${member.last_name || ""}`}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t("memberSince")}
-                {member.created_at ? formatDate(member.created_at) : formatDate(member.joinDate)}
-              </p>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-2">
-                <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">{t("email")}</p>
-                  <p className="text-sm">{member.email || t("notProvided")}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">{t("phone")}</p>
-                  <p className="text-sm">{member.phone || t("notProvided")}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">{t("gender")}</p>
-                  <p className="text-sm">{member.gender ? t(member.gender) : t("notProvided")}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">{t("dateOfBirth")}</p>
-                  <p className="text-sm">{member.dateOfBirth || t("notProvided")}</p>
-                </div>
-              </div>
-            </div>
+            <MemberEditForm 
+              member={member} 
+              onSubmit={handleUpdateMember} 
+              onCancel={() => setIsEditing(false)} 
+            />
           </CardContent>
         </Card>
-
-        <div className="md:col-span-3">
-          <MemberProfileTabs memberId={member.id} />
-        </div>
-      </div>
-    </DashboardShell>
-  )
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile">פרופיל</TabsTrigger>
+            <TabsTrigger value="subscriptions">מנויים</TabsTrigger>
+            <TabsTrigger value="payments">תשלומים</TabsTrigger>
+            <TabsTrigger value="checkins">כניסות</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  פרטי חבר
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">שם מלא</h3>
+                      <p>{member.name} {member.last_name}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">אימייל</h3>
+                      <p>{member.email || "לא הוזן"}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">טלפון</h3>
+                      <p>{member.phone || "לא הוזן"}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">מגדר</h3>
+                      <p>{member.gender || "לא הוזן"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">סטטוס מנוי</h3>
+                      <div className="mt-1">
+                        <Badge className={getMembershipStatusColor(member.membership_status)}>
+                          {member.membership_status || "לא ידוע"}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">סוג מנוי</h3>
+                      <p>{member.membership_type || "אין מנוי פעיל"}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">תאריך סיום מנוי</h3>
+                      <p>{formatDate(member.membership_end_date)}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">כניסה אחרונה</h3>
+                      <p>{formatDate(member.last_checkin)}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Additional member details can be added here */}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="subscriptions">
+            <MemberSubscriptions memberId={member.id} />
+          </TabsContent>
+          
+          <TabsContent value="payments">
+            <MemberPayments memberId={member.id} />
+          </TabsContent>
+          
+          <TabsContent value="checkins">
+            <MemberCheckins memberId={member.id} />
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
 }

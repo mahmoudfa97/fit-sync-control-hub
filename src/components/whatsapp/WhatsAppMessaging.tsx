@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -31,6 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { WhatsAppService } from "@/services/WhatsAppService"
+import { useOrganization } from "@/contexts/OrganizationContext"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +76,7 @@ interface FilterOptions {
 
 export default function WhatsAppMessaging() {
   const { toast } = useToast()
+  const { currentOrganization } = useOrganization()
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
@@ -97,15 +100,15 @@ export default function WhatsAppMessaging() {
 
   // Fetch members and templates on component mount
   useEffect(() => {
-    fetchMembers()
-    fetchTemplates()
-  }, [])
+    if (currentOrganization) {
+      fetchMembers()
+      fetchTemplates()
+    }
+  }, [currentOrganization])
 
   // Apply filters and search to members
   useEffect(() => {
     let filtered = [...members]
-
-
 
     // Apply gender filter
     if (filterOptions.gender !== "all") {
@@ -164,12 +167,15 @@ export default function WhatsAppMessaging() {
 
   // Fetch members from database
   const fetchMembers = async () => {
+    if (!currentOrganization) return;
+    
     try {
       setIsLoading(true)
       // First fetch members with their basic information
       const { data: membersData, error: membersError } = await supabase
         .from("custom_members")
         .select("id, name, phone, last_name")
+        .eq("organization_id", currentOrganization.id)
         .order("name")
 
       if (membersError) {
@@ -180,6 +186,7 @@ export default function WhatsAppMessaging() {
       const { data: membershipsData, error: membershipsError } = await supabase
         .from("custom_memberships")
         .select("member_id, membership_type, start_date, end_date")
+        .eq("organization_id", currentOrganization.id)
 
       if (membershipsError) {
         throw membershipsError
@@ -225,8 +232,10 @@ export default function WhatsAppMessaging() {
 
   // Fetch WhatsApp templates
   const fetchTemplates = async () => {
+    if (!currentOrganization) return;
+    
     try {
-      const templates = await WhatsAppService.getTemplates()
+      const templates = await WhatsAppService.getTemplates(currentOrganization.id)
       setTemplates(templates)
       if (templates.length > 0) {
         setSelectedTemplate(templates[0].id)
@@ -317,6 +326,8 @@ export default function WhatsAppMessaging() {
 
   // Send messages to selected members
   const sendMessages = async () => {
+    if (!currentOrganization) return;
+    
     if (selectedMembers.length === 0) {
       toast({
         title: "לא נבחרו חברים",
@@ -362,9 +373,9 @@ export default function WhatsAppMessaging() {
       for (const member of selectedMembersList) {
         try {
           if (messageType === "direct") {
-            await WhatsAppService.sendDirectMessage(member.phone, directMessage)
+            await WhatsAppService.sendDirectMessage(currentOrganization.id, member.phone, directMessage)
           } else {
-            await WhatsAppService.sendTemplateMessage(member.phone, selectedTemplate, templateVariables)
+            await WhatsAppService.sendTemplateMessage(currentOrganization.id, member.phone, selectedTemplate, templateVariables)
           }
 
           // Update status for this member
@@ -400,6 +411,80 @@ export default function WhatsAppMessaging() {
     } finally {
       setIsSending(false)
     }
+  }
+
+  // Toggle member selection
+  const toggleMemberSelection = (memberId: string) => {
+    if (selectedMembers.includes(memberId)) {
+      setSelectedMembers(selectedMembers.filter((id) => id !== memberId))
+    } else {
+      setSelectedMembers([...selectedMembers, memberId])
+    }
+  }
+
+  // Handle template selection
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId)
+    // Reset template variables when template changes
+    setTemplateVariables({})
+  }
+
+  // Update template variable
+  const updateTemplateVariable = (key: string, value: string) => {
+    setTemplateVariables({
+      ...templateVariables,
+      [key]: value,
+    })
+  }
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilterOptions({
+      status: "all",
+      gender: "all",
+      group: "all",
+    })
+    setSearchQuery("")
+  }
+
+  // Get template variable fields based on selected template
+  const getTemplateVariableFields = () => {
+    const template = templates.find((t) => t.id === selectedTemplate)
+    if (!template) return null
+
+    // Extract variables from template components
+    const variables: { key: string; example: string }[] = []
+    template.components?.forEach((component) => {
+      if (component.type === "BODY" || component.type === "HEADER") {
+        component.example?.variables?.forEach((variable: string, index: number) => {
+          variables.push({
+            key: `${component.type.toLowerCase()}_${index}`,
+            example: variable,
+          })
+        })
+      }
+    })
+
+    if (variables.length === 0) return <p className="text-sm text-gray-500">תבנית זו אינה מכילה משתנים.</p>
+
+    return (
+      <div className="space-y-4 mt-4">
+        <h3 className="text-sm font-medium">משתני תבנית:</h3>
+        {variables.map((variable) => (
+          <div key={variable.key} className="space-y-2">
+            <Label htmlFor={variable.key}>
+              משתנה {variable.key} <span className="text-gray-500 text-xs">(לדוגמה: {variable.example})</span>
+            </Label>
+            <Input
+              id={variable.key}
+              value={templateVariables[variable.key] || ""}
+              onChange={(e) => updateTemplateVariable(variable.key, e.target.value)}
+              placeholder={variable.example}
+            />
+          </div>
+        ))}
+      </div>
+    )
   }
 
   // Get status icon based on message status
@@ -654,7 +739,7 @@ export default function WhatsAppMessaging() {
                                 <div className="text-sm text-gray-500">{member.phone}</div>
                                 {member.gender && (
                                   <Badge variant="outline" className="text-xs">
-                                    {member.gender === "male" ? "גבר" : member.gender === "female" ? "אישה" : "אחר"}
+                                    {member.gender === "גברים" ? "גבר" : member.gender === "נשים" ? "אישה" : "אחר"}
                                   </Badge>
                                 )}
                                 {member.group && (
