@@ -8,7 +8,7 @@ import FinanceReportsPage from "@/components/reports/FinanceReportsPage";
 import GeneralReportsPage from "@/components/reports/GeneralReportsPage";
 import MembersReportsPage from "@/components/reports/MembersReportsPage";
 import { PaymentReportPage } from "@/components/reports/PaymentReportPage";
-import { FileText, TrendingUp, Users, CreditCard, Download, Clock } from "lucide-react";
+import { FileText, Download, Clock } from "lucide-react";
 
 export default function ReportsPage() {
   const [reportsHistory, setReportsHistory] = useState<any[]>([]);

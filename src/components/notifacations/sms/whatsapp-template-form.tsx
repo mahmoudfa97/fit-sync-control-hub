@@ -144,11 +144,14 @@ export function WhatsAppTemplateForm({ recipientPhone = "", onSent }: WhatsAppTe
             <SelectContent>
               {templates.map((template) => (
                 <SelectItem key={template.id} value={template.id}>
-                  {template.name} {template.status !== "APPROVED" && (
-                    <Badge variant="destructive" className="text-xs">
-                      {template.status}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {template.name}
+                    {template.status !== "APPROVED" && (
+                      <Badge variant="destructive" className="text-xs">
+                        {template.status}
+                      </Badge>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

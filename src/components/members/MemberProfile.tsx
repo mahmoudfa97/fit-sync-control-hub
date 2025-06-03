@@ -3,13 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MemberService } from '@/services/MemberService';
 import { MemberProfileActions } from './MemberProfileActions';
 import { MemberProfileTabs } from './MemberProfileTabs';
-import { ArrowLeft, Phone, Mail, Calendar, CreditCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Member {
@@ -28,7 +26,6 @@ export function MemberProfile() {
   const navigate = useNavigate();
   const [member, setMember] = useState<Member | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -49,34 +46,10 @@ export function MemberProfile() {
     }
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = async (updatedMember: Partial<Member>) => {
-    if (!member) return;
-    
-    try {
-      await MemberService.updateMember(member.id, updatedMember);
-      setMember({ ...member, ...updatedMember });
-      setIsEditing(false);
-      toast.success('פרטי החבר עודכנו בהצלחה');
-    } catch (error) {
-      console.error('Error updating member:', error);
-      toast.error('שגיאה בעדכון פרטי החבר');
+  const handleRefresh = () => {
+    if (id) {
+      fetchMember(id);
     }
-  };
-
-  const handleAddSubscription = () => {
-    console.log('Add subscription');
-  };
-
-  const handleAddPayment = () => {
-    console.log('Add payment');
-  };
-
-  const handleCheckIn = () => {
-    console.log('Check in');
   };
 
   if (isLoading) {
@@ -152,9 +125,10 @@ export function MemberProfile() {
           </div>
           <MemberProfileActions
             memberId={member.id}
-            onAddSubscription={handleAddSubscription}
-            onAddPayment={handleAddPayment}
-            onCheckIn={handleCheckIn}
+            memberName={member.name}
+            memberEmail={member.email}
+            memberPhone={member.phone}
+            onRefresh={handleRefresh}
           />
         </CardHeader>
       </Card>

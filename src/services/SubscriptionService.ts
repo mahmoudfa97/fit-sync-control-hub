@@ -3,13 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface Subscription {
   id: string;
-  user_id: string;
-  organization_id: string;
-  email: string;
-  stripe_customer_id?: string;
-  subscribed: boolean;
-  subscription_tier?: string;
-  subscription_end?: string;
+  member_id: string;
+  membership_type: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  payment_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -24,21 +23,34 @@ export interface GroupSubscription {
   price_six_months: number;
   annual_price: number;
   is_active: boolean;
+  schedule: any;
   organization_id: string;
-  schedule?: any;
   created_at: string;
   updated_at: string;
 }
 
 export interface PaymentDetails {
-  amount: number;
-  duration: number;
-  subscription_type: string;
   payment_method: string;
-  cardDetails?: any;
-  checkDetails?: any;
-  bankDetails?: any;
-  hypDetails?: any;
+  cardDetails?: {
+    cardNumber: string;
+    expiryDate: string;
+    cvv: string;
+    cardHolderName: string;
+  };
+  checkDetails?: {
+    checkNumber: string;
+    bankName: string;
+    accountNumber: string;
+  };
+  bankDetails?: {
+    accountNumber: string;
+    bankName: string;
+    branchNumber: string;
+  };
+  hypDetails?: {
+    paymentMethod: string;
+    redirectUrl: string;
+  };
   installments?: number;
   installmentAmount?: number;
   sendReceipt?: boolean;
@@ -48,103 +60,73 @@ export interface PaymentDetails {
 }
 
 export const SubscriptionService = {
-  async getCurrentSubscription(): Promise<Subscription | null> {
-    try {
-      const { data, error } = await supabase
-        .from('subscribers')
-        .select('*')
-        .limit(1)
-        .single();
+  async getCurrentSubscription(): Promise<Subscription> {
+    const { data, error } = await supabase
+      .from('custom_memberships')
+      .select('*')
+      .eq('status', 'active')
+      .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching subscription:', error);
-      return null;
-    }
+    if (error) throw error;
+    return data;
   },
 
   async createSubscription(organizationId: string, tier: string): Promise<void> {
-    try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('User not authenticated');
+    const { error } = await supabase
+      .from('custom_memberships')
+      .insert([{
+        organization_id: organizationId,
+        membership_type: tier,
+        status: 'active',
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      }]);
 
-      const { error } = await supabase
-        .from('subscribers')
-        .insert({
-          user_id: user.user.id,
-          organization_id: organizationId,
-          email: user.user.email!,
-          subscribed: true,
-          subscription_tier: tier
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error creating subscription:', error);
-      throw error;
-    }
+    if (error) throw error;
   },
 
   async updateSubscription(subscriptionId: string, updates: Partial<Subscription>): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('subscribers')
-        .update(updates)
-        .eq('id', subscriptionId);
+    const { error } = await supabase
+      .from('custom_memberships')
+      .update(updates)
+      .eq('id', subscriptionId);
 
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating subscription:', error);
-      throw error;
-    }
+    if (error) throw error;
   },
 
   async cancelSubscription(subscriptionId: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('subscribers')
-        .update({ subscribed: false })
-        .eq('id', subscriptionId);
+    const { error } = await supabase
+      .from('custom_memberships')
+      .update({ status: 'cancelled' })
+      .eq('id', subscriptionId);
 
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error canceling subscription:', error);
-      throw error;
-    }
+    if (error) throw error;
   },
 
-  async checkTrialStatus(organizationId: string): Promise<{ isExpired: boolean; daysLeft: number }> {
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('trial_ends_at, subscription_status')
-        .eq('id', organizationId)
-        .single();
+  async checkTrialStatus(organizationId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('organizations')
+      .select('trial_ends_at')
+      .eq('id', organizationId)
+      .single();
 
-      if (error) throw error;
-
-      const trialEndDate = new Date(data.trial_ends_at);
-      const now = new Date();
-      const daysLeft = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
-      return {
-        isExpired: data.subscription_status === 'trial' && daysLeft <= 0,
-        daysLeft: Math.max(0, daysLeft)
-      };
-    } catch (error) {
-      console.error('Error checking trial status:', error);
-      return { isExpired: false, daysLeft: 0 };
-    }
+    if (error) throw error;
+    return new Date(data.trial_ends_at) > new Date();
   },
 
-  async fetchGroupSubscriptions(organizationId: string): Promise<GroupSubscription[]> {
+  async fetchGroupSubscriptions(organizationId?: string): Promise<GroupSubscription[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('group_subscriptions')
         .select('*')
-        .eq('organization_id', organizationId)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
@@ -154,19 +136,41 @@ export const SubscriptionService = {
     }
   },
 
-  async addSubscription(memberId: string, subscriptionData: any): Promise<void> {
+  async addSubscription(memberId: string, subscriptionData: any, paymentDetails: PaymentDetails): Promise<void> {
     try {
-      const { error } = await supabase
+      // Create the subscription
+      const { data: subscription, error: subscriptionError } = await supabase
         .from('custom_memberships')
-        .insert({
+        .insert([{
           member_id: memberId,
-          ...subscriptionData
-        });
+          membership_type: subscriptionData.membershipType,
+          start_date: subscriptionData.startDate,
+          end_date: subscriptionData.endDate,
+          status: 'active',
+          payment_status: 'paid',
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (subscriptionError) throw subscriptionError;
+
+      // Create payment record
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert([{
+          member_id: memberId,
+          amount: subscriptionData.totalAmount,
+          payment_method: paymentDetails.payment_method,
+          status: 'paid',
+          description: `${subscriptionData.membershipType} membership`,
+          payment_details: paymentDetails,
+        }]);
+
+      if (paymentError) throw paymentError;
+
     } catch (error) {
       console.error('Error adding subscription:', error);
       throw error;
     }
-  }
+  },
 };
