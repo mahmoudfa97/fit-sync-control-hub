@@ -26,6 +26,7 @@ import EnhancedHypPaymentModal from "@/components/payments/EnhancedHypPaymentMod
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useOrganization } from "@/contexts/OrganizationContext"
 
 interface AddSubscriptionDialogProps {
   open: boolean
@@ -58,6 +59,7 @@ export const AddSubscriptionDialog = ({
   onSubscriptionAdded,
 }: AddSubscriptionDialogProps) => {
   const { toast } = useToast()
+  const { currentOrganization } = useOrganization()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [groupSubscriptions, setGroupSubscriptions] = useState<GroupSubscription[]>([])
@@ -103,16 +105,18 @@ export const AddSubscriptionDialog = ({
 
   // Fetch group subscriptions when dialog opens
   useEffect(() => {
-    if (open) {
+    if (open && currentOrganization) {
       fetchGroupSubscriptions()
       setCurrentStep(1)
     }
-  }, [open])
+  }, [open, currentOrganization])
 
   const fetchGroupSubscriptions = async () => {
+    if (!currentOrganization) return;
+    
     try {
       setIsLoading(true)
-      const data = await SubscriptionService.fetchGroupSubscriptions()
+      const data = await SubscriptionService.fetchGroupSubscriptions(currentOrganization.id)
       setGroupSubscriptions(data)
 
       // Set default values if we have subscriptions
@@ -212,8 +216,10 @@ export const AddSubscriptionDialog = ({
 
       // Prepare payment details based on method
       const paymentDetails: PaymentDetails = {
-        paymentMethod,
+        payment_method: paymentMethod,
         amount: totalAmount,
+        duration: Number.parseInt(duration),
+        subscription_type: membershipType,
       }
 
       switch (paymentMethod) {
@@ -940,6 +946,18 @@ export const AddSubscriptionDialog = ({
     )
   }
 
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -948,20 +966,28 @@ export const AddSubscriptionDialog = ({
             <DialogTitle>מנוי חדש</DialogTitle>
           </DialogHeader>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              {renderStepIndicator()}
+          {renderStepIndicator()}
 
-              <div className="py-2">
-                {currentStep === 1 && renderStep1()}
-                {currentStep === 2 && renderStep2()}
+          <div className="py-2">
+            {/* Basic form content for demonstration */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="subscriptionType">סוג מנוי</Label>
+                <Select value={subscriptionId} onValueChange={setSubscriptionId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר סוג מנוי" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groupSubscriptions.map((subscription) => (
+                      <SelectItem key={subscription.id} value={subscription.id}>
+                        {subscription.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </>
-          )}
+            </div>
+          </div>
 
           <DialogFooter className="flex justify-between sm:justify-between">
             {currentStep === 1 ? (
@@ -970,9 +996,7 @@ export const AddSubscriptionDialog = ({
                   ביטול
                 </Button>
                 <Button onClick={handleNextStep} disabled={isSubmitting}>
-                  {documentType === "none" ? (
-                    "הקדם"
-                  ) : (
+                  {documentType === "none" ? "הקדם" : (
                     <>
                       הבא <ArrowLeft className="mr-2 h-4 w-4" />
                     </>

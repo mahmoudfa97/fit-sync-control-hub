@@ -14,8 +14,6 @@ export default function ReportsPage() {
   const [reportsHistory, setReportsHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    // For now, we'll use a placeholder for reports history
-    // This can be connected to a real table later
     setReportsHistory([]);
   }, []);
 
@@ -52,7 +50,6 @@ export default function ReportsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Reports History Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

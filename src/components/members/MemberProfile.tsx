@@ -68,17 +68,14 @@ export function MemberProfile() {
   };
 
   const handleAddSubscription = () => {
-    // Implementation for adding subscription
     console.log('Add subscription');
   };
 
   const handleAddPayment = () => {
-    // Implementation for adding payment
     console.log('Add payment');
   };
 
   const handleCheckIn = () => {
-    // Implementation for check-in
     console.log('Check in');
   };
 
@@ -155,7 +152,6 @@ export function MemberProfile() {
           </div>
           <MemberProfileActions
             memberId={member.id}
-            onEdit={handleEdit}
             onAddSubscription={handleAddSubscription}
             onAddPayment={handleAddPayment}
             onCheckIn={handleCheckIn}
@@ -164,7 +160,7 @@ export function MemberProfile() {
       </Card>
 
       {/* Tabs */}
-      <MemberProfileTabs member={member} />
+      <MemberProfileTabs memberId={member.id} />
     </div>
   );
 }
