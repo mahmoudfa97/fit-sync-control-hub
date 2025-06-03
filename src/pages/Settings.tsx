@@ -15,12 +15,14 @@ import type { Json } from "@/integrations/supabase/types";
 interface WorkingHours {
   weekdays: string;
   weekends: string;
+  [key: string]: Json;
 }
 
 interface Notifications {
   email: boolean;
   sms: boolean;
   app: boolean;
+  [key: string]: Json;
 }
 
 interface BusinessInfo {
@@ -33,6 +35,7 @@ interface PrivacySettings {
   shareData: boolean;
   membersCanSeeOthers: boolean;
   publicProfile: boolean;
+  [key: string]: Json;
 }
 
 interface SmsSettings {
@@ -41,6 +44,7 @@ interface SmsSettings {
   apiSecret: string;
   fromNumber: string;
   testMessage: string;
+  [key: string]: Json;
 }
 
 interface Settings {
@@ -112,13 +116,21 @@ export default function Settings() {
     loadSettings();
   }, []);
 
+  const safeJsonParse = <T extends Record<string, any>>(value: Json | null, defaultValue: T): T => {
+    if (!value) return defaultValue;
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return { ...defaultValue, ...value } as T;
+    }
+    return defaultValue;
+  };
+
   const loadSettings = async () => {
     try {
       const { data, error } = await supabase
         .from("settings")
         .select("*")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         throw error;
@@ -132,14 +144,14 @@ export default function Settings() {
           phone: data.phone || "",
           language: data.language || "he",
           address: data.address || "",
-          workingHours: (data.working_hours as unknown as WorkingHours) || defaultSettings.workingHours,
-          notifications: (data.notifications as unknown as Notifications) || defaultSettings.notifications,
+          workingHours: safeJsonParse(data.working_hours, defaultSettings.workingHours),
+          notifications: safeJsonParse(data.notifications, defaultSettings.notifications),
           memberReminders: data.member_reminders ?? true,
           autoRenewals: data.auto_renewals ?? false,
-          businessInfo: (data.business_info as unknown as BusinessInfo) || defaultSettings.businessInfo,
+          businessInfo: safeJsonParse(data.business_info, defaultSettings.businessInfo),
           taxRate: data.tax_rate || 17,
-          privacySettings: (data.privacy_settings as unknown as PrivacySettings) || defaultSettings.privacySettings,
-          smsSettings: (data.sms_settings as unknown as SmsSettings) || defaultSettings.smsSettings,
+          privacySettings: safeJsonParse(data.privacy_settings, defaultSettings.privacySettings),
+          smsSettings: safeJsonParse(data.sms_settings, defaultSettings.smsSettings),
           backupFrequency: data.backup_frequency || "weekly",
           createdAt: data.created_at || "",
           updatedAt: data.updated_at || ""

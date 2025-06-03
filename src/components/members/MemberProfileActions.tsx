@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -15,7 +16,7 @@ interface MemberProfileActionsProps {
   onRefresh: () => void
 }
 
-export function MemberProfileActions({ memberId, memberName,memberEmail, memberPhone, onRefresh }: MemberProfileActionsProps) {
+export function MemberProfileActions({ memberId, memberName, memberEmail, memberPhone, onRefresh }: MemberProfileActionsProps) {
   const [isAddSubscriptionOpen, setIsAddSubscriptionOpen] = useState(false)
 
   return (
@@ -50,6 +51,7 @@ export function MemberProfileActions({ memberId, memberName,memberEmail, memberP
         memberName={memberName}
         memberEmail={memberEmail}
         memberPhone={memberPhone}
+        onSuccess={onRefresh}
         onSubscriptionAdded={onRefresh}
       />
     </div>
