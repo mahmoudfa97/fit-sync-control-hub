@@ -161,17 +161,19 @@ export const SubscriptionService = {
 
       if (subscriptionError) throw subscriptionError;
 
-      // Create payment record
+      // Create payment record with proper type conversion
+      const paymentRecord = {
+        member_id: memberId,
+        amount: Number(subscriptionData.totalAmount),
+        payment_method: paymentDetails.payment_method,
+        status: 'paid',
+        description: `${subscriptionData.membershipType} membership`,
+        payment_details: paymentDetails as any, // Cast to any to satisfy Json type
+      };
+
       const { error: paymentError } = await supabase
         .from('payments')
-        .insert([{
-          member_id: memberId,
-          amount: subscriptionData.totalAmount,
-          payment_method: paymentDetails.payment_method,
-          status: 'paid',
-          description: `${subscriptionData.membershipType} membership`,
-          payment_details: paymentDetails,
-        }]);
+        .insert([paymentRecord]);
 
       if (paymentError) throw paymentError;
 

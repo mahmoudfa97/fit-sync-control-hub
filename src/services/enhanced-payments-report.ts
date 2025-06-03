@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client"
 import { generateTableReport } from "@/utils/pdfGenerator"
 import { format, startOfMonth, endOfMonth } from "date-fns"
@@ -18,7 +19,7 @@ export const generateEnhancedPaymentsReport = async (
     const effectiveStartDate = startDate || startOfMonth(new Date())
     const effectiveEndDate = endDate || endOfMonth(new Date())
 
-    // Build query
+    // Build query - only select existing columns
     let query = supabase
       .from("payments")
       .select(`
@@ -26,8 +27,8 @@ export const generateEnhancedPaymentsReport = async (
         payment_date,
         amount,
         payment_method,
-        invoice_id,
-        notes,
+        receipt_number,
+        description,
         custom_members!member_id (id, name, last_name, email, phone)
       `)
       .gte("payment_date", formatDate(effectiveStartDate))
@@ -45,16 +46,16 @@ export const generateEnhancedPaymentsReport = async (
 
     return (data || []).map((item) => ({
       id: item.id,
-      member_id: item.custom_members.id,
-      name: item.custom_members.name,
-      last_name: item.custom_members.last_name,
-      email: item.custom_members.email,
-      phone: item.custom_members.phone,
+      member_id: item.custom_members?.id || '',
+      name: item.custom_members?.name || '',
+      last_name: item.custom_members?.last_name || '',
+      email: item.custom_members?.email || '',
+      phone: item.custom_members?.phone || '',
       payment_date: item.payment_date,
       amount: item.amount,
       payment_method: item.payment_method,
-      invoice_id: item.invoice_id,
-      notes: item.notes || "",
+      receipt_number: item.receipt_number || "",
+      description: item.description || "",
     }))
   }
 
@@ -118,18 +119,16 @@ export const generateEnhancedPaymentsReport = async (
     { key: "payment_date", header: "תאריך תשלום" },
     { key: "amount", header: "סכום" },
     { key: "payment_method", header: "אמצעי תשלום" },
-    { key: "invoice_id", header: "מזהה חשבונית" },
-    { key: "notes", header: "הערות" },
+    { key: "receipt_number", header: "מספר קבלה" },
+    { key: "description", header: "תיאור" },
   ]
 
   // Get summary data for the report header
   const summary = await fetchSummaryData()
 
-  // Generate the report with summary information
+  // Generate the report with basic options only
   await generateTableReport(fetchData, columns, "דוח תקבולים מפורט", {
     landscape: true,
-    subtitle: summary.dateRangeText,
-    additionalInfo: summary.summaryText,
   })
 }
 
@@ -203,6 +202,5 @@ export const generateMonthlyPaymentsSummaryReport = async (year: number): Promis
 
   await generateTableReport(fetchData, columns, `דוח תקבולים חודשי - ${year}`, {
     landscape: true,
-    subtitle: `סיכום תקבולים לשנת ${year}`,
   })
 }

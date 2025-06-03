@@ -1,3 +1,4 @@
+
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { supabase } from "@/integrations/supabase/client"
@@ -128,21 +129,20 @@ export const generateTableReport = async (
   }
 }
 
-// Generate invoice PDF
-export const generateInvoicePdf = async (invoiceId: string): Promise<void> => {
+// Generate invoice PDF - simplified to use payments table instead of non-existent invoices table
+export const generateInvoicePdf = async (paymentId: string): Promise<void> => {
   try {
-    const { data: invoice, error } = await supabase
-      .from("invoices")
+    const { data: payment, error } = await supabase
+      .from("payments")
       .select(`
         *,
-        custom_members!member_id (name, last_name, email, phone),
-        invoice_items (*)
+        custom_members!member_id (name, last_name, email, phone)
       `)
-      .eq("id", invoiceId)
+      .eq("id", paymentId)
       .single()
 
     if (error) throw error
-    if (!invoice) throw new Error("חשבונית לא נמצאה")
+    if (!payment) throw new Error("תשלום לא נמצא")
 
     // Create PDF with proper encoding
     const doc = new jsPDF({
@@ -158,36 +158,24 @@ export const generateInvoicePdf = async (invoiceId: string): Promise<void> => {
 
     // Add title
     doc.setFontSize(18)
-    doc.text("חשבונית מס", doc.internal.pageSize.width / 2, 20, { align: "center" })
+    doc.text("קבלה", doc.internal.pageSize.width / 2, 20, { align: "center" })
 
-    // Add invoice info
+    // Add payment info
     doc.setFontSize(12)
-    doc.text(`מספר חשבונית: ${invoice.invoice_number || invoice.id}`, 190, 40, { align: "right" })
-    doc.text(`שם לקוח: ${invoice.custom_members.name} ${invoice.custom_members.last_name || ""}`, 190, 50, {
+    doc.text(`מספר קבלה: ${payment.receipt_number || payment.id}`, 190, 40, { align: "right" })
+    doc.text(`שם לקוח: ${payment.custom_members?.name} ${payment.custom_members?.last_name || ""}`, 190, 50, {
       align: "right",
     })
-    doc.text(`תאריך: ${format(new Date(invoice.created_at), "dd/MM/yyyy", { locale: he })}`, 190, 60, {
+    doc.text(`תאריך: ${format(new Date(payment.payment_date), "dd/MM/yyyy", { locale: he })}`, 190, 60, {
       align: "right",
     })
-    doc.text(`תאריך לתשלום: ${format(new Date(invoice.due_date), "dd/MM/yyyy", { locale: he })}`, 190, 70, {
+    doc.text(`אמצעי תשלום: ${payment.payment_method}`, 190, 70, {
       align: "right",
     })
 
-    // Create invoice items table
-    const tableHeaders = [["מחיר יחידה", "כמות", "תיאור", "מס'"]]
-
-    const tableData = invoice.invoice_items.map((item: any, index: number) => [
-      `₪${Number(item.unit_price).toFixed(2)}`,
-      item.quantity.toString(),
-      item.description,
-      (index + 1).toString(),
-    ])
-
-    // Calculate total
-    const total = invoice.invoice_items.reduce(
-      (sum: number, item: any) => sum + item.quantity * Number(item.unit_price),
-      0,
-    )
+    // Create payment details table
+    const tableHeaders = [["סכום", "תיאור"]]
+    const tableData = [[`₪${Number(payment.amount).toFixed(2)}`, payment.description || "תשלום"]]
 
     // Add table with proper font settings
     autoTable(doc, {
@@ -217,12 +205,7 @@ export const generateInvoicePdf = async (invoiceId: string): Promise<void> => {
 
     // Add total
     const finalY = (doc as any).lastAutoTable.finalY || 120
-    doc.text(`סה"כ: ₪${total.toFixed(2)}`, 190, finalY + 20, { align: "right" })
-
-    // Add notes if they exist
-    if (invoice.notes) {
-      doc.text(`הערות: ${invoice.notes}`, 190, finalY + 30, { align: "right" })
-    }
+    doc.text(`סה"כ: ₪${Number(payment.amount).toFixed(2)}`, 190, finalY + 20, { align: "right" })
 
     // Add footer
     doc.setFontSize(10)
@@ -234,9 +217,9 @@ export const generateInvoicePdf = async (invoiceId: string): Promise<void> => {
     )
 
     // Save the PDF
-    doc.save(`חשבונית-${invoice.invoice_number || invoice.id}.pdf`)
+    doc.save(`קבלה-${payment.receipt_number || payment.id}.pdf`)
   } catch (error) {
-    console.error("Error generating invoice PDF:", error)
+    console.error("Error generating receipt PDF:", error)
     throw error
   }
 }

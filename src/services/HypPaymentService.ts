@@ -169,52 +169,10 @@ export const HypPaymentService = {
         throw error
       }
 
-      // Also save to a hyp_payments table for easier querying if needed
-      await this.saveToHypPaymentsTable(memberId, paymentResponse, paymentId, paymentDate, metadata)
-
       return paymentId
     } catch (error) {
       console.error("Error saving payment record:", error)
       throw error
-    }
-  },
-
-  /**
-   * Save to a dedicated HYP payments table for easier querying
-   * (This is an optional enhancement)
-   */
-  async saveToHypPaymentsTable(
-    memberId: string,
-    paymentResponse: HypPaymentResponse,
-    paymentId: string,
-    paymentDate: string,
-    metadata: any = {},
-  ): Promise<void> {
-    try {
-      // Insert into hyp_payments table if it exists
-      const { error } = await supabase.from("hyp_payments").insert({
-        id: uuidv4(),
-        payment_id: paymentId,
-        member_id: memberId,
-        amount: paymentResponse.amount,
-        currency: paymentResponse.currency,
-        status: paymentResponse.status,
-        payment_url: paymentResponse.paymentUrl,
-        created_at: paymentDate,
-        updated_at: paymentDate,
-        metadata: {
-          ...metadata,
-          customerDetails: paymentResponse.customerDetails,
-        },
-      })
-
-      if (error && error.code !== "42P01") {
-        // Ignore table doesn't exist error
-        console.error("Error saving to HYP payments table:", error)
-      }
-    } catch (error) {
-      // Don't throw error here, just log it
-      console.error("Error saving to HYP payments table (non-critical):", error)
     }
   },
 
@@ -283,21 +241,6 @@ export const HypPaymentService = {
 
       if (error) {
         throw error
-      }
-
-      // Also update hyp_payments table if it exists
-      try {
-        await supabase
-          .from("hyp_payments")
-          .update({
-            status,
-            ...additionalData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("payment_id", paymentId)
-      } catch (error) {
-        // Non-critical, just log
-        console.error("Error updating hyp_payments table (non-critical):", error)
       }
     } catch (error) {
       console.error("Error updating payment status:", error)
