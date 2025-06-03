@@ -61,16 +61,20 @@ export const HypDatabase = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
     try {
-      // Create a simple update object with explicit any type to avoid TS inference issues
-      const updateData: any = {
-        status,
-        updated_at: new Date().toISOString(),
-        ...additionalData
+      // Explicitly type the update object to avoid TypeScript inference issues
+      const updateFields: Record<string, unknown> = {
+        status: status,
+        updated_at: new Date().toISOString()
+      }
+
+      // Manually add additional data properties to avoid spread operator issues
+      for (const [key, value] of Object.entries(additionalData)) {
+        updateFields[key] = value
       }
 
       const { error } = await supabase
         .from("payments")
-        .update(updateData)
+        .update(updateFields)
         .eq("id", paymentId)
 
       if (error) {
