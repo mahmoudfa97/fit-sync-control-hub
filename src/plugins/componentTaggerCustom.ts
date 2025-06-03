@@ -1,3 +1,4 @@
+
 import { parse } from "@babel/parser";
 import * as esbuild from "esbuild";
 import fs from "fs/promises";
@@ -6,7 +7,7 @@ import path from "path";
 import resolveConfig from "tailwindcss/resolveConfig";
 import { existsSync } from "fs";
 import type { Plugin } from "vite";
-import type { JSXElement, JSXOpeningElement } from "@babel/types";
+import type { JSXElement, JSXOpeningElement, JSXIdentifier, JSXMemberExpression } from "@babel/types";
 
 // Utility to find root
 function findProjectRoot(startPath = process.cwd()): string {
@@ -51,7 +52,7 @@ export function componentTaggerCustom(): Plugin {
       const cwd = process.cwd();
       const relativePath = path.relative(cwd, id);
       const parserOptions = {
-        sourceType: "module",
+        sourceType: "module" as const,
         plugins: ["jsx", "typescript"] as const
       };
 
@@ -61,7 +62,7 @@ export function componentTaggerCustom(): Plugin {
         let currentElement: JSXElement | null = null;
 
         const { walk } = await import("estree-walker");
-        walk(ast, {
+        walk(ast as any, {
           enter(node: any) {
             if (node.type === "JSXElement") {
               currentElement = node;
@@ -72,9 +73,13 @@ export function componentTaggerCustom(): Plugin {
               let elementName = "";
 
               if (jsxNode.name.type === "JSXIdentifier") {
-                elementName = jsxNode.name.name;
+                const identifier = jsxNode.name as JSXIdentifier;
+                elementName = identifier.name;
               } else if (jsxNode.name.type === "JSXMemberExpression") {
-                elementName = `${jsxNode.name.object.name}.${jsxNode.name.property.name}`;
+                const memberExpr = jsxNode.name as JSXMemberExpression;
+                if (memberExpr.object.type === "JSXIdentifier" && memberExpr.property.type === "JSXIdentifier") {
+                  elementName = `${memberExpr.object.name}.${memberExpr.property.name}`;
+                }
               } else {
                 return;
               }
