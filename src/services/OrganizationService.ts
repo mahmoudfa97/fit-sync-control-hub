@@ -31,7 +31,7 @@ export const OrganizationService = {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      return data as Organization;
     } catch (error) {
       console.error('Error fetching current organization:', error);
       return null;
@@ -130,7 +130,10 @@ export const OrganizationService = {
         .eq('organization_id', orgId);
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(user => ({
+        ...user,
+        role: user.role as 'owner' | 'admin' | 'staff' | 'member'
+      }));
     } catch (error) {
       console.error('Error fetching organization users:', error);
       return [];

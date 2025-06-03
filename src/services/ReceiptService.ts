@@ -1,3 +1,4 @@
+
 import { jsPDF } from "jspdf"
 import "jspdf-autotable"
 import { format } from "date-fns"
@@ -50,9 +51,10 @@ export class ReceiptService {
 
       // Add HYP specific details if applicable
       if (payment.payment_method === "hyp" && payment.payment_details) {
+        const paymentDetails = payment.payment_details as any
         receiptData.hypDetails = {
-          transactionId: payment.payment_details.transactionId || payment.payment_details.transaction_id,
-          referenceId: payment.payment_details.referenceId || payment.payment_details.reference_id,
+          transactionId: paymentDetails?.transactionId || paymentDetails?.transaction_id,
+          referenceId: paymentDetails?.referenceId || paymentDetails?.reference_id,
         }
       }
 
