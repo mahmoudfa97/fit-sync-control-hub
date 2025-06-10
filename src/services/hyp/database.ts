@@ -60,14 +60,13 @@ export const HypDatabase = {
   /**
    * Update payment status in Supabase with more details
    */
-  async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
+  async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
     try {
-      const baseUpdate = {
+      const updateData = {
         status,
         updated_at: new Date().toISOString(),
+        ...additionalData
       }
-
-      const updateData = Object.assign(baseUpdate, additionalData)
 
       const { error } = await supabase
         .from("payments")
