@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { OrganizationAwareService } from './OrganizationAwareService';
 
 export interface Payment {
   id: string;
@@ -9,6 +10,7 @@ export interface Payment {
   payment_date: string;
   member_id: string;
   description?: string;
+  organization_id?: string;
 }
 
 export interface PaymentMethod {
@@ -37,9 +39,12 @@ export interface PaymentMethodFormData {
 export const PaymentService = {
   async fetchPayments(): Promise<Payment[]> {
     try {
+      const organizationId = await OrganizationAwareService.withOrganizationScope();
+      
       const { data, error } = await supabase
         .from('payments')
         .select('*')
+        .eq('organization_id', organizationId)
         .order('payment_date', { ascending: false });
 
       if (error) throw error;
@@ -50,11 +55,16 @@ export const PaymentService = {
     }
   },
 
-  async createPayment(payment: Omit<Payment, 'id'>): Promise<Payment> {
+  async createPayment(payment: Omit<Payment, 'id' | 'organization_id'>): Promise<Payment> {
     try {
+      const organizationId = await OrganizationAwareService.withOrganizationScope();
+      
       const { data, error } = await supabase
         .from('payments')
-        .insert([payment])
+        .insert([{
+          ...payment,
+          organization_id: organizationId
+        }])
         .select()
         .single();
 
@@ -68,10 +78,15 @@ export const PaymentService = {
 
   async addPaymentMethod(paymentMethodData: PaymentMethodFormData): Promise<PaymentMethod> {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('payment_methods')
         .insert([{
-          user_id: 'temp-user-id', // This should be replaced with actual user ID
+          user_id: session.session.user.id,
           payment_type: paymentMethodData.paymentType,
           provider: paymentMethodData.provider,
           last_four: paymentMethodData.cardNumber?.slice(-4),

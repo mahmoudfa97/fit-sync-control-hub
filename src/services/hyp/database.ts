@@ -60,21 +60,23 @@ export const HypDatabase = {
   /**
    * Update payment status in Supabase with more details
    */
-  async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, string | number | boolean | null> = {}): Promise<void> {
+  async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
     try {
-      const updateData: Record<string, any> = {
+      const updateFields: any = {
         status,
         updated_at: new Date().toISOString()
       }
 
-      // Manually add each property from additionalData to avoid type inference issues
-      for (const [key, value] of Object.entries(additionalData)) {
-        updateData[key] = value
+      // Add additional data fields if provided
+      if (additionalData && typeof additionalData === 'object') {
+        Object.keys(additionalData).forEach(key => {
+          updateFields[key] = additionalData[key]
+        })
       }
 
       const { error } = await supabase
         .from("payments")
-        .update(updateData)
+        .update(updateFields)
         .eq("id", paymentId)
 
       if (error) {

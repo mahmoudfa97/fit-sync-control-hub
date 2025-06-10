@@ -1,4 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client"
+import { OrganizationAwareService } from "./OrganizationAwareService"
 
 export interface CheckIn {
   id: string
@@ -17,11 +19,7 @@ export interface Member {
 export class CheckInService {
   static async fetchCheckIns() {
     try {
-      // First check if user is authenticated
-      const { data: authData } = await supabase.auth.getSession()
-      if (!authData.session) {
-        throw new Error("Authentication required")
-      }
+      const organizationId = await OrganizationAwareService.withOrganizationScope()
 
       const { data, error } = await supabase
         .from("custom_checkins")
@@ -32,13 +30,13 @@ export class CheckInService {
           member_id,
           custom_members:member_id(id, name, last_name)
         `)
+        .eq("organization_id", organizationId)
         .order("check_in_time", { ascending: false })
 
       if (error) {
         throw error
       }
 
-      // Transform the data to match our interface
       const transformedData: CheckIn[] = data.map((item) => ({
         id: item.id,
         memberId: item.member_id,
@@ -58,13 +56,13 @@ export class CheckInService {
 
   static async fetchMembers() {
     try {
-      // First check if user is authenticated
-      const { data: authData } = await supabase.auth.getSession()
-      if (!authData.session) {
-        throw new Error("Authentication required")
-      }
+      const organizationId = await OrganizationAwareService.withOrganizationScope()
 
-      const { data, error } = await supabase.from("custom_members").select("id, name, last_name").order("name")
+      const { data, error } = await supabase
+        .from("custom_members")
+        .select("id, name, last_name")
+        .eq("organization_id", organizationId)
+        .order("name")
 
       if (error) {
         throw error
@@ -79,21 +77,29 @@ export class CheckInService {
 
   static async addCheckIn(memberId: string, notes?: string) {
     try {
-      // First check if user is authenticated
-      const { data: authData } = await supabase.auth.getSession()
-      if (!authData.session) {
-        throw new Error("Authentication required")
+      const organizationId = await OrganizationAwareService.withOrganizationScope()
+
+      // Verify member belongs to organization
+      const { data: member } = await supabase
+        .from("custom_members")
+        .select("id, name, last_name")
+        .eq("id", memberId)
+        .eq("organization_id", organizationId)
+        .single()
+
+      if (!member) {
+        throw new Error("Member not found in organization")
       }
 
       const now = new Date()
 
-      // Add check-in to Supabase using custom_checkins table
       const { data, error } = await supabase
         .from("custom_checkins")
         .insert({
           member_id: memberId,
           check_in_time: now.toISOString(),
           notes: notes || null,
+          organization_id: organizationId,
         })
         .select("id")
 
@@ -103,21 +109,6 @@ export class CheckInService {
 
       const checkInId = data[0].id
 
-      // Get the member info to include in the response
-      const { data: memberData, error: memberError } = await supabase
-        .from("custom_members")
-        .select("name, last_name")
-        .eq("id", memberId)
-        .single()
-
-      if (memberError) {
-        throw memberError
-      }
-
-      // Add type assertion to fix TypeScript error
-      const member = memberData as { name: string; last_name?: string }
-
-      // Build and return the new check-in object
       return {
         id: checkInId,
         memberId: memberId,
