@@ -1,15 +1,17 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { AuthService } from '@/services/AuthService';
+import { OrganizationService } from '@/services/OrganizationService';
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, lastName: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, lastName: string, orgData?: any) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -70,13 +72,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, lastName: string) => {
+  const signUp = async (email: string, password: string, name: string, lastName: string, orgData?: any) => {
     try {
       setIsLoading(true);
-      await AuthService.signUp(email, password, name, lastName);
+      
+      // Create the user with metadata that will be used by the trigger
+      const userData = {
+        name,
+        last_name: lastName,
+        gym_name: orgData?.gymName
+      };
+
+      await AuthService.signUp(email, password, name, lastName, userData);
+      
+      // If there's a logo file, upload it after user creation
+      if (orgData?.logoFile) {
+        // We'll handle logo upload after the organization is created by the trigger
+        console.log('Logo file ready for upload:', orgData.logoFile);
+      }
+      
       toast({
         title: "הרשמה בוצעה בהצלחה",
-        description: "כעת באפשרותך להתחבר למערכת",
+        description: "המכון החדש נוצר בהצלחה! כעת באפשרותך להתחבר למערכת",
       });
     } catch (error: any) {
       toast({

@@ -3,14 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
 export class AuthService {
-  static async signUp(email: string, password: string, name: string, lastName: string) {
+  static async signUp(email: string, password: string, name: string, lastName: string, metadata: any = {}) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           name,
-          last_name: lastName
+          last_name: lastName,
+          gym_name: metadata.gym_name,
+          ...metadata
         }
       }
     });

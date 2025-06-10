@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client"
 import { v4 as uuidv4 } from "uuid"
 import { HypPaymentResponse } from "./types"
@@ -61,12 +62,12 @@ export const HypDatabase = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
     try {
-      // Create update object with explicit type to avoid TypeScript inference issues
-      const updateData: any = {
+      const baseUpdate = {
         status,
         updated_at: new Date().toISOString(),
-        ...additionalData
       }
+
+      const updateData = Object.assign(baseUpdate, additionalData)
 
       const { error } = await supabase
         .from("payments")

@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,9 @@ import {
 } from "lucide-react";
 import { t } from "@/utils/translations";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import logo from '@/assets/logo.png';
+
 interface NavItemProps {
   icon: React.ElementType;
   label: string;
@@ -30,8 +33,6 @@ interface NavItemProps {
 }
 
 const NavItem = ({ icon: Icon, label, to, collapsed }: NavItemProps) => {
-    
-  
   return (
     <NavLink
       to={to}
@@ -58,12 +59,14 @@ const navItems = [
   { icon: UserRound, label: t("staff_menu"), to: "/staff" },
   { icon: MessagesSquareIcon, label: t("messages_center"), to: "/messages" },
   { icon: Group, label: t("groupSubscriptions"), to: "/group-subscriptions" },
-   { icon: LucideSettings, label: t("admin"), to: "/assets" },
+  { icon: LucideSettings, label: t("admin"), to: "/assets" },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { signOut } = useAuth();
+  const { currentOrganization } = useOrganization();
+  
   const handleSignOut = async () => { 
     try {
       await signOut();
@@ -71,17 +74,22 @@ export function Sidebar() {
       console.error("Error signing out:", error);
     }
   }
+
+  const organizationLogo = currentOrganization?.logo_url || logo;
+  const organizationName = currentOrganization?.name || "המכון שלי";
+
   return (
     <aside className={cn("bg-sidebar h-screen flex-shrink-0 border-r border-sidebar-border flex flex-col transition-all duration-300", collapsed ? "w-16" : "w-64")}>
       <div className={cn("p-4 flex items-center", collapsed ? "justify-center" : "justify-between")}>
         {!collapsed ? (
           <div className="flex items-center gap-2">
-            <Link to="/">
-            <img src={logo} alt="Logo" className="h-48 w-96 object-scale-down" />
+            <Link to="/" className="flex items-center gap-2">
+              <img src={organizationLogo} alt={organizationName} className="h-12 w-12 object-cover rounded-lg" />
+              <span className="font-semibold text-lg">{organizationName}</span>
             </Link>
           </div>
         ) : (
-          <img src={logo} alt="Logo" className="h-48 w-96 object-scale-down" />
+          <img src={organizationLogo} alt={organizationName} className="h-12 w-12 object-cover rounded-lg" />
         )}
 
         <Button variant="ghost" size="icon" className={cn("h-8 w-8 text-sidebar-foreground", collapsed ? "mt-4" : "")} onClick={() => setCollapsed(!collapsed)}>
