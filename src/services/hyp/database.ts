@@ -60,12 +60,16 @@ export const HypDatabase = {
   /**
    * Update payment status in Supabase with more details
    */
-  async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
+  async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, string | number | boolean | null> = {}): Promise<void> {
     try {
-      const updateData = {
+      const updateData: Record<string, any> = {
         status,
-        updated_at: new Date().toISOString(),
-        ...additionalData
+        updated_at: new Date().toISOString()
+      }
+
+      // Manually add each property from additionalData to avoid type inference issues
+      for (const [key, value] of Object.entries(additionalData)) {
+        updateData[key] = value
       }
 
       const { error } = await supabase
