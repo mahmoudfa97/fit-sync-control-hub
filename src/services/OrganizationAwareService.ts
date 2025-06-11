@@ -12,9 +12,9 @@ export class OrganizationAwareService {
         throw new Error('User not authenticated');
       }
 
-      // Use the existing security definer function (the name in types is get_user_organization)
+      // Use the new security definer function
       const { data, error } = await supabase
-        .rpc('get_user_organization');
+        .rpc('get_user_organization_id');
 
       if (error) {
         console.error('Error fetching user organization:', error);

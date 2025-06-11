@@ -1870,6 +1870,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      user_belongs_to_organization: {
+        Args: { org_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       unassigned: "unassigned"

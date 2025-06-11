@@ -2,13 +2,15 @@
 import { supabase } from "@/integrations/supabase/client"
 import { v4 as uuidv4 } from "uuid"
 import { HypPaymentResponse } from "./types"
+import { OrganizationAwareService } from "../OrganizationAwareService"
 
 export const HypDatabase = {
   /**
    * Save payment record to Supabase with better integration
    */
-  async savePaymentRecord(memberId: string, paymentResponse: HypPaymentResponse, metadata: any = {}): Promise<string> {
+  async savePaymentRecord(memberId: string, paymentResponse: HypPaymentResponse, metadata: Record<string, any> = {}): Promise<string> {
     try {
+      const organizationId = await OrganizationAwareService.withOrganizationScope();
       const paymentId = uuidv4()
       const receiptNumber = `REC-HYP-${Date.now().toString().slice(-6)}`
 
@@ -43,6 +45,7 @@ export const HypDatabase = {
         description: (metadata.description as string) || "תשלום באמצעות HYP",
         receipt_number: receiptNumber,
         payment_details: fullMetadata,
+        organization_id: organizationId,
       })
 
       if (error) {
@@ -60,7 +63,7 @@ export const HypDatabase = {
   /**
    * Update payment status in Supabase with more details
    */
-  async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
+  async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, any> = {}): Promise<void> {
     try {
       const updateData = {
         status,
