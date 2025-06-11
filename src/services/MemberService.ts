@@ -32,7 +32,6 @@ export interface ExpiringMember {
   id: string;
   name: string;
   last_name?: string;
-  avatar_url?: string;
   membership: {
     id: string;
     membership_type: string;
@@ -180,7 +179,6 @@ export const MemberService = {
           id,
           name,
           last_name,
-          avatar_url,
           custom_memberships!inner(
             id,
             membership_type,
@@ -200,7 +198,6 @@ export const MemberService = {
         id: member.id,
         name: member.name,
         last_name: member.last_name,
-        avatar_url: member.avatar_url,
         membership: member.custom_memberships[0]
       })) || [];
     } catch (error) {
@@ -221,7 +218,6 @@ export const MemberService = {
           id,
           name,
           last_name,
-          avatar_url,
           custom_memberships!inner(
             id,
             membership_type,
@@ -240,7 +236,6 @@ export const MemberService = {
         id: member.id,
         name: member.name,
         last_name: member.last_name,
-        avatar_url: member.avatar_url,
         membership: member.custom_memberships[0]
       })) || [];
     } catch (error) {
