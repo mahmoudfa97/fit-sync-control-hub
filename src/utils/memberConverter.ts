@@ -1,5 +1,5 @@
 
-import { Member as ServiceMember } from '@/services/MemberService';
+import { ServiceMember } from '@/services/MemberService';
 import { Member as StoreMember } from '@/store/slices/members/types';
 
 export function convertServiceMemberToStoreMember(serviceMember: ServiceMember): StoreMember {
@@ -18,7 +18,7 @@ export function convertServiceMemberToStoreMember(serviceMember: ServiceMember):
     lastCheckIn: undefined,
     address: undefined,
     emergencyContact: undefined,
-    dateOfBirth: serviceMember.dateOfBirth,
+    dateOfBirth: serviceMember.date_of_birth,
     gender: serviceMember.gender as 'male' | 'female' | 'other' | undefined,
     hasInsurance: undefined,
     insuranceEndDate: undefined,

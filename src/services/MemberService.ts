@@ -25,6 +25,22 @@ export interface ServiceMember {
   organization_id?: string;
 }
 
+// Export Member type for compatibility
+export type Member = ServiceMember;
+
+export interface ExpiringMember {
+  id: string;
+  name: string;
+  last_name?: string;
+  avatar_url?: string;
+  membership: {
+    id: string;
+    membership_type: string;
+    end_date: string;
+    status: string;
+  };
+}
+
 export const MemberService = {
   async fetchMembers(): Promise<ServiceMember[]> {
     try {
@@ -97,7 +113,7 @@ export const MemberService = {
           last_name: memberData.lastName,
           email: memberData.email,
           phone: memberData.phone,
-          date_of_birth: memberData.dateOfBirth,
+          dateOfBirth: memberData.dateOfBirth,
           gender: memberData.gender,
           notes: memberData.notes,
           organization_id: organizationId,
@@ -150,4 +166,103 @@ export const MemberService = {
       throw error;
     }
   },
+
+  async fetchExpiringMembers(): Promise<ExpiringMember[]> {
+    try {
+      const organizationId = await OrganizationAwareService.withOrganizationScope();
+      
+      const today = new Date();
+      const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+
+      const { data, error } = await supabase
+        .from("custom_members")
+        .select(`
+          id,
+          name,
+          last_name,
+          avatar_url,
+          custom_memberships!inner(
+            id,
+            membership_type,
+            end_date,
+            status
+          )
+        `)
+        .eq("organization_id", organizationId)
+        .eq("custom_memberships.status", "active")
+        .gte("custom_memberships.end_date", today.toISOString())
+        .lte("custom_memberships.end_date", thirtyDaysFromNow.toISOString())
+        .order("custom_memberships.end_date", { ascending: true });
+
+      if (error) throw error;
+
+      return data?.map(member => ({
+        id: member.id,
+        name: member.name,
+        last_name: member.last_name,
+        avatar_url: member.avatar_url,
+        membership: member.custom_memberships[0]
+      })) || [];
+    } catch (error) {
+      console.error("Error fetching expiring members:", error);
+      throw error;
+    }
+  },
+
+  async fetchExpiredMembers(): Promise<ExpiringMember[]> {
+    try {
+      const organizationId = await OrganizationAwareService.withOrganizationScope();
+      
+      const today = new Date();
+
+      const { data, error } = await supabase
+        .from("custom_members")
+        .select(`
+          id,
+          name,
+          last_name,
+          avatar_url,
+          custom_memberships!inner(
+            id,
+            membership_type,
+            end_date,
+            status
+          )
+        `)
+        .eq("organization_id", organizationId)
+        .eq("custom_memberships.status", "active")
+        .lt("custom_memberships.end_date", today.toISOString())
+        .order("custom_memberships.end_date", { ascending: false });
+
+      if (error) throw error;
+
+      return data?.map(member => ({
+        id: member.id,
+        name: member.name,
+        last_name: member.last_name,
+        avatar_url: member.avatar_url,
+        membership: member.custom_memberships[0]
+      })) || [];
+    } catch (error) {
+      console.error("Error fetching expired members:", error);
+      throw error;
+    }
+  },
+
+  async updateMembershipToExpired(membershipId: string): Promise<void> {
+    try {
+      const organizationId = await OrganizationAwareService.withOrganizationScope();
+      
+      const { error } = await supabase
+        .from("custom_memberships")
+        .update({ status: "expired" })
+        .eq("id", membershipId)
+        .eq("organization_id", organizationId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error updating membership status:", error);
+      throw error;
+    }
+  }
 };
