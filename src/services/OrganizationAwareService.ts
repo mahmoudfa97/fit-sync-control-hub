@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export class OrganizationAwareService {
   /**
-   * Get current user's organization ID
+   * Get current user's organization ID using security definer function
    */
   static async getCurrentOrganizationId(): Promise<string | null> {
     try {
@@ -12,18 +12,16 @@ export class OrganizationAwareService {
         throw new Error('User not authenticated');
       }
 
+      // Use the security definer function to avoid RLS recursion
       const { data, error } = await supabase
-        .from('organization_users')
-        .select('organization_id')
-        .eq('user_id', session.session.user.id)
-        .single();
+        .rpc('get_user_organization_id');
 
       if (error) {
         console.error('Error fetching user organization:', error);
         return null;
       }
 
-      return data?.organization_id || null;
+      return data || null;
     } catch (error) {
       console.error('Error in getCurrentOrganizationId:', error);
       return null;

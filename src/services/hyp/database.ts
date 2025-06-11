@@ -7,7 +7,7 @@ export const HypDatabase = {
   /**
    * Save payment record to Supabase with better integration
    */
-  async savePaymentRecord(memberId: string, paymentResponse: HypPaymentResponse, metadata: any = {}): Promise<string> {
+  async savePaymentRecord(memberId: string, paymentResponse: HypPaymentResponse, metadata: Record<string, unknown> = {}): Promise<string> {
     try {
       const paymentId = uuidv4()
       const receiptNumber = `REC-HYP-${Date.now().toString().slice(-6)}`
@@ -40,7 +40,7 @@ export const HypDatabase = {
         payment_method: "hyp",
         payment_date: paymentDate,
         status: paymentResponse.status === "completed" ? "paid" : "pending",
-        description: metadata.description || "תשלום באמצעות HYP",
+        description: metadata.description as string || "תשלום באמצעות HYP",
         receipt_number: receiptNumber,
         payment_details: fullMetadata,
       })
@@ -62,7 +62,7 @@ export const HypDatabase = {
    */
   async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, unknown> = {}): Promise<void> {
     try {
-      const updateData = {
+      const updateData: Record<string, unknown> = {
         status,
         updated_at: new Date().toISOString(),
         ...additionalData
