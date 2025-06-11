@@ -60,7 +60,7 @@ export const HypDatabase = {
   /**
    * Update payment status in Supabase with more details
    */
-  async updatePaymentStatus(paymentId: string, status: string, additionalData: any = {}): Promise<void> {
+  async updatePaymentStatus(paymentId: string, status: string, additionalData: Record<string, unknown> = {}): Promise<void> {
     try {
       const updateData = {
         status,

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -77,9 +78,6 @@ export function ExpiringMembersCard() {
                 <div key={member.id}>
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      {member.avatar_url ? (
-                        <AvatarImage src={member.avatar_url || "/placeholder.svg"} alt={member.name} />
-                      ) : null}
                       <AvatarFallback className="bg-amber-100 text-amber-800">
                         {getInitials(member.name, member.last_name)}
                       </AvatarFallback>
