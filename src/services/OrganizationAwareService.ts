@@ -14,7 +14,7 @@ export class OrganizationAwareService {
 
       // Use the security definer function to avoid RLS recursion
       const { data, error } = await supabase
-        .rpc('get_user_organization');
+        .rpc('get_user_organization_id');
 
       if (error) {
         console.error('Error fetching user organization:', error);
