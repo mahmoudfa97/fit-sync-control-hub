@@ -12,9 +12,9 @@ export class OrganizationAwareService {
         throw new Error('User not authenticated');
       }
 
-      // Use the security definer function to avoid RLS recursion
+      // Use the existing security definer function (the name in types is get_user_organization)
       const { data, error } = await supabase
-        .rpc('get_user_organization_id');
+        .rpc('get_user_organization');
 
       if (error) {
         console.error('Error fetching user organization:', error);
