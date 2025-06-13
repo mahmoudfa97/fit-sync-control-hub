@@ -127,15 +127,7 @@ export type Database = {
           member_id?: string | null
           notes?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "class_attendance_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       class_registrations: {
         Row: {
@@ -247,13 +239,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "custom_checkins_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "custom_checkins_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -295,13 +280,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "custom_member_insurance_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "custom_member_insurance_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -320,8 +298,8 @@ export type Database = {
           id: string
           last_name: string | null
           name: string
-          organization_id: string | null
           phone: string | null
+          tenant_id: string
           updated_at: string | null
         }
         Insert: {
@@ -333,8 +311,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           name: string
-          organization_id?: string | null
           phone?: string | null
+          tenant_id: string
           updated_at?: string | null
         }
         Update: {
@@ -346,16 +324,16 @@ export type Database = {
           id?: string
           last_name?: string | null
           name?: string
-          organization_id?: string | null
           phone?: string | null
+          tenant_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "custom_members_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "custom_members_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -367,10 +345,10 @@ export type Database = {
           id: string
           member_id: string | null
           membership_type: string | null
-          organization_id: string | null
           payment_status: string | null
           start_date: string | null
           status: string | null
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -379,10 +357,10 @@ export type Database = {
           id?: string
           member_id?: string | null
           membership_type?: string | null
-          organization_id?: string | null
           payment_status?: string | null
           start_date?: string | null
           status?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -391,23 +369,16 @@ export type Database = {
           id?: string
           member_id?: string | null
           membership_type?: string | null
-          organization_id?: string | null
           payment_status?: string | null
           start_date?: string | null
           status?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "custom_memberships_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "custom_memberships_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "custom_memberships_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
@@ -455,13 +426,6 @@ export type Database = {
           organization_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "files_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "files_organization_id_fkey"
             columns: ["organization_id"]
@@ -569,13 +533,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "hyp_payments_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "hyp_payments_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -629,13 +586,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "member_files_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "member_files_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -685,13 +635,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "member_programs_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "member_programs_organization_id_fkey"
             columns: ["organization_id"]
@@ -748,13 +691,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "member_tasks_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "member_tasks_organization_id_fkey"
             columns: ["organization_id"]
@@ -853,13 +789,6 @@ export type Database = {
           subject?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "messages_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "messages_organization_id_fkey"
             columns: ["organization_id"]
@@ -1026,13 +955,6 @@ export type Database = {
           status?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "payments_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "payments_organization_id_fkey"
             columns: ["organization_id"]
@@ -1489,13 +1411,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tasks_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "tasks_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1503,6 +1418,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tenants: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          owner_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          owner_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          owner_user_id?: string
+        }
+        Relationships: []
       }
       tracking_entries: {
         Row: {
@@ -1593,13 +1529,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "tracking_programs_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "custom_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "tracking_programs_organization_id_fkey"
             columns: ["organization_id"]
@@ -1864,6 +1793,10 @@ export type Database = {
       }
       create_organization_with_owner: {
         Args: { org_name: string; org_slug: string; user_id: string }
+        Returns: string
+      }
+      current_user_tenant_id: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_user_organization: {

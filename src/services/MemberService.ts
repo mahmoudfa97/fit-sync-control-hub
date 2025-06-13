@@ -1,262 +1,178 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { OrganizationAwareService } from "./OrganizationAwareService";
+import { supabase } from '@/integrations/supabase/client';
+import { OrganizationAwareService } from './OrganizationAwareService';
 
-export interface MemberFormData {
+export interface Member {
+  id: string;
   name: string;
-  lastName?: string;
+  last_name?: string;
   email?: string;
   phone?: string;
   dateOfBirth?: string;
   gender?: string;
-  notes?: string;
+  created_at: string;
+  updated_at: string;
+  organization_id?: string;
+  memberships?: Membership[];
 }
 
-export interface ServiceMember {
+export interface Membership {
   id: string;
-  name: string;
-  last_name?: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-  gender?: string;
-  notes?: string;
-  created_at: string;
+  member_id: string;
+  membership_type?: string;
+  status?: string;
+  payment_status?: string;
+  start_date?: string;
+  end_date?: string;
   organization_id?: string;
 }
 
-// Export Member type for compatibility
-export type Member = ServiceMember;
-
-export interface ExpiringMember {
-  id: string;
-  name: string;
-  last_name?: string;
-  membership: {
-    id: string;
-    membership_type: string;
-    end_date: string;
-    status: string;
-  };
-}
-
 export const MemberService = {
-  async fetchMembers(): Promise<ServiceMember[]> {
+  async fetchMembers(): Promise<Member[]> {
     try {
       const organizationId = await OrganizationAwareService.withOrganizationScope();
       
       const { data, error } = await supabase
-        .from("custom_members")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .order("created_at", { ascending: false });
+        .from('custom_members')
+        .select(`
+          *,
+          custom_memberships (
+            id,
+            membership_type,
+            status,
+            payment_status,
+            start_date,
+            end_date,
+            organization_id
+          )
+        `)
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Error fetching members:", error);
+        console.error('Error fetching members:', error);
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(member => ({
+        ...member,
+        memberships: member.custom_memberships || []
+      }));
     } catch (error) {
-      console.error("Error in fetchMembers:", error);
+      console.error('Error in fetchMembers:', error);
       throw error;
     }
   },
 
-  async getMemberById(memberId: string): Promise<ServiceMember> {
+  async createMember(memberData: Omit<Member, 'id' | 'created_at' | 'updated_at' | 'organization_id'>): Promise<Member> {
     try {
       const organizationId = await OrganizationAwareService.withOrganizationScope();
       
       const { data, error } = await supabase
-        .from("custom_members")
-        .select("*")
-        .eq("id", memberId)
-        .eq("organization_id", organizationId)
+        .from('custom_members')
+        .insert([{
+          ...memberData,
+          organization_id: organizationId,
+          tenant_id: organizationId // Keep for backward compatibility
+        }])
+        .select()
         .single();
 
       if (error) {
-        console.error("Error fetching member:", error);
+        console.error('Error creating member:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error("Error in getMemberById:", error);
+      console.error('Error in createMember:', error);
       throw error;
     }
   },
 
-  async addMember(memberData: MemberFormData): Promise<{ member: ServiceMember; isExisting: boolean }> {
+  async updateMember(memberId: string, updates: Partial<Member>): Promise<Member> {
     try {
       const organizationId = await OrganizationAwareService.withOrganizationScope();
-
-      // Check if member already exists in this organization
-      if (memberData.email) {
-        const { data: existingMember } = await supabase
-          .from("custom_members")
-          .select("*")
-          .eq("email", memberData.email)
-          .eq("organization_id", organizationId)
-          .single();
-
-        if (existingMember) {
-          return { member: existingMember, isExisting: true };
-        }
-      }
-
-      // Create new member
+      
       const { data, error } = await supabase
-        .from("custom_members")
-        .insert({
-          name: memberData.name,
-          last_name: memberData.lastName,
-          email: memberData.email,
-          phone: memberData.phone,
-          dateOfBirth: memberData.dateOfBirth,
-          gender: memberData.gender,
-          notes: memberData.notes,
-          organization_id: organizationId,
+        .from('custom_members')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
         })
+        .eq('id', memberId)
+        .eq('organization_id', organizationId)
         .select()
         .single();
 
       if (error) {
-        console.error("Error adding member:", error);
+        console.error('Error updating member:', error);
         throw error;
       }
 
-      return { member: data, isExisting: false };
+      return data;
     } catch (error) {
-      console.error("Error in addMember:", error);
+      console.error('Error in updateMember:', error);
       throw error;
     }
   },
 
-  async recordCheckIn(memberId: string): Promise<void> {
+  async deleteMember(memberId: string): Promise<void> {
     try {
       const organizationId = await OrganizationAwareService.withOrganizationScope();
       
-      // Verify member belongs to organization
-      const { data: member } = await supabase
-        .from("custom_members")
-        .select("id")
-        .eq("id", memberId)
-        .eq("organization_id", organizationId)
-        .single();
-
-      if (!member) {
-        throw new Error("Member not found in organization");
-      }
-
       const { error } = await supabase
-        .from("custom_checkins")
-        .insert({
-          member_id: memberId,
-          check_in_time: new Date().toISOString(),
-          organization_id: organizationId,
-        });
+        .from('custom_members')
+        .delete()
+        .eq('id', memberId)
+        .eq('organization_id', organizationId);
 
       if (error) {
-        console.error("Error recording check-in:", error);
+        console.error('Error deleting member:', error);
         throw error;
       }
     } catch (error) {
-      console.error("Error in recordCheckIn:", error);
+      console.error('Error in deleteMember:', error);
       throw error;
     }
   },
 
-  async fetchExpiringMembers(): Promise<ExpiringMember[]> {
+  async getMemberById(memberId: string): Promise<Member | null> {
     try {
       const organizationId = await OrganizationAwareService.withOrganizationScope();
       
-      const today = new Date();
-      const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
-
       const { data, error } = await supabase
-        .from("custom_members")
+        .from('custom_members')
         .select(`
-          id,
-          name,
-          last_name,
-          custom_memberships!inner(
+          *,
+          custom_memberships (
             id,
             membership_type,
+            status,
+            payment_status,
+            start_date,
             end_date,
-            status
+            organization_id
           )
         `)
-        .eq("organization_id", organizationId)
-        .eq("custom_memberships.status", "active")
-        .gte("custom_memberships.end_date", today.toISOString())
-        .lte("custom_memberships.end_date", thirtyDaysFromNow.toISOString())
-        .order("custom_memberships.end_date", { ascending: true });
+        .eq('id', memberId)
+        .eq('organization_id', organizationId)
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        console.error('Error fetching member by ID:', error);
+        throw error;
+      }
 
-      return data?.map(member => ({
-        id: member.id,
-        name: member.name,
-        last_name: member.last_name,
-        membership: member.custom_memberships[0]
-      })) || [];
+      return {
+        ...data,
+        memberships: data.custom_memberships || []
+      };
     } catch (error) {
-      console.error("Error fetching expiring members:", error);
-      throw error;
-    }
-  },
-
-  async fetchExpiredMembers(): Promise<ExpiringMember[]> {
-    try {
-      const organizationId = await OrganizationAwareService.withOrganizationScope();
-      
-      const today = new Date();
-
-      const { data, error } = await supabase
-        .from("custom_members")
-        .select(`
-          id,
-          name,
-          last_name,
-          custom_memberships!inner(
-            id,
-            membership_type,
-            end_date,
-            status
-          )
-        `)
-        .eq("organization_id", organizationId)
-        .eq("custom_memberships.status", "active")
-        .lt("custom_memberships.end_date", today.toISOString())
-        .order("custom_memberships.end_date", { ascending: false });
-
-      if (error) throw error;
-
-      return data?.map(member => ({
-        id: member.id,
-        name: member.name,
-        last_name: member.last_name,
-        membership: member.custom_memberships[0]
-      })) || [];
-    } catch (error) {
-      console.error("Error fetching expired members:", error);
-      throw error;
-    }
-  },
-
-  async updateMembershipToExpired(membershipId: string): Promise<void> {
-    try {
-      const organizationId = await OrganizationAwareService.withOrganizationScope();
-      
-      const { error } = await supabase
-        .from("custom_memberships")
-        .update({ status: "expired" })
-        .eq("id", membershipId)
-        .eq("organization_id", organizationId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error updating membership status:", error);
+      console.error('Error in getMemberById:', error);
       throw error;
     }
   }
